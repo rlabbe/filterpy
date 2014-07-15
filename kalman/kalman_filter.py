@@ -13,19 +13,10 @@ import numpy.random as random
 class KalmanFilter:
 
     def __init__(self, dim_x, dim_z, use_short_form=False):
-        """ Create a Kalman filter of dimension 'dim', where dimension is the
-        number of state variables.
-        
-        use_short_form will force the filter to use the short form equation
-        for computing covariance: (I-KH)P. This is the equation that results
-        from deriving the Kalman filter equations. It is efficient to compute
-        but not numerically stable for very long runs. The long form,
-        implemented in update(), is very slightly suboptimal, and takes longer
-        to compute, but is stable. I have chosen to make the long form the
-        default behavior. If you really want the short form, either call
-        update_short_form() directly, or set 'use_short_form' to true. This
-        causes update() to use the short form. So, if you do it this way
-        you will never be able to use the long form again with this object.
+        """ Create a Kalman filter with 'dim_x' state variables, and
+        'dim_z' measurements. You are responsible for setting the various
+        state variables to reasonable values; the defaults below will
+        not give you a functional filter.
         """
 
         self.x = 0 # state
@@ -36,58 +27,52 @@ class KalmanFilter:
         self.F = 0 # state transition matrix
         self.H = 0 # Measurement function (maps state to measurements)
         self.R = np.eye(dim_z) # state uncertainty
-        self.I = np.eye(dim_x)
+        
+        # identity matrix. Do not alter this. 
+        self._I = np.eye(dim_x)
         
         if use_short_form:
             self.update = self.update_short_form
 
 
-    def update(self, Z):
+    def update(self, Z, R=None):
         """
-        Add a new measurement to the kalman filter.
-        """
-
-        # measurement update
-        y = Z - self.H.dot(self.x)                   # error (residual) between measurement and prediction
-        S = self.H.dot(self.P).dot(self.H.T) + self.R   # project system uncertainty into measurment space + measurement noise(R)
-
-        K = self.P.dot(self.H.T).dot(linalg.inv(S)) # map system uncertainty into kalman gain
-
-        self.x = self.x + K.dot(y)                # predict new x with residual scaled by the kalman gain
-
-        KH = K.dot(self.H)
-        I_KH = self.I - KH
-        self.P = I_KH.dot(self.P.dot(I_KH.T)) + K.dot(self.R.dot(K.T))
-
-
-    def update_short_form(self, Z):
-        """
-        Add a new measurement to the kalman filter.
+        Add a new measurement (Z) to the kalman filter. 
         
-        Uses the 'short form' computation for P, which is mathematically
-        correct, but perhaps not that stable when dealing with large data
-        sets. But, it is fast to compute. Advice varies; some say to never
-        use this. My opinion - if the longer form in update() executes too
-        slowly to run in real time, what choice do you have. But that should
-        be a rare case, so the long form is the default use
+        Optionally provide R to override the measurement noise for this 
+        one call, otherwise  self.R will be used.
+        
+        self.residual, self.S, and self.K are stored in case you want to
+        inspect these variables. Strictly speaking they are not part of the
+        output of the Kalman filter, however, it is often useful to know
+        what these values are in various scenarios.
         """
+        
+        if R is None:
+            R = self.R
+        elif np.isscalar(R):
+            R = np.eye(self.dim_z) * R
 
-        # measurement update
-        y = Z - self.H.dot(self.x)                   # error (residual) between measurement and prediction
-        S = self.H.dot(self.P.dot(self.H.T)) + self.R   # project system uncertainty into measurment space + measurement noise(R)
+        # error (residual) between measurement and prediction
+        self.residual = Z - self.H.dot(self.x)
+        
+        # project system uncertainty into measurement space 
+        self.S = self.H.dot(self.P).dot(self.H.T) + R   
 
+        # map system uncertainty into kalman gain
+        self.K = self.P.dot(self.H.T).dot(linalg.inv(self.S)) 
 
-        K = self.P.dot(self.H.T.dot(inalg.inv(S))) # map system uncertainty into kalman gain
+        # predict new x with residual scaled by the kalman gain
+        self.x = self.x + self.K.dot(self.residual)                
 
-        self.x = self.x + K.dot(y)                # predict new x with residual scaled by the kalman gain
-
-        # and compute the new covariance
-        self.P = (self.I - K.dot(self.H)).dot(self.P)  # and compute the new covariance
-
+        KH = self.K.dot(self.H)
+        I_KH = self._I - KH
+        self.P = (I_KH.dot(self.P.dot(I_KH.T)) + 
+                 self.K.dot(self.R.dot(self.K.T)))
 
 
     def predict(self):
-        # prediction
+        """ predict next position """
     
         self.x = self.F.dot(self.x)
         if self.B != 0:
