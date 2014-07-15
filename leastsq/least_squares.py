@@ -132,7 +132,9 @@ def listing_3_4():
     plt.plot(xs)
     plt.plot(ys)
     
-listing_3_4()
 
-#test_second_order()
-#fig_3_8()
+if __name__ == "__main__":
+    listing_3_4()
+
+    #test_second_order()
+    #fig_3_8()
