@@ -6,10 +6,10 @@ book Kalman Filters and Random Signals in Python.
 
 Basic use:
 --
-
+```
 import filterpy.kalman as kf
 import filterpy.leastsq as lsq
 
 my_filter = kf.KalmanFilter(3,4)
-
+```
 
