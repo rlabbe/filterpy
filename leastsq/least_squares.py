@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jul  9 23:20:51 2014
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 
 The test implement code from P. Zarchan Fundamentals of Kalman Filtering
 """

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jul 15 19:25:36 2014
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
 
 from __future__ import (division, print_function)

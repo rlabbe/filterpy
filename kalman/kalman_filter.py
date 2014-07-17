@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 18 18:02:07 2013
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
 
 import numpy as np
