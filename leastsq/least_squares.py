@@ -7,7 +7,8 @@ for more information.
 The test implement code from P. Zarchan Fundamentals of Kalman Filtering
 """
 
-from __future__ import division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import numpy as np
 import matplotlib.pyplot as plt
 
