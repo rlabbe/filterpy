@@ -14,22 +14,35 @@ import numpy.random as random
 class KalmanFilter:
 
     def __init__(self, dim_x, dim_z):
-        """ Create a Kalman filter with 'dim_x' state variables, and
-        'dim_z' measurements. You are responsible for setting the various
-        state variables to reasonable values; the defaults below will
+        """ Create a Kalman filter. You are responsible for setting the 
+        various state variables to reasonable values; the defaults below will
         not give you a functional filter.
+        
+        Parameters
+        ----------
+        dim_x : int
+            Number of state variables for the Kalman filter. For example, if
+            you are tracking the position and velocity of an object in two
+            dimensions, dim_x would be 4.
+            
+            This is used to set the default size of P, Q, and u
+           
+        dim_z : int
+            Number of of measurement inputs. For example, if the sensor
+            provides you with position in (x,y), dim_z would be 2.            
         """
+        
         self.dim_x = dim_x
         self.dim_z = dim_z
 
-        self.x = 0 # state
-        self.P = np.eye(dim_x) # uncertainty covariance
-        self.Q = np.eye(dim_x) # process uncertainty
-        self.u = np.zeros((dim_x,1)) # motion vector
-        self.B = 0
-        self.F = 0 # state transition matrix
-        self.H = 0 # Measurement function (maps state to measurements)
-        self.R = np.eye(dim_z) # state uncertainty
+        self.x = np.zeros((dim_x,1)) # state
+        self.P = np.eye(dim_x)       # uncertainty covariance
+        self.Q = np.eye(dim_x)       # process uncertainty
+        self.u = 0                   # control input vector
+        self.B = np.zeros((dim_x,1))
+        self.F = 0                   # state transition matrix
+        self.H = 0                   # Measurement function
+        self.R = np.eye(dim_z)       # state uncertainty
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -75,12 +88,21 @@ class KalmanFilter:
                  self.K.dot(self.R.dot(self.K.T)))
 
 
-    def predict(self):
-        """ predict next position """
+    def predict(self, ekf_x=None):
+        """ Predict next position. For a linear Kalman filter, leave
+        `ekf_x` set to None. On the other hand, if you are implementing
+        an Extended Kalman filter you will need to compute the nonlinear
+        state transition yourself. There is no one way to do this, so you
+        must compute the result based on the design of your filter. Then,
+        pass the result in as the new state vector. self.x will be set to
+        ekf_x.
+        """
+        
+        if ekf_x is None:
+            self.x = self.F.dot(self.x) + self.B.dot(self.u)
+        else:
+            self.x = ekf_x
 
-        self.x = self.F.dot(self.x)
-        if self.B != 0:
-           self.x += self.B.dot(self.u)
         self.P = self.F.dot(self.P).dot(self.F.T) + self.Q
 
 
