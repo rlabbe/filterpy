@@ -10,39 +10,41 @@ import numpy as np
 import scipy.linalg as linalg
 import matplotlib.pyplot as plt
 import numpy.random as random
+from numpy import dot, zeros, eye
 
 class KalmanFilter:
 
     def __init__(self, dim_x, dim_z):
-        """ Create a Kalman filter. You are responsible for setting the 
+        """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
-        
+
         Parameters
         ----------
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
             dimensions, dim_x would be 4.
-            
+
             This is used to set the default size of P, Q, and u
-           
+
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.            
+            provides you with position in (x,y), dim_z would be 2.
         """
-        
+
         self.dim_x = dim_x
         self.dim_z = dim_z
 
-        self.x = np.zeros((dim_x,1)) # state
-        self.P = np.eye(dim_x)       # uncertainty covariance
-        self.Q = np.eye(dim_x)       # process uncertainty
-        self.u = 0                   # control input vector
-        self.B = np.zeros((dim_x,1))
-        self.F = 0                   # state transition matrix
-        self.H = 0                   # Measurement function
-        self.R = np.eye(dim_z)       # state uncertainty
+        self.x = zeros((dim_x,1)) # state
+        self.P = eye(dim_x)       # uncertainty covariance
+        self.Q = eye(dim_x)       # process uncertainty
+        self.u = 0                # control input vector
+        self.B = 0
+        self.F = 0                # state transition matrix
+        self.H = 0                # Measurement function
+        self.R = eye(dim_z)       # state uncertainty
+        self.K = 0                # kalman gain
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -68,24 +70,35 @@ class KalmanFilter:
         if R is None:
             R = self.R
         elif np.isscalar(R):
-            R = np.eye(self.dim_z) * R
+            R = eye(self.dim_z) * R
 
+        # rename for readability and a tiny extra bit of speed
+        H = self.H
+        P = self.P
+        x = self.x
+
+        # y = Z - Hx
         # error (residual) between measurement and prediction
-        self.residual = Z - self.H.dot(self.x)
+        self.residual = Z - dot(H, x)
 
+        # S = HPH' + R
         # project system uncertainty into measurement space
-        self.S = self.H.dot(self.P).dot(self.H.T) + R
+        S = dot(dot(H, P), H.T) + R
 
+        # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = self.P.dot(self.H.T).dot(linalg.inv(self.S))
+        K = dot(dot(P, H.T), linalg.inv(S))
 
+        # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x = self.x + self.K.dot(self.residual)
+        self.x = x + dot(K, self.residual)
 
-        KH = self.K.dot(self.H)
-        I_KH = self._I - KH
-        self.P = (I_KH.dot(self.P.dot(I_KH.T)) +
-                 self.K.dot(self.R.dot(self.K.T)))
+        # P = (I-KH)P(I-KH)' + KRK'
+        I_KH = self._I - dot(K, H)
+        self.P = dot(I_KH, dot(P, I_KH.T)) + dot(K, dot(R, K.T))
+
+        self.S = S
+        self.K = K
 
 
     def predict(self, ekf_x=None):
@@ -97,13 +110,15 @@ class KalmanFilter:
         pass the result in as the new state vector. self.x will be set to
         ekf_x.
         """
-        
+
         if ekf_x is None:
-            self.x = self.F.dot(self.x) + self.B.dot(self.u)
+            # x = Fx + Bu
+            self.x = dot(self.F, self.x) + dot(self.B, self.u)
         else:
             self.x = ekf_x
 
-        self.P = self.F.dot(self.P).dot(self.F.T) + self.Q
+        # P = FPF' + Q
+        self.P = dot(dot(self.F, self.P), self.F.T) + self.Q
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -128,13 +143,13 @@ class KalmanFilter:
 
         Returns
         -------
-        
+
         means: np.array((n,dim_x,1))
             array of the state for each time step. Each entry is an np.array.
             In other words `means[k,:]` is the state at step `k`.
-            
+
         covariance: np.array((n,dim_x,dim_x))
-            array of the covariances for each time step. In other words 
+            array of the covariances for each time step. In other words
             `covariance[k,:,:]` is the covariance at step `k`.
         """
 
@@ -143,7 +158,7 @@ class KalmanFilter:
             Rs = [None]*n
 
         # mean estimates from Kalman Filter
-        means = np.zeros((n,self.dim_x,1))
+        means = zeros((n,self.dim_x,1))
 
         # state covariances from Kalman Filter
         covariances = np.zeros((n,self.dim_x,self.dim_x))
@@ -201,7 +216,7 @@ if __name__ == "__main__":
     # it is working the same as the recursive implementation.
     # give slightly different P so result is slightly different
     f.x = np.array([[2.,0]]).T
-    f.P = np.eye(2)*100. 
+    f.P = np.eye(2)*100.
     m,c = f.batch_filter(zs,update_first=False)
 
     # plot data
@@ -209,7 +224,7 @@ if __name__ == "__main__":
     p2, = plt.plot (results,'b')
     p4, = plt.plot(m[:,0], 'm')
     p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
-    plt.legend([p1,p2, p3, p4], 
+    plt.legend([p1,p2, p3, p4],
                ["noisy measurement", "KF output", "ideal", "batch"], 4)
 
 

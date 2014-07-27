@@ -11,131 +11,81 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 import matplotlib.pyplot as plt
+from math import sqrt
 
+class LeastSquaresFilter(object):
+    def __init__(self, dt, order, noise_variance=0.):
+        """ Least Squares filter of order 0 to 2."""
 
-class LeastSquaresFilter0(object):
-    
-    def __init__(self):
+        assert order >= 0
+        assert order <= 2
+
         self.k = 0
         self.x = 0.
-    
-    def __call__(self, x):
-         self.k += 1
-             
-         residual =  x - self.x
-         self.x = self.x + residual/self.k
-         
-         return self.x
-         
-class LeastSquaresFilter1(object):
-    
-    def __init__(self, dt):
-        self.k = 0
-        self.x = 0.
-        self.dx = 0
-        self.dt = dt
-    
-    def __call__(self, x):
-         self.k += 1
-             
-         K1 = 2*(2*self.k-1) / (self.k*(self.k+1))
-         K2 = 6 / (self.k * (self.k+1) * self.dt)
-         
-         residual =  x - self.x - self.dx*self.dt
-         self.x = self.x + self.dx*self.dt + K1 * residual
-         self.dx = self.dx + K2*residual
-         
-         return self.x
-
-
-class LeastSquaresFilter2(object):
-    
-    def __init__(self, dt):
-        self.k = 0
-        self.x = 0.
+        self.error = 0.
+        self.derror = 0.
+        self.dderror = 0.
         self.dx = 0.
         self.ddx = 0.
         self.dt = dt
         self.dt2 = dt**2
-    
+        
+        self.sigma = noise_variance
+
+        self._order = order
+
+
     def __call__(self, x):
-         self.k += 1
-         
-         k = self.k
-         den = k*(k+1)*(k+2)
-         K1 = 3*(3*k**2 - 3*k + 2) / den
-         K2 = 18*(2*k-1) / (den*self.dt)
-         K3 = 60./ (den*self.dt2)
-         print(K1,K2,K3)
-                         
-         residual =  x - self.x - self.dx*self.dt - .5*self.ddx*self.dt2
-         self.x += self.dx*self.dt + .5*self.ddx*self.dt2 + K1 * residual
-         self.dx += self.ddx*self.dt + K2*residual
-         self.ddx += K3*residual
-         print(self.x, self.dx, self.ddx)
-         return self.x
-         
-         
-def test_first_order ():
-    ''' data and example from Zarchan, page 105-6'''
-    
-    lsf = LeastSquaresFilter1(1)
-    
-    xs = [1.2, .2, 2.9, 2.1]
-    ys = []
-    for x in xs:
-        ys.append (lsf(x))
-    
-    plt.plot(xs,c='b')
-    plt.plot(ys, c='g')
-    plt.plot([0,len(xs)-1], [ys[0], ys[-1]])
+        self.k += 1
+        k = self.k
+        if self._order == 0:
+            residual =  x - self.x
+            self.x = self.x + residual/k
+            self.error = self.sigma/math.sqrt(k)
 
-         
-def test_second_order ():
-    ''' data and example from Zarchan, page 114'''
-    
-    lsf = LeastSquaresFilter2(1)
-    
-    xs = [1.2, .2, 2.9, 2.1]
-    ys = []
-    for x in xs:
-        ys.append (lsf(x))
-    
-    plt.plot(xs,c='b')
-    plt.plot(ys, c='g')
-    plt.plot([0,len(xs)-1], [ys[0], ys[-1]])
-    
-import numpy.random as random
+        elif self._order == 1:
+            K1 = 2*(2*k-1) / (k*(k+1))
+            K2 = 6 / (k * (k+1) * self.dt)
 
-def fig_3_8():
-    """ figure 3.8 in Zarchan, p. 108"""
-    lsf = LeastSquaresFilter1(0.1) 
-    
-    xs = [x+3 + random.randn() for x in np.arange (0,10, 0.1)]
-    ys = []
-    for x in xs:
-        ys.append (lsf(x))
-    
-    plt.plot(xs)
-    plt.plot(ys)    
+            residual =  x - self.x - self.dx*self.dt
+            self.x = self.x + self.dx*self.dt + K1 * residual
+            self.dx = self.dx + K2*residual
+            
+            self.error = self.sigma*sqrt(2.*(2*k-1)/(k*(k+1)))
+            self.derror = self.sigma*sqrt(12./(k*(k*k-1)*self.dt*self.dt))
 
+        else:
+            den = k*(k+1)*(k+2)
+            K1 = 3*(3*k**2 - 3*k + 2) / den
+            K2 = 18*(2*k-1) / (den*self.dt)
+            K3 = 60./ (den*self.dt2)
+            dt = self.dt
+            dt2 = self.dt2
 
-def listing_3_4():
-    """ listing 3.4 in Zarchan, p. 117"""
-    
-    lsf = LeastSquaresFilter2(0.1) 
-    
-    xs = [5*x*x -x + 2 + 30*random.randn() for x in np.arange (0,10, 0.1)]
-    ys = []
-    for x in xs:
-        ys.append (lsf(x))
-    
-    plt.plot(xs)
-    plt.plot(ys)
-    
+            residual =  x - self.x - self.dx*dt - .5*self.ddx*self.dt2
+            self.x   += self.dx*dt + .5*self.ddx*dt2 + K1 * residual
+            self.dx  += self.ddx*dt + K2*residual
+            self.ddx += K3*residual
+            
+            if k < 3:
+                self.error = 0.
+                self.derror = 0.
+                self.dderror = 0.
+            else:           
+                self.error = self.sigma*sqrt(3*(3*k*k-3*k+2)/(k*(k+1)*(k+2)))
+                self.derror = self.sigma*sqrt(12*(16*k*k-30*k+11) /
+                                              (k*(k*k-1)*(k*k-4)*dt2))                                          
+                self.dderror = self.sigma*sqrt(720/(k*(k*k-1)*(k*k-4)*dt2*dt2))
 
-if __name__ == "__main__":
-    listing_3_4()
+        return self.x
+     
+    def standard_deviation(self):
+        if self.k == 0:
+            return 0.
+            
+        if self._order == 0:
+            return 1./math.sqrt(self)
 
-    #test_second_order()
-    #fig_3_8()
+        elif self._order == 1:
+            pass            
+        

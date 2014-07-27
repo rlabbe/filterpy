@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Copyright 2014 Roger R Labbe Jr.
 
+Rauch-Tung-Striebal Kalman smoother from the filterpy library.
+
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
@@ -115,33 +117,4 @@ if __name__ == '__main__':
 
 
     plt.show()  
-        
-
-            
-            
-        
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
