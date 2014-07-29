@@ -15,7 +15,7 @@ import scipy.linalg as linalg
 from numpy import dot, zeros, eye
 
 
-class KalmanFilter:
+class KalmanFilter(object):
 
     def __init__(self, dim_x, dim_z):
         """ Create a Kalman filter. You are responsible for setting the
@@ -86,11 +86,11 @@ class KalmanFilter:
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        S = dot(dot(H, P), H.T) + R
+        S = dot(H, dot(P, H.T)) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        K = dot(dot(P, H.T), linalg.inv(S))
+        K = dot(P, dot(H.T, linalg.inv(S)))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -181,3 +181,48 @@ class KalmanFilter:
                 covariances[i,:,:] = self.P
 
         return (means, covariances)
+
+
+    def get_prediction(self):
+        """ Predicts the next state of the filter and returns it.
+
+        DOES NOT ALTER THE STATE OF THE FILTER.
+
+        Returns
+        -------
+        (x, P)
+
+        State vector and covariance array of the prediction.
+        """
+
+        x = dot(self.F, self.x) + dot(self.B, self.u)
+        P = dot(dot(self.F, self.P), self.F.T) + self.Q
+        return (x, P)
+
+
+    def residual_of(self, z):
+        """ returns the residual for the given measurement. Does not alter
+        the state of the filter.
+        """
+
+        return z - dot(self.H, self.x)
+
+
+    def measurement_of_state(self, x):
+        """ Helper function that converts a state into a measurement.
+
+        Parameters
+        ----------
+        x : np.array
+            kalman state vector
+
+        Returns
+        -------
+        z : np.array
+            measurement corresponding to the given state
+        """
+
+        x = dot(self.H, x) + dot(self.B, self.u)
+        P = dot(self.F, dot(self.P, self.F.T)) + self.Q
+
+        return (x, P)
