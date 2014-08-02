@@ -15,6 +15,13 @@ import scipy.linalg as linalg
 from numpy import dot, zeros, eye
 
 
+
+def dot3(A,B,C):
+    """ Returns the matrix multiplication of A*B*C"""
+
+    return dot(A, dot(B,C))
+
+
 class KalmanFilter(object):
 
     def __init__(self, dim_x, dim_z):
@@ -48,6 +55,7 @@ class KalmanFilter(object):
         self.H = 0                # Measurement function
         self.R = eye(dim_z)       # state uncertainty
         self.K = 0                # kalman gain
+        self.residual = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -63,7 +71,7 @@ class KalmanFilter(object):
 
         self.residual, self.S, and self.K are stored in case you want to
         inspect these variables. Strictly speaking they are not part of the
-        output of the Kalman filter, however, it is often useful to know
+        output of the Kalman filter, however it is often useful to know
         what these values are in various scenarios.
         """
 
@@ -86,11 +94,11 @@ class KalmanFilter(object):
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        S = dot(H, dot(P, H.T)) + R
+        S = dot3(H, P, H.T) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        K = dot(P, dot(H.T, linalg.inv(S)))
+        K = dot3(P, H.T, linalg.inv(S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -98,30 +106,20 @@ class KalmanFilter(object):
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(K, H)
-        self.P = dot(I_KH, dot(P, I_KH.T)) + dot(K, dot(R, K.T))
+        self.P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
         self.S = S
         self.K = K
 
 
     def predict(self, ekf_x=None):
-        """ Predict next position. For a linear Kalman filter, leave
-        `ekf_x` set to None. On the other hand, if you are implementing
-        an Extended Kalman filter you will need to compute the nonlinear
-        state transition yourself. There is no one way to do this, so you
-        must compute the result based on the design of your filter. Then,
-        pass the result in as the new state vector. self.x will be set to
-        ekf_x.
-        """
+        """ Predict next position."""
 
-        if ekf_x is None:
-            # x = Fx + Bu
-            self.x = dot(self.F, self.x) + dot(self.B, self.u)
-        else:
-            self.x = ekf_x
+        # x = Fx + Bu
+        self.x = dot(self.F, self.x) + dot(self.B, self.u)
 
         # P = FPF' + Q
-        self.P = dot(dot(self.F, self.P), self.F.T) + self.Q
+        self.P = dot3(self.F, self.P, self.F.T) + self.Q
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -196,7 +194,7 @@ class KalmanFilter(object):
         """
 
         x = dot(self.F, self.x) + dot(self.B, self.u)
-        P = dot(dot(self.F, self.P), self.F.T) + self.Q
+        P = dot3(self.F, self.P, self.F.T) + self.Q
         return (x, P)
 
 
@@ -221,8 +219,4 @@ class KalmanFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-
-        x = dot(self.H, x) + dot(self.B, self.u)
-        P = dot(self.F, dot(self.P, self.F.T)) + self.Q
-
-        return (x, P)
+        return dot(self.H, x)
