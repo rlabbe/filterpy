@@ -18,7 +18,6 @@ from numpy import dot, zeros, eye
 
 def dot3(A,B,C):
     """ Returns the matrix multiplication of A*B*C"""
-
     return dot(A, dot(B,C))
 
 
@@ -49,7 +48,7 @@ class KalmanFilter(object):
         self.x = zeros((dim_x,1)) # state
         self.P = eye(dim_x)       # uncertainty covariance
         self.Q = eye(dim_x)       # process uncertainty
-        self.B = 0                # control transistion matrx
+        self.G = 0                # control transistion matrx
         self.F = 0                # state transition matrix
         self.H = 0                # Measurement function
         self.R = eye(dim_z)       # state uncertainty
@@ -121,12 +120,12 @@ class KalmanFilter(object):
         Parameters
         ----------
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
+            Optional control vector. If non-zero, it is multiplied by G
             to create the control input into the system.
         """
 
-        # x = Fx + Bu
-        self.x = dot(self.F, self.x) + dot(self.B, u)
+        # x = Fx + Gu
+        self.x = dot(self.F, self.x) + dot(self.G, u)
 
         # P = FPF' + Q
         self.P = dot3(self.F, self.P, self.F.T) + self.Q
@@ -204,7 +203,7 @@ class KalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self.F, self.x) + dot(self.B, u)
+        x = dot(self.F, self.x) + dot(self.G, u)
         P = dot3(self.F, self.P, self.F.T) + self.Q
         return (x, P)
 
@@ -259,7 +258,7 @@ class ExtendedKalmanFilter(object):
 
         self.x = zeros((dim_x,1)) # state
         self.P = eye(dim_x)       # uncertainty covariance
-        self.B = 0                # control transition matrix
+        self.G = 0                # control transition matrix
         self.F = 0                # state transition matrix
         self.R = eye(dim_z)       # state uncertainty
         self.Q = eye(dim_x)       # process uncertainty
@@ -293,16 +292,16 @@ class ExtendedKalmanFilter(object):
         """
 
         F = self.F
+        G = self.G
         P = self.P
         Q = self.Q
         R = self.R
-        B = self.B
         x = self.x
 
         H = HJabobian(x)
 
         # predict step
-        x = dot(F, x) + dot(B, u)
+        x = dot(F, x) + dot(G, u)
         P = dot3(F, P, F.T) + Q
 
         # update step
@@ -354,9 +353,9 @@ class ExtendedKalmanFilter(object):
         Parameters
         ----------
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
+            Optional control vector. If non-zero, it is multiplied by G
             to create the control input into the system.
         """
 
-        self.x = dot(self.F, self.x) + dot(self.B, u)
+        self.x = dot(self.F, self.x) + dot(self.G, u)
         self.P = dot3(self.F, self.P, self.F.T) + self.Q
