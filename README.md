@@ -7,10 +7,11 @@ http://rlabbe.github.io/Kalman-and-Bayesian-Filters-in-Python/
 Basic use:
 --
 ```
-import filterpy.kalman as kf
-import filterpy.leastsq as lsq
+from filterpy.kalman import KalmanFilter
+from filterpy.memory import FadingMemoryFilter
 
-my_filter = kf.KalmanFilter(3,4)
+
+my_filter = KalmanFilter(3,4)
 ```
 
 
