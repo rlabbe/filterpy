@@ -20,7 +20,7 @@ from filterpy.memory import FadingMemoryFilter
 
     
 
-def test_2d_data():
+def dotest_2d_data():
     """ tests having multidimensional data for x"""
     
     fm = FadingMemoryFilter(x0=np.array([[0,2],[0,0]]), dt=1, order=1, beta=.6)
@@ -37,7 +37,7 @@ def test_2d_data():
 
 
 
-def test_1d(order, beta):
+def dotest_1d(order, beta):
     fm = FadingMemoryFilter(x0=0, dt=1, order=order, beta=beta)
 
     xs = [x for x in range(0,50)]
@@ -55,8 +55,8 @@ def test_1d(order, beta):
 
 
 if __name__ == "__main__":
-    test_1d(0, .7)
-    test_1d(1, .7)
-    test_1d(2, .7)
+    dotest_1d(0, .7)
+    dotest_1d(1, .7)
+    d0test_1d(2, .7)
     plt.figure(2)
-    test_2d_data()
+    dotest_2d_data()

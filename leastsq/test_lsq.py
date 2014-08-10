@@ -16,6 +16,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy.random as random
 import matplotlib.pyplot as plt
+import numpy as np
 
 from filterpy.leastsq import LeastSquaresFilter
 

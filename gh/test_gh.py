@@ -12,7 +12,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from filterpy.gh import GHFilter, least_squares_parameters
 from numpy import array
-
+import pytest
 
 def test_least_squares():
     
