@@ -156,3 +156,4 @@ class FadingMemoryFilter(object):
             self.x[2] = ddx + (2*K/(self.dt**2))*residual
 
 
+
