@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Aug  9 19:17:24 2014
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+filterpy library.
+http://github.com/rlabbe/filterpy
+
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
 
 from filterpy.gh import GHFilter, least_squares_parameters
