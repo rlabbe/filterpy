@@ -10,10 +10,10 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
-from filterpy.kalman import KalmanFilter
+import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
+from filterpy.kalman import KalmanFilter
 
 def test_noisy_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)

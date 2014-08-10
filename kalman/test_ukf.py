@@ -12,13 +12,14 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-from filterpy.kalman import UKF
+import matplotlib.pyplot as plt
 
 import numpy.random as random
 from numpy.random import randn
 import math
 import numpy as np
 import stats
+from filterpy.kalman import UKF
 
 
 
@@ -46,7 +47,7 @@ def plot_sigma_test():
     stats.plot_covariance_ellipse([1,2],P)
 
 
-def test_1D_sigma_points():
+def sigma_points_1D_tests():
     """ tests passing 1D data into sigma_points"""
     Xi, W = sigma_points (5,9,2)
     xm, cov = unscented_transform(Xi, W)
@@ -69,7 +70,6 @@ class RadarSim(object):
         self.dt = dt
 
     def get_range(self):
-        from numpy.random import randn
 
         vel = 100 * 5*randn()
         alt = 1000 + 10*randn()
@@ -99,9 +99,8 @@ def GetRadar(dt):
 
     return range
 
+
 def test_radar():
-
-
     def fx(x, dt):
         A = np.eye(3) + dt * np.array ([[0, 1, 0],
                                         [0, 0, 0],
@@ -147,13 +146,7 @@ def test_radar():
     plt.plot(t, xs[:,2])
 
 
-
-
-
-
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
 
     '''test_1D_sigma_points()
     #plot_sigma_test ()
