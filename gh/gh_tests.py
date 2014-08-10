@@ -5,10 +5,25 @@ Created on Sat Aug  9 19:17:24 2014
 @author: rlabbe
 """
 
-from filterpy.gh import GHFilter
+from filterpy.gh import GHFilter, least_squares_parameters
 from numpy import array
 
 
+def test_least_squares():
+    
+    """ there is an alternative form for computing h for the least squares.
+    It works for all but the very first term (n=0). Use it to partially test
+    the output of least_squares_parameters(). This test does not test that
+    g is correct"""
+    
+    for n in range (1, 100):
+        g,h = least_squares_parameters(n)
+       
+        h2 = 4 - 2*g - (4*(g-2)**2 - 3*g**2)**.5
+        
+        assert abs(h2-h) < 1.e-12
+
+        
 def test_1d_array():
     f1 = GHFilter (0, 0, 1, .8, .2)
     f2 = GHFilter (array([0]), array([0]), 1, .8, .2)
@@ -79,6 +94,7 @@ def test_2d_array():
 
 if __name__ == "__main__":
     
+    test_least_squares()
     test_1d_array()
     test_2d_array()
     

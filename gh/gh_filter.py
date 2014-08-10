@@ -5,9 +5,7 @@ Created on Fri Aug  8 18:26:28 2014
 @author: rlabbe
 """
 
-
 from __future__ import division
-
 import numpy as np
 
 
@@ -120,7 +118,6 @@ class GHFilter(object):
         self.x  = self.x_prediction  + g * self.residual
 
         return (self.x, self.dx)
-
 
 
     def batch_filter (self, data, save_predictions=False):
@@ -458,6 +455,44 @@ class GHKFilter(object):
         vddx = 8*h*(k**2) / ((self.dt**4)*hg4*ghk)
 
         return (vx, vdx, vddx)
+
+
+def least_squares_parameters(n):
+    """ An order 1 least squared filter can be computed by a g-h filter
+    by varying g and h over time according to the formulas below, where
+    the first measurement is at n=0, the second is at n=1, and so on:
+    
+    .. math::
+    
+        h_n = \\frac{6}{(n+2)(n+1)}
+        
+        g_n = \\frac{2(2n+1)}{(n+2)(n+1)}
+        
+    
+    Parameters
+    ----------
+    n : int
+        the nth measurement, starting at 0 (i.e. first measurement has n==0)
+     
+    Returns
+    -------
+    (g,h)  : (float, float)
+        g and h parameters for this time step for the least-squares filter
+        
+    Examples
+    --------
+    >>> lsf = GHFilter (0, 0, 1, 0, 0)
+    >>> z = 10
+    >>> for i in range(10):
+    >>>     g,h = least_squares_parameters(i)
+    >>>     lsf.update(z, g, h)
+    
+    """
+    den = (n+2)*(n+1)  
+    
+    g = (2*(2*n + 1)) / den
+    h = 6 / den
+    return (g,h)
 
 
 def critical_damping_parameters(theta, filter_type = 'g-h'):
