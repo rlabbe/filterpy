@@ -7,6 +7,8 @@ http://github.com/rlabbe/filterpy
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 
 import numpy as np
@@ -78,15 +80,15 @@ def unscented_transform (Xi, W, NoiseCov=None):
 if __name__ == "__main__":
     Xi, W = sigma_points (5,9,2)
     xm, cov = unscented_transform(Xi, W)
-    print xm
-    print cov
+    print(xm)
+    print(cov)
 
-    xm = mat([[1],[2],[3]])
-    P = eye(3) * 2.
+    xm = np.array([[1],[2],[3]])
+    P = np.eye(3) * 2.
 
     Xi, W = sigma_points (xm, P, 4)
     xm, cov = unscented_transform(Xi, W)
-    print xm
-    print cov
+    print(xm)
+    print (cov)
 #    sigma_points ([5,2],9*np.eye(2), 2)
 

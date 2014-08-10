@@ -1,5 +1,3 @@
-import random
-import math
 
 """Copyright 2014 Roger R Labbe Jr.
 
@@ -9,6 +7,12 @@ http://github.com/rlabbe/filterpy
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
+import random
+import math
 
 
 
@@ -35,4 +39,4 @@ def GetRadar(dt):
     
 if __name__ == "__main__":
     for i in range (100):
-        print GetRadar (0.1)
+        print(GetRadar (0.1))

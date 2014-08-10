@@ -7,6 +7,8 @@ http://github.com/rlabbe/filterpy
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from filterpy.gh import GHFilter, least_squares_parameters
 from numpy import array
@@ -100,4 +102,6 @@ if __name__ == "__main__":
     test_least_squares()
     test_1d_array()
     test_2d_array()
+    
+    print('all passed')
     
