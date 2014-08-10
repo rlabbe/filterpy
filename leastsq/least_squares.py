@@ -19,7 +19,22 @@ from math import sqrt
 
 class LeastSquaresFilter(object):
     def __init__(self, dt, order, noise_variance=0.):
-        """ Least Squares filter of order 0 to 2."""
+        """ Least Squares filter of order 0 to 2.
+        
+        Parameters
+        ----------
+        dt : float
+           time step per update
+           
+        order : int
+            order of filter 0..2
+            
+        noise_variance : float
+            variance in x
+        """
+
+        
+
 
         assert order >= 0
         assert order <= 2
@@ -103,3 +118,7 @@ class LeastSquaresFilter(object):
         return 'LeastSquareFilter x={}, dx={}, ddx={}'.format(
                self.x, self.dx, self.ddx)
 
+
+class LeastSquaresFilterGH(object):
+    """ Implements the Least Squares filter using the g-h filter.
+    This is lighter weight than the LeastSquaresFilter cla"""
