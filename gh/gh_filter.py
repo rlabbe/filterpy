@@ -11,12 +11,132 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import numpy as np
+from numpy import dot
+
+
+class GHFilterOrder(object):
+
+    def __init__(self, x0, dt, order, g, h=None, k=None):
+        """ Creates a g-h filter of order 0, 1, or 2.
+        
+        Strictly speaking, the g-h filter is order 1, and the 2nd order
+        filter is called the g-h-k filter. I'm not aware of any filter name
+        that encompasses orders 0, 1, and 2 under one name, or I would use it.
+
+        Parameters
+        ----------
+        x0 : 1D np.array or scalar
+            Initial value for the filter state. Each value can be a scalar
+            or a np.array.
+
+            You can use a scalar for x0. If order > 0, then 0.0 is assumed
+            for the higher order terms.
+
+            x[0] is the value being tracked
+            x[1] is the first derivative (for order 1 and 2 filters)
+            x[2] is the second derivative (for order 2 filters)
+
+        dt : scalar
+            timestep
+
+        order : int
+            order of the filter. Defines the order of the system
+            0 - assumes system of form x = a_0 + a_1*t
+            1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
+            2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
+
+        g : float
+            filter g gain parameter.
+
+        h : float, optional
+            filter h gain parameter, order 1 and 2 only
+            
+        k : float, optional
+            filter k gain parameter, order 2 only
+
+        Members
+        -------
+
+        self.x : np.array
+            State of the filter.
+            x[0] is the value being tracked
+            x[1] is the derivative of x[0] (order 1 and 2 only)
+            x[2] is the 2nd derivative of x[0] (order 2 only)
+
+            This is always an np.array, even for order 0 where you can
+            initialize x0 with a scalar.
+
+        self.residual
+            difference between the measurment and the prediction
+            
+        """
+
+        assert order >= 0
+        assert order <= 2
+
+        if np.isscalar(x0):
+            self.x = np.zeros(order+1)
+            self.x[0] = x0
+        else:
+            self.x = np.copy(x0.astype(float))
+
+        self.dt = dt
+        self.order = order
+        
+        self.g = g
+        self.h = h
+        self.k = k
+
+    def update(self, z, g=None, h=None, k=None):
+        """ update the filter with measurement z. z must be the same type
+        (or treatable as the same type) as self.x[0].
+        """
+
+        if self.order == 0:
+            if g is None:
+                g = self.g
+            self.residual = z - self.x[0]
+            self.x += dot(g, self.residual)
+
+        elif self.order == 1:
+            if g is None:
+                g = self.g
+            if h is None:
+                h = self.h
+            x  = self.x[0]
+            dx = self.x[1]
+            dxdt = dot(dx, self.dt)
+
+            self.residual = z - (x + dxdt)
+            self.x[0] = x + dxdt + g*self.residual
+            self.x[1] = dx       + h*self.residual / self.dt
+
+        else: # order == 2
+            if g is None:
+                g = self.g
+            if h is None:
+                h = self.h
+            if k is None:
+                k = self.k
+
+            x   = self.x[0]
+            dx  = self.x[1]
+            ddx = self.x[2]
+            dxdt = dot(dx, self.dt)
+            T2 = self.dt**2.
+
+            self.residual = z -(x + dxdt +0.5*ddx*T2)
+
+            self.x[0] = x + dxdt + 0.5*ddx*T2 + g*self.residual
+            self.x[1] = dx + ddx*self.dt      + h*self.residual / self.dt
+            self.x[2] = ddx            + 2*self.k*self.residual / (self.dt**2)
+
 
 
 class GHFilter(object):
     """ Implements the g-h filter. The topic is too large to cover in
-    this comment. See my book "Kalman and Bayesian Filters in Python"
-    or Eli Brookner's "Tracking and Kalman Filters Made Easy".
+    this comment. See my book "Kalman and Bayesian Filters in Python" [1]
+    or Eli Brookner's "Tracking and Kalman Filters Made Easy" [2].
 
     A few basic examples are below, and the tests in ./gh_tests.py may
     give you more ideas on use.
@@ -50,10 +170,10 @@ class GHFilter(object):
 
     References
     ----------
-    Labbe, "Kalman and Bayesian Filters in Python"
+    [1] Labbe, "Kalman and Bayesian Filters in Python"
     http://rlabbe.github.io/Kalman-and-Bayesian-Filters-in-Python
 
-    Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
+    [2] Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.
     """
     def __init__(self, x, dx, dt, g, h):
@@ -461,6 +581,43 @@ class GHKFilter(object):
         return (vx, vdx, vddx)
 
 
+def optimal_noise_smoothing(g):
+    """ provides g,h,k parameters for optimal smoothing of noise for a given
+    value of g. This is due to Polge and Bhagavan[1].
+    
+    Parameters
+    ----------
+    g : float
+        value for g for which we will optimize for
+        
+    Returns
+    -------
+    (g,h,k) : (float, float, float)
+        values for g,h,k that provide optimal smoothing of noise    
+
+
+    Examples
+    --------
+
+    >>> g,h,k = opetimal_noise_smoothing(g)
+    >>> f = GHKFilter(0,0,0,1,g,h,k)
+    >>> f.update(1.)
+    
+    
+    References
+    ----------
+    [1] Polge and Bhagavan. "A Study of the g-h-k Tracking Filter".
+    Report No. RE-CR-76-1. University of Alabama in Huntsville.
+    July, 1975
+
+    """
+    
+    h = ((2*g**3 - 4*g**2) + (4*g**6 -64*g**5 + 64*g**4)**.5) / (8*(1-g)) 
+    k = (h*(2-g) - g**2) / g
+    
+    return (g,h,k)
+    
+
 def least_squares_parameters(n):
     """ An order 1 least squared filter can be computed by a g-h filter
     by varying g and h over time according to the formulas below, where
@@ -472,6 +629,7 @@ def least_squares_parameters(n):
         
         g_n = \\frac{2(2n+1)}{(n+2)(n+1)}
         
+    
     
     Parameters
     ----------
@@ -499,15 +657,15 @@ def least_squares_parameters(n):
     return (g,h)
 
 
-def critical_damping_parameters(theta, filter_type = 'g-h'):
+def critical_damping_parameters(theta, order=2):
     """ Computes values for g and h (and k for g-h-k filter) for a
     critically damped filter.
 
     The idea here is to create a filter that reduces the influence of
     old data as new data comes in. This allows the filter to track a
-    moving target better. This goes by different names. It may be called the discounted
-    least-squares g-h filter, a fading-memory polynomal filter of order
-    1, or a critically damped g-h filter.
+    moving target better. This goes by different names. It may be called the 
+    discounted least-squares g-h filter, a fading-memory polynomal filter 
+    of order 1, or a critically damped g-h filter.
 
     In a normal least-squares filter we compute the error for each point as
 
@@ -536,9 +694,9 @@ def critical_damping_parameters(theta, filter_type = 'g-h'):
     theta : float, 0 <= theta <= 1
         scaling factor for previous terms
 
-    filter_type : string, 'g-h' (default) or 'g-h-k'
-       type of filter to create the parameters for. g and h will be
-       calculated for the former, and g, h, and k for the latter.
+    order : int, 2 (default) or 3
+       order of filter to create the parameters for. g and h will be
+       calculated for the order 2, and g, h, and k for order 3.
 
     Returns
     -------
@@ -571,13 +729,13 @@ def critical_damping_parameters(theta, filter_type = 'g-h'):
     assert theta >= 0
     assert theta <= 1
 
-    if filter_type == 'g-h':
+    if order == 2:
         return (1. - theta**2, (1. - theta)**2)
 
-    if filter_type == 'g-h-k':
+    if order == 3:
         return (1. - theta**3, 1.5*(1.-theta**2)*(1.-theta), .5*(1 - theta)**3)
 
-    raise Exception('bad filter named used: ' + filter_type)
+    raise Exception('bad order specified: {}'.format(order))
 
 
 def benedict_bornder_constants(g, critical=False):

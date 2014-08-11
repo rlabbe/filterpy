@@ -10,9 +10,12 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from filterpy.gh import GHFilter, least_squares_parameters
+from filterpy.gh import (GHFilter, GHKFilter, least_squares_parameters, 
+                         optimal_noise_smoothing, GHFilterOrder)
 from numpy import array
-import pytest
+from numpy.random import randn
+import matplotlib.pyplot as plt
+
 
 def test_least_squares():
     
@@ -94,11 +97,47 @@ def test_2d_array():
         
         assert f.VRF() == f0.VRF()
         assert f.VRF() == f1.VRF()
+
     
+
+def optimal_test():
+    def fx(x): 
+        return .1*x**2 + 3*x -4
+    
+    g,h,k = optimal_noise_smoothing(.2)
+    f = GHKFilter(-4,0,0,1,g,h,k)
+
+    ys = []
+    zs = []
+    for i in range(100):
+        z = fx(i) + randn()*10
+        f.update(z)
+        ys.append(f.x)
+        zs.append(z)
+        
+    plt.plot(ys)
+    plt.plot(zs)      
         
 
-if __name__ == "__main__":
+def foo():
+    def fx(x):
+        return 2*x+1
+        
+    f1 = GHFilterOrder(x0=array([0,0]), dt=1, order=1, g=.6, h=.02)
+    f2 = GHFilter(x=0, dx=0, dt=1, g=.6, h=.02)
     
+    for i in range(100):
+        z = fx(i) + randn()
+        f1.update(z)
+        f2.update(z)
+        
+        assert abs(f1.x[0]-f2.x) < 1.e-18
+        
+foo()
+
+if __name__ == "__main__":
+    optimal_test() 
+
     test_least_squares()
     test_1d_array()
     test_2d_array()

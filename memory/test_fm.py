@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from numpy.random import randn
 import numpy as np
 from filterpy.memory import FadingMemoryFilter
+from filterpy.gh import GHKFilter
 
 
     
@@ -54,9 +55,31 @@ def dotest_1d(order, beta):
     plt.show()
 
 
+
+def test_ghk_formulation():
+    beta = .6
+    
+    g = 1-beta**3
+    h = 1.5*(1+beta)*(1-beta)**2
+    k = 0.5*(1-beta)**3
+    
+    f1 = GHKFilter(0,0,0,1, g, h, k)
+    f2 = FadingMemoryFilter(x0=0, dt=1, order=2, beta=beta)
+    
+    def fx(x):
+        return .02*x**2 + 2*x - 3
+        
+    for i in range(1,100):
+        z = fx(i)
+        f1.update(z)
+        f2.update(z)
+
+        assert abs(f1.x-f2.x[0]) < 1.e-80
+            
 if __name__ == "__main__":
-    dotest_1d(0, .7)
+    test_ghk_formulation()
+    '''dotest_1d(0, .7)
     dotest_1d(1, .7)
-    d0test_1d(2, .7)
+    dotest_1d(2, .7)
     plt.figure(2)
-    dotest_2d_data()
+    dotest_2d_data()'''
