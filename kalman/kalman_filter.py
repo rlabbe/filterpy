@@ -25,7 +25,7 @@ def dot3(A,B,C):
 
 class KalmanFilter(object):
 
-    def __init__(self, dim_x, dim_z):
+    def __init__(self, dim_x, dim_z, dim_u=0):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -42,24 +42,33 @@ class KalmanFilter(object):
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
+            
+        dim_u : int (optional)
+            size of the control input, if it is being used.
+            Default value of 0 indicates it is not used.
         """
+        
+        assert dim_x > 0
+        assert dim_z > 0
+        assert dim_u >= 0
 
         self.dim_x = dim_x
         self.dim_z = dim_z
+        self.dim_u = dim_u
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.Q = eye(dim_x)       # process uncertainty
-        self.G = 0                # control transistion matrx
-        self.F = 0                # state transition matrix
-        self.H = 0                # Measurement function
-        self.R = eye(dim_z)       # state uncertainty
+        self._x = zeros((dim_x,1)) # state
+        self._P = eye(dim_x)       # uncertainty covariance
+        self._Q = eye(dim_x)       # process uncertainty
+        self._G = 0                # control transistion matrx
+        self._F = 0                # state transition matrix
+        self._H = 0                # Measurement function
+        self._R = eye(dim_z)       # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = 0 # kalman gain
-        self.residual = zeros((dim_z, 1))
+        self._K = 0 # kalman gain
+        self._residual = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -84,18 +93,18 @@ class KalmanFilter(object):
             return
 
         if R is None:
-            R = self.R
+            R = self._R
         elif np.isscalar(R):
             R = eye(self.dim_z) * R
 
         # rename for readability and a tiny extra bit of speed
-        H = self.H
-        P = self.P
-        x = self.x
+        H = self._H
+        P = self._P
+        x = self._x
 
         # y = Z - Hx
         # error (residual) between measurement and prediction
-        self.residual = Z - dot(H, x)
+        self._residual = Z - dot(H, x)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -107,14 +116,14 @@ class KalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x = x + dot(K, self.residual)
+        self._x = x + dot(K, self._residual)
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(K, H)
-        self.P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
-        self.S = S
-        self.K = K
+        self._S = S
+        self._K = K
 
 
     def predict(self, u=0):
@@ -127,10 +136,10 @@ class KalmanFilter(object):
         """
 
         # x = Fx + Gu
-        self.x = dot(self.F, self.x) + dot(self.G, u)
+        self._x = dot(self._F, self.x) + dot(self._G, u)
 
         # P = FPF' + Q
-        self.P = dot3(self.F, self.P, self.F.T) + self.Q
+        self._P = dot3(self._F, self._P, self._F.T) + self._Q
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -176,16 +185,16 @@ class KalmanFilter(object):
         if update_first:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.update(z,r)
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+                means[i,:] = self._x
+                covariances[i,:,:] = self._P
                 self.predict()
         else:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.predict()
                 self.update(z,r)
 
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+                means[i,:] = self._x
+                covariances[i,:,:] = self._P
 
         return (means, covariances)
 
@@ -205,8 +214,8 @@ class KalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self.F, self.x) + dot(self.G, u)
-        P = dot3(self.F, self.P, self.F.T) + self.Q
+        x = dot(self._F, self._x) + dot(self._G, u)
+        P = dot3(self._F, self._P, self._F.T) + self.Q
         return (x, P)
 
 
@@ -214,7 +223,7 @@ class KalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self.H, self.x)
+        return z - dot(self._H, self._x)
 
 
     def measurement_of_state(self, x):
@@ -230,9 +239,106 @@ class KalmanFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-        return dot(self.H, x)
+        return dot(self._H, x)
 
 
+    @property
+    def Q(self):
+        """ Process uncertainty"""
+        return self._Q
+    
+    @Q.setter
+    def Q(self, value):
+        if np.isscalar(value):
+            self._Q = eye(self.dim_x) * value           
+        elif value.shape == (self.dim_x, self.dim_x):
+            self._Q = value.copy()           
+        else:
+            raise Exception('Wrong shape for Q')
+            
+
+    @property
+    def P(self):
+        """ covariance matrix"""
+        return self._P
+        
+    @P.setter
+    def P(self, value):
+        if np.isscalar(value):   
+            self._P = eye(self.dim_P) * value
+        elif value.shape == (self.dim_x, self.dim_x):
+            self._P = value.copy()            
+        else:
+            raise Exception('Wrong shape for P')        
+
+
+    @property
+    def R(self):
+        """ measurement uncertainty"""
+        return self._R
+        
+    @R.setter
+    def R(self, value):
+        if np.isscalar(value):   
+            self._R = eye(self.dim_z) * value
+        elif value.shape == (self.dim_z, self.dim_z):
+            self._R = value.copy()            
+        else:
+            raise Exception('Wrong shape for R')        
+
+    @property
+    def H(self):
+        return self._H
+        
+    @H.setter
+    def H(self, value):
+        if value.shape == (self.dim_z, self.dim_x):
+            self._H = value.copy()
+            
+        else:
+            raise Exception(
+                'H must have shape ({},{})'.format(self.dim_z, 
+                                                   self.dim_x))
+
+    @property
+    def F(self):
+        return self._F
+        
+    @F.setter
+    def F(self, value):
+        if value.shape == (self.dim_x, self.dim_x):
+            self._F = value.copy()            
+        else:
+            raise Exception(
+                'F must have shape ({},{})'.format(self.dim_x, 
+                                                   self.dim_x))
+
+    @property
+    def G(self):
+        return self._G
+        
+    @G.setter
+    def G(self, value):
+        if value.shape == (self.dim_x, self.dim_u):
+            self._H = value.copy()
+            
+        else:
+            raise Exception(
+                'G must have shape ({},{})'.format(self.dim_z, 
+                                                   self.dim_u))
+
+    @property
+    def x(self):
+        return self._x
+        
+    @x.setter
+    def x(self, value):
+        if value.shape == (self.dim_x, 1):
+            self._x = value.copy()
+            
+        else:
+            raise Exception(
+                'x must have shape ({},1)'.format(self.dim_1))
 
 class ExtendedKalmanFilter(object):
 
