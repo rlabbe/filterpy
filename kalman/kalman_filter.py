@@ -246,6 +246,7 @@ class KalmanFilter(object):
     def Q(self):
         """ Process uncertainty"""
         return self._Q
+
     
     @Q.setter
     def Q(self, value):
@@ -261,7 +262,8 @@ class KalmanFilter(object):
     def P(self):
         """ covariance matrix"""
         return self._P
-        
+ 
+       
     @P.setter
     def P(self, value):
         if np.isscalar(value):   
@@ -276,7 +278,8 @@ class KalmanFilter(object):
     def R(self):
         """ measurement uncertainty"""
         return self._R
-        
+      
+      
     @R.setter
     def R(self, value):
         if np.isscalar(value):   
@@ -293,16 +296,17 @@ class KalmanFilter(object):
     @H.setter
     def H(self, value):
         if value.shape == (self.dim_z, self.dim_x):
-            self._H = value.copy()
-            
+            self._H = value.copy()            
         else:
             raise Exception(
                 'H must have shape ({},{})'.format(self.dim_z, 
                                                    self.dim_x))
 
+
     @property
     def F(self):
         return self._F
+
         
     @F.setter
     def F(self, value):
@@ -316,33 +320,36 @@ class KalmanFilter(object):
     @property
     def G(self):
         return self._G
+
         
     @G.setter
     def G(self, value):
         if value.shape == (self.dim_x, self.dim_u):
-            self._H = value.copy()
-            
+            self._H = value.copy()            
         else:
             raise Exception(
                 'G must have shape ({},{})'.format(self.dim_z, 
                                                    self.dim_u))
 
+
     @property
     def x(self):
         return self._x
+
         
     @x.setter
     def x(self, value):
         if value.shape == (self.dim_x, 1):
-            self._x = value.copy()
-            
+            self._x = value.copy()           
         else:
             raise Exception(
                 'x must have shape ({},1)'.format(self.dim_1))
 
+
+
 class ExtendedKalmanFilter(object):
 
-    def __init__(self, dim_x, dim_z):
+    def __init__(self, dim_x, dim_z, dim_u=0):
         """ Extended Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -364,13 +371,13 @@ class ExtendedKalmanFilter(object):
         self.dim_x = dim_x
         self.dim_z = dim_z
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.G = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.R = eye(dim_z)       # state uncertainty
-        self.Q = eye(dim_x)       # process uncertainty
-        self.residual = zeros((dim_z, 1))
+        self._x = zeros((dim_x,1)) # state
+        self._P = eye(dim_x)       # uncertainty covariance
+        self._G = 0                # control transition matrix
+        self._F = 0                # state transition matrix
+        self._R = eye(dim_z)       # state uncertainty
+        self._Q = eye(dim_x)       # process uncertainty
+        self._residual = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -399,12 +406,12 @@ class ExtendedKalmanFilter(object):
             optional control vector input to the filter.
         """
 
-        F = self.F
-        G = self.G
-        P = self.P
-        Q = self.Q
-        R = self.R
-        x = self.x
+        F = self._F
+        G = self._G
+        P = self._P
+        Q = self._Q
+        R = self._R
+        x = self._x
 
         H = HJabobian(x)
 
@@ -416,10 +423,10 @@ class ExtendedKalmanFilter(object):
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        self.x = x + dot(K, (z - Hx(x)))
+        self._x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
-        self.P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
     def update(self, z, HJabobian, Hx):
@@ -441,9 +448,9 @@ class ExtendedKalmanFilter(object):
             that would correspond to that state.
         """
 
-        P = self.P
-        R = self.R
-        x = self.x
+        P = self._P
+        R = self._R
+        x = self._x
 
         H = HJabobian(x)
 
@@ -453,7 +460,7 @@ class ExtendedKalmanFilter(object):
         self.x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
-        self.P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
     def predict(self, u=0):
@@ -465,5 +472,114 @@ class ExtendedKalmanFilter(object):
             to create the control input into the system.
         """
 
-        self.x = dot(self.F, self.x) + dot(self.G, u)
-        self.P = dot3(self.F, self.P, self.F.T) + self.Q
+        self._x = dot(self._F, self._x) + dot(self._G, u)
+        self._P = dot3(self._F, self._P, self._F.T) + self._Q
+        
+        
+    @property
+    def Q(self):
+        """ Process uncertainty"""
+        return self._Q
+
+    
+    @Q.setter
+    def Q(self, value):
+        if np.isscalar(value):
+            self._Q = eye(self.dim_x) * value           
+        elif value.shape == (self.dim_x, self.dim_x):
+            self._Q = value.copy()           
+        else:
+            raise Exception('Wrong shape for Q')
+            
+
+    @property
+    def P(self):
+        """ covariance matrix"""
+        return self._P
+
+        
+    @P.setter
+    def P(self, value):
+        if np.isscalar(value):   
+            self._P = eye(self.dim_P) * value
+        elif value.shape == (self.dim_x, self.dim_x):
+            self._P = value.copy()            
+        else:
+            raise Exception('Wrong shape for P')        
+
+
+    @property
+    def R(self):
+        """ measurement uncertainty"""
+        return self._R
+
+        
+    @R.setter
+    def R(self, value):
+        if np.isscalar(value):   
+            self._R = eye(self.dim_z) * value
+        elif value.shape == (self.dim_z, self.dim_z):
+            self._R = value.copy()            
+        else:
+            raise Exception('Wrong shape for R')        
+
+
+    @property
+    def H(self):
+        return self._H
+
+        
+    @H.setter
+    def H(self, value):
+        if value.shape == (self.dim_z, self.dim_x):
+            self._H = value.copy()
+            
+        else:
+            raise Exception(
+                'H must have shape ({},{})'.format(self.dim_z, 
+                                                   self.dim_x))
+
+    @property
+    def F(self):
+        return self._F
+ 
+       
+    @F.setter
+    def F(self, value):
+        if value.shape == (self.dim_x, self.dim_x):
+            self._F = value.copy()            
+        else:
+            raise Exception(
+                'F must have shape ({},{})'.format(self.dim_x, 
+                                                   self.dim_x))
+
+    @property
+    def G(self):
+        return self._G
+
+        
+    @G.setter
+    def G(self, value):
+        if value.shape == (self.dim_x, self.dim_u):
+            self._H = value.copy()
+            
+        else:
+            raise Exception(
+                'G must have shape ({},{})'.format(self.dim_z, 
+                                                   self.dim_u))
+
+    @property
+    def x(self):
+        return self._x
+
+        
+    @x.setter
+    def x(self, value):
+        if value.shape == (self.dim_x, 1):
+            self._x = value.copy()
+            
+        else:
+            raise Exception(
+                'x must have shape ({},1)'.format(self.dim_1))
+
+        
