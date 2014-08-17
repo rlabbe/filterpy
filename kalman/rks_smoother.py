@@ -114,7 +114,7 @@ class RKSSmoother(object):
             
             
             
-
+    def rks(self, Ms, Ps, F, Q):
                         
             
 
