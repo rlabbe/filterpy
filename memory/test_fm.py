@@ -17,14 +17,12 @@ from numpy.random import randn
 import numpy as np
 from filterpy.memory import FadingMemoryFilter
 from filterpy.gh import GHKFilter
-
-
-    
+   
 
 def dotest_2d_data():
     """ tests having multidimensional data for x"""
     
-    fm = FadingMemoryFilter(x0=np.array([[0,2],[0,0]]), dt=1, order=1, beta=.6)
+    fm = FadingMemoryFilter(x0=np.array([[0.,2.],[0.,0.]]), dt=1, order=1, beta=.6)
 
     xs = [x for x in range(0,50)]
 
@@ -53,7 +51,6 @@ def dotest_1d(order, beta):
 
     plt.plot(fxs, c='r')
     plt.show()
-
 
 
 def test_ghk_formulation():
