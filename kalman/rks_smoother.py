@@ -18,6 +18,12 @@ import numpy as np
 import numpy.linalg as linalg
 from numpy import dot, zeros, eye
 
+def dot3(A,B,C):
+    """ Returns the matrix multiplication of A*B*C"""
+    return dot(A, dot(B,C))
+
+
+
 class RKSSmoother(object):
     """ Rauch-Tung-Striebal Kalman smoother.
 
@@ -114,7 +120,7 @@ class RKSSmoother(object):
             
             
             
-    def rks(self, Ms, Ps, F, Q):
+    def rks(self, Xs, Ps, F, Q):
                         
             
 
@@ -125,7 +131,7 @@ class RKSSmoother(object):
         Parameters
         ----------
 
-        Ms : numpy.array
+        Xs : numpy.array
            array of the means (state variable x) of the output of a Kalman
            filter.
 
@@ -141,32 +147,31 @@ class RKSSmoother(object):
 
         Returns
         -------
-        'M' : numpy.array
+        'X' : numpy.ndarray
            smoothed means
 
-        'P' : numpy.array
+        'P' : numpy.ndarray
            smoothed state covariances
 
-        'D' : numpy.array
+        'C' : numpy.ndarray
+            smoother gain at each step
+        
 
         """
-        M = np.copy(Ms)
-        P = np.copy(Ps)
-        assert len(M) == len(P)
+        X = Xs.copy()
+        P = Ps.copy()
+        assert len(X) == len(P)
 
-        n     = np.size(M,0)  # number of measurements
-        dim_x = np.size(M,1)  # number of state variables
+        n, dim_x, _ = X.shape
 
-        D = np.zeros((n,dim_x,dim_x))
-
+        # smoother gain
+        C = np.zeros((n,dim_x,dim_x))
 
         for k in range(n-2,-1,-1):
-            P_pred = F.dot(P[k]).dot(F.T) + Q
-            #D[k,:,:] = linalg.solve(P[k].dot(F.T).T, P_pred.T)
-            D[k,:,:] = P[k].dot(linalg.solve((F.T).T, P_pred.T))
-            M[k] = M[k] + D[k].dot(M[k+1] - F.dot(M[k]))
-            P[k,:,:] = P[k,:,:] + D[k].dot(P[k+1,:,:] - P_pred).dot(D[k].T)
+            P_pred = dot3(F, P[k], F.T) + Q
 
+            C[k] = dot3(P[k], F.T, linalg.inv(P_pred))
+            X[k] = X[k] + dot (C[k], X[k+1] - dot(F, X[k]))
+            P[k] = P[k] + dot3 (C[k], P[k+1] - P_pred, C[k].T)
 
-        return (M,P,D)
-
+        return (X,P,C)
