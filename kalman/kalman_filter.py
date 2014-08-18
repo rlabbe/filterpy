@@ -14,7 +14,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 import scipy.linalg as linalg
-from numpy import dot, zeros, eye
+from numpy import dot, zeros, eye, asarray
 
 
 
@@ -250,13 +250,7 @@ class KalmanFilter(object):
     
     @Q.setter
     def Q(self, value):
-        if np.isscalar(value):
-            self._Q = eye(self.dim_x) * value           
-        elif value.shape == (self.dim_x, self.dim_x):
-            self._Q = value.copy()           
-        else:
-            raise Exception('Wrong shape for Q')
-            
+        self._Q = self.setter_scalar(value, self.dim_x)          
 
     @property
     def P(self):
@@ -266,12 +260,7 @@ class KalmanFilter(object):
        
     @P.setter
     def P(self, value):
-        if np.isscalar(value):   
-            self._P = eye(self.dim_P) * value
-        elif value.shape == (self.dim_x, self.dim_x):
-            self._P = value.copy()            
-        else:
-            raise Exception('Wrong shape for P')        
+        self._P = self.setter_scalar(value, self.dim_x)          
 
 
     @property
@@ -282,25 +271,16 @@ class KalmanFilter(object):
       
     @R.setter
     def R(self, value):
-        if np.isscalar(value):   
-            self._R = eye(self.dim_z) * value
-        elif value.shape == (self.dim_z, self.dim_z):
-            self._R = value.copy()            
-        else:
-            raise Exception('Wrong shape for R')        
+        self._R = self.setter_scalar(value, self.dim_z)          
 
     @property
     def H(self):
         return self._H
+
         
     @H.setter
     def H(self, value):
-        if value.shape == (self.dim_z, self.dim_x):
-            self._H = value.copy()            
-        else:
-            raise Exception(
-                'H must have shape ({},{})'.format(self.dim_z, 
-                                                   self.dim_x))
+        self._H = self.setter(value, self.dim_z, self.dim_x)
 
 
     @property
@@ -310,12 +290,7 @@ class KalmanFilter(object):
         
     @F.setter
     def F(self, value):
-        if value.shape == (self.dim_x, self.dim_x):
-            self._F = value.copy()            
-        else:
-            raise Exception(
-                'F must have shape ({},{})'.format(self.dim_x, 
-                                                   self.dim_x))
+        self._F = self.setter(value, self.dim_x, self.dim_x)
 
     @property
     def G(self):
@@ -324,12 +299,7 @@ class KalmanFilter(object):
         
     @G.setter
     def G(self, value):
-        if value.shape == (self.dim_x, self.dim_u):
-            self._H = value.copy()            
-        else:
-            raise Exception(
-                'G must have shape ({},{})'.format(self.dim_z, 
-                                                   self.dim_u))
+        self._G = self.setter (value, self.dim_x, self.dim_u)
 
 
     @property
@@ -339,14 +309,40 @@ class KalmanFilter(object):
         
     @x.setter
     def x(self, value):
-        if value.shape == (self.dim_x, 1):
-            self._x = value.copy()           
+        self._x = self.setter(value, self.dim_x, 1)
+
+
+    def setter(self, value, dim_x, dim_y):
+        """ returns a copy of 'value' as an numpy.array with dtype=float. Throws 
+        exception if the array is not dimensioned correctly. Value may be any
+        type which converts to numpy.array (list, np.array, np.matrix, etc)
+        """
+        v = asarray(value, dtype=float)
+        if v is value:
+            v = value.copy()
+        if v.shape != (dim_x, dim_y):
+            raise Exception('must have shape ({},{})'.format(dim_x, dim_y))
+        return v
+        
+    def setter_scalar(self, value, dim_x):
+        """ returns a copy of 'value' as an numpy.array with dtype=float. Throws 
+        exception if the array is not dimensioned correctly. Value may be any
+        type which converts to numpy.array (list, np.array, np.matrix, etc),
+        or a scalar, in which case we create a diagonal matrix with each
+        diagonal element == value.
+        """
+        if np.isscalar(value):
+            v = eye(dim_x) * value
         else:
-            raise Exception(
-                'x must have shape ({},1)'.format(self.dim_1))
+            v = asarray(value, dtype=float)
+            
+        if v is value:
+            v = value.copy()
+        if v.shape != (dim_x, dim_x):
+            raise Exception('must have shape ({},{})'.format(dim_x, dim_x))
+        return v            
 
-
-
+        
 class ExtendedKalmanFilter(object):
 
     def __init__(self, dim_x, dim_z, dim_u=0):
@@ -484,12 +480,7 @@ class ExtendedKalmanFilter(object):
     
     @Q.setter
     def Q(self, value):
-        if np.isscalar(value):
-            self._Q = eye(self.dim_x) * value           
-        elif value.shape == (self.dim_x, self.dim_x):
-            self._Q = value.copy()           
-        else:
-            raise Exception('Wrong shape for Q')
+        self._Q = self.setter_scalar(value, self.dim_x)
             
 
     @property
@@ -500,12 +491,7 @@ class ExtendedKalmanFilter(object):
         
     @P.setter
     def P(self, value):
-        if np.isscalar(value):   
-            self._P = eye(self.dim_P) * value
-        elif value.shape == (self.dim_x, self.dim_x):
-            self._P = value.copy()            
-        else:
-            raise Exception('Wrong shape for P')        
+        self._P = self.setter_scalar(value, self.dim_x)
 
 
     @property
@@ -516,12 +502,7 @@ class ExtendedKalmanFilter(object):
         
     @R.setter
     def R(self, value):
-        if np.isscalar(value):   
-            self._R = eye(self.dim_z) * value
-        elif value.shape == (self.dim_z, self.dim_z):
-            self._R = value.copy()            
-        else:
-            raise Exception('Wrong shape for R')        
+        self._R = self.setter_scalar(value, self.dim_z)
 
 
     @property
@@ -531,13 +512,7 @@ class ExtendedKalmanFilter(object):
         
     @H.setter
     def H(self, value):
-        if value.shape == (self.dim_z, self.dim_x):
-            self._H = value.copy()
-            
-        else:
-            raise Exception(
-                'H must have shape ({},{})'.format(self.dim_z, 
-                                                   self.dim_x))
+        self._H = self.setter(value, self.dim_z, self.dim_x)
 
     @property
     def F(self):
@@ -546,12 +521,8 @@ class ExtendedKalmanFilter(object):
        
     @F.setter
     def F(self, value):
-        if value.shape == (self.dim_x, self.dim_x):
-            self._F = value.copy()            
-        else:
-            raise Exception(
-                'F must have shape ({},{})'.format(self.dim_x, 
-                                                   self.dim_x))
+        self._F = self.setter(value, self.dim_x, self.dim_x)
+
 
     @property
     def G(self):
@@ -560,13 +531,8 @@ class ExtendedKalmanFilter(object):
         
     @G.setter
     def G(self, value):
-        if value.shape == (self.dim_x, self.dim_u):
-            self._H = value.copy()
-            
-        else:
-            raise Exception(
-                'G must have shape ({},{})'.format(self.dim_z, 
-                                                   self.dim_u))
+        self._G = self.setter(value, self.dim_x, self.dim_u)
+
 
     @property
     def x(self):
@@ -575,11 +541,37 @@ class ExtendedKalmanFilter(object):
         
     @x.setter
     def x(self, value):
-        if value.shape == (self.dim_x, 1):
-            self._x = value.copy()
-            
+        self._x = self.setter(value, self.dim_x, 1)
+
+
+    def setter(self, value, dim_x, dim_y):
+        """ returns a copy of 'value' as an numpy.array with dtype=float. Throws 
+        exception if the array is not dimensioned correctly. Value may be any
+        type which converts to numpy.array (list, np.array, np.matrix, etc)
+        """
+        v = asarray(value, dtype=float)
+        if v is value:
+            v = value.copy()
+        if v.shape != (dim_x, dim_y):
+            raise Exception('must have shape ({},{})'.format(dim_x, dim_y))
+        return v
+        
+    def setter_scalar(self, value, dim_x):
+        """ returns a copy of 'value' as an numpy.array with dtype=float. Throws 
+        exception if the array is not dimensioned correctly. Value may be any
+        type which converts to numpy.array (list, np.array, np.matrix, etc),
+        or a scalar, in which case we create a diagonal matrix with each
+        diagonal element == value.
+        """
+        if np.isscalar(value):
+            v = eye(dim_x) * value
         else:
-            raise Exception(
-                'x must have shape ({},1)'.format(self.dim_1))
+            v = asarray(value, dtype=float)
+            
+        if v is value:
+            v = value.copy()
+        if v.shape != (dim_x, dim_x):
+            raise Exception('must have shape ({},{})'.format(dim_x, dim_x))
+        return v            
 
         
