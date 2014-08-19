@@ -16,10 +16,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy.linalg as linalg
 from numpy import dot, zeros
-
-def dot3(A,B,C):
-    """ Returns the matrix multiplication of A*B*C"""
-    return dot(A, dot(B,C))
+from filterpy.common import dot3
 
 
             
