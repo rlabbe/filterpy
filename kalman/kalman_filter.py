@@ -315,7 +315,7 @@ class KalmanFilter(object):
     @property
     def K(self):
         """ Kalman gain """
-        return self._K = 0
+        return self._K
         
     @property
     def residual(self):
@@ -556,7 +556,7 @@ class ExtendedKalmanFilter(object):
     @property
     def K(self):
         """ Kalman gain """
-        return self._K = 0
+        return self._K
         
     @property
     def residual(self):
