@@ -69,6 +69,7 @@ class KalmanFilter(object):
         # purposes
         self._K = 0 # kalman gain
         self._residual = zeros((dim_z, 1))
+        self._S = 0 # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -311,7 +312,21 @@ class KalmanFilter(object):
     def x(self, value):
         self._x = self.setter(value, self.dim_x, 1)
 
-
+    @property
+    def K(self):
+        """ Kalman gain """
+        return self._K = 0
+        
+    @property
+    def residual(self):
+        """ measurement residual (innovation) """
+        return self._residual
+        
+    @property
+    def S(self):
+        """ system uncertainy in measurement space """        
+        return self._S
+        
     def setter(self, value, dim_x, dim_y):
         """ returns a copy of 'value' as an numpy.array with dtype=float. Throws 
         exception if the array is not dimensioned correctly. Value may be any
@@ -537,6 +552,21 @@ class ExtendedKalmanFilter(object):
     @property
     def x(self):
         return self._x
+
+    @property
+    def K(self):
+        """ Kalman gain """
+        return self._K = 0
+        
+    @property
+    def residual(self):
+        """ measurement residual (innovation) """
+        return self._residual
+        
+    @property
+    def S(self):
+        """ system uncertainy in measurement space """        
+        return self._S
 
         
     @x.setter
