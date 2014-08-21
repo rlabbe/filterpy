@@ -45,19 +45,3 @@ plt.plot(xs)
 plt.subplot(212)
 plt.plot(vs)
 plt.show()
-
-'''
-a = [1 dt; 0 1]; % transition matrix
-b = [dt^2/2; dt]; % input matrix
-c = [0 1]; % measurement matrix
-x = [0; 0]; % initial state vector
-y = c * x; % initial measurement
-
-
-Pinf = 0.01*eye(2);
-W = [0.0003 0.0050; 0.0050 0.1000]/1000;
-V = 0.01;
-Q = [0.01 0; 0 0.01];
-
-
-'''
