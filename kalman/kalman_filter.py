@@ -38,12 +38,12 @@ class KalmanFilter(object):
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
-            
+
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
         """
-        
+
         assert dim_x > 0
         assert dim_z > 0
         assert dim_u >= 0
@@ -55,7 +55,7 @@ class KalmanFilter(object):
         self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
         self._Q = eye(dim_x)       # process uncertainty
-        self._G = 0                # control transistion matrx
+        self._B = 0                # control transition matrx
         self._F = 0                # state transition matrix
         self._H = 0                # Measurement function
         self._R = eye(dim_z)       # state uncertainty
@@ -128,12 +128,12 @@ class KalmanFilter(object):
         Parameters
         ----------
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by G
+            Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
         """
 
-        # x = Fx + Gu
-        self._x = dot(self._F, self.x) + dot(self._G, u)
+        # x = Fx + Bu
+        self._x = dot(self._F, self.x) + dot(self._B, u)
 
         # P = FPF' + Q
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
@@ -211,7 +211,7 @@ class KalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self._F, self._x) + dot(self._G, u)
+        x = dot(self._F, self._x) + dot(self._B, u)
         P = dot3(self._F, self._P, self._F.T) + self.Q
         return (x, P)
 
@@ -244,37 +244,37 @@ class KalmanFilter(object):
         """ Process uncertainty"""
         return self._Q
 
-    
+
     @Q.setter
     def Q(self, value):
-        self._Q = setter_scalar(value, self.dim_x)          
+        self._Q = setter_scalar(value, self.dim_x)
 
     @property
     def P(self):
         """ covariance matrix"""
         return self._P
- 
-       
+
+
     @P.setter
     def P(self, value):
-        self._P = setter_scalar(value, self.dim_x)          
+        self._P = setter_scalar(value, self.dim_x)
 
 
     @property
     def R(self):
         """ measurement uncertainty"""
         return self._R
-      
-      
+
+
     @R.setter
     def R(self, value):
-        self._R = setter_scalar(value, self.dim_z)          
+        self._R = setter_scalar(value, self.dim_z)
 
     @property
     def H(self):
         return self._H
 
-        
+
     @H.setter
     def H(self, value):
         self._H = setter(value, self.dim_z, self.dim_x)
@@ -284,19 +284,21 @@ class KalmanFilter(object):
     def F(self):
         return self._F
 
-        
+
     @F.setter
     def F(self, value):
         self._F = setter(value, self.dim_x, self.dim_x)
 
     @property
-    def G(self):
-        return self._G
+    def B(self):
+        """ control transition matrix"""
+        return self._B
 
-        
-    @G.setter
-    def G(self, value):
-        self._G = setter (value, self.dim_x, self.dim_u)
+
+    @B.setter
+    def B(self, value):
+        """ control transition matrix"""
+        self._B = setter (value, self.dim_x, self.dim_u)
 
 
     @property
@@ -312,19 +314,19 @@ class KalmanFilter(object):
     def K(self):
         """ Kalman gain """
         return self._K
-        
+
     @property
     def residual(self):
         """ measurement residual (innovation) """
         return self._residual
-        
+
     @property
     def S(self):
-        """ system uncertainy in measurement space """        
+        """ system uncertainy in measurement space """
         return self._S
-        
 
-        
+
+
 class ExtendedKalmanFilter(object):
 
     def __init__(self, dim_x, dim_z, dim_u=0):
@@ -351,7 +353,7 @@ class ExtendedKalmanFilter(object):
 
         self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
-        self._G = 0                # control transition matrix
+        self._B = 0                # control transition matrix
         self._F = 0                # state transition matrix
         self._R = eye(dim_z)       # state uncertainty
         self._Q = eye(dim_x)       # process uncertainty
@@ -385,7 +387,7 @@ class ExtendedKalmanFilter(object):
         """
 
         F = self._F
-        G = self._G
+        B = self._B
         P = self._P
         Q = self._Q
         R = self._R
@@ -394,7 +396,7 @@ class ExtendedKalmanFilter(object):
         H = HJabobian(x)
 
         # predict step
-        x = dot(F, x) + dot(G, u)
+        x = dot(F, x) + dot(B, u)
         P = dot3(F, P, F.T) + Q
 
         # update step
@@ -446,31 +448,31 @@ class ExtendedKalmanFilter(object):
         Parameters
         ----------
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by G
+            Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
         """
 
-        self._x = dot(self._F, self._x) + dot(self._G, u)
+        self._x = dot(self._F, self._x) + dot(self._B, u)
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
-        
-        
+
+
     @property
     def Q(self):
         """ Process uncertainty"""
         return self._Q
 
-    
+
     @Q.setter
     def Q(self, value):
         self._Q = setter_scalar(value, self.dim_x)
-            
+
 
     @property
     def P(self):
         """ covariance matrix"""
         return self._P
 
-        
+
     @P.setter
     def P(self, value):
         self._P = setter_scalar(value, self.dim_x)
@@ -481,7 +483,7 @@ class ExtendedKalmanFilter(object):
         """ measurement uncertainty"""
         return self._R
 
-        
+
     @R.setter
     def R(self, value):
         self._R = setter_scalar(value, self.dim_z)
@@ -491,7 +493,7 @@ class ExtendedKalmanFilter(object):
     def H(self):
         return self._H
 
-        
+
     @H.setter
     def H(self, value):
         self._H = setter(value, self.dim_z, self.dim_x)
@@ -500,21 +502,22 @@ class ExtendedKalmanFilter(object):
     @property
     def F(self):
         return self._F
- 
-       
+
+
     @F.setter
     def F(self, value):
         self._F = setter(value, self.dim_x, self.dim_x)
 
 
     @property
-    def G(self):
-        return self._G
+    def B(self):
+        return self._B
 
-        
-    @G.setter
-    def G(self, value):
-        self._G = setter(value, self.dim_x, self.dim_u)
+
+    @B.setter
+    def B(self, value):
+        """ control transition matrix"""
+        self._B = setter(value, self.dim_x, self.dim_u)
 
 
     @property
@@ -525,16 +528,15 @@ class ExtendedKalmanFilter(object):
     def K(self):
         """ Kalman gain """
         return self._K
-        
+
     @property
     def residual(self):
         """ measurement residual (innovation) """
         return self._residual
-        
+
     @property
     def S(self):
-        """ system uncertainy in measurement space """        
+        """ system uncertainy in measurement space """
         return self._S
 
 
-        
