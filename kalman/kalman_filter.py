@@ -28,6 +28,7 @@ class KalmanFilter(object):
 
         Parameters
         ----------
+        
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
@@ -55,7 +56,7 @@ class KalmanFilter(object):
         self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
         self._Q = eye(dim_x)       # process uncertainty
-        self._B = 0                # control transition matrx
+        self._B = 0                # control transition matrix
         self._F = 0                # state transition matrix
         self._H = 0                # Measurement function
         self._R = eye(dim_z)       # state uncertainty
@@ -64,7 +65,7 @@ class KalmanFilter(object):
         # save them so that in case you want to inspect them for various
         # purposes
         self._K = 0 # kalman gain
-        self._residual = zeros((dim_z, 1))
+        self._y = zeros((dim_z, 1))
         self._S = 0 # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
@@ -101,7 +102,7 @@ class KalmanFilter(object):
 
         # y = Z - Hx
         # error (residual) between measurement and prediction
-        self._residual = Z - dot(H, x)
+        self._y = Z - dot(H, x)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -113,7 +114,7 @@ class KalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x = x + dot(K, self._residual)
+        self._x = x + dot(K, self._y)
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(K, H)
@@ -316,9 +317,9 @@ class KalmanFilter(object):
         return self._K
 
     @property
-    def residual(self):
+    def y(self):
         """ measurement residual (innovation) """
-        return self._residual
+        return self._y
 
     @property
     def S(self):
@@ -357,7 +358,7 @@ class ExtendedKalmanFilter(object):
         self._F = 0                # state transition matrix
         self._R = eye(dim_z)       # state uncertainty
         self._Q = eye(dim_x)       # process uncertainty
-        self._residual = zeros((dim_z, 1))
+        self._y = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -530,9 +531,9 @@ class ExtendedKalmanFilter(object):
         return self._K
 
     @property
-    def residual(self):
+    def y(self):
         """ measurement residual (innovation) """
-        return self._residual
+        return self._y
 
     @property
     def S(self):
