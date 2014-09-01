@@ -35,8 +35,26 @@ questions or needs and I will either answer directly or shift my
 development to address your problem (assuming your question is a planned
 part of this library.
 
-Basic use:
-----------
+Installation
+------------
+
+::
+    pip install filterpy
+
+If you prefer to download the source yourself
+
+::
+    cd <directory you want to install to>
+    git clone http://github.com/rlabbe/filterpy
+    python setup.py install
+
+Note: at the moment github will probably be much more 'bleeding edge' than
+the pip install. I need to formalize this into a dev and stable path, but
+have yet to do so.
+
+
+Basic use
+---------
 
 ::
 
@@ -44,7 +62,21 @@ Basic use:
     from filterpy.memory import FadingMemoryFilter
 
 
-    my_filter = KalmanFilter(3,4)
+    my_filter = KalmanFilter(dim_x=9, dim_z=2)
+
+Sorry, that is the extent of the documentation. However, the library is
+broken up into subdirectories: gh, kalman, memory, leastsq, and so on.
+Each subdirectory contains python files relating to that form of filter.
+The functions and methods contain pretty good docstrings on use.
+
+My book http://rlabbe.github.io/Kalman-and-Bayesian-Filters-in-Python/
+uses this library, and is the place to go if you are trying to learn
+about Kalman filtering. These two are not exactly in sync - my normal
+development cycle is to add files here, test them, figure out how to
+present them pedalogically, then write the appropriate section or chapter
+in the book. So there are files here that are not even discussed yet
+in the book.
+
 
 Requirements
 ------------
