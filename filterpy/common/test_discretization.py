@@ -12,7 +12,6 @@ from __future__ import (absolute_import, division, print_function,
 from filterpy.common import linear_ode_discretation
 from numpy import array
 
-
 def near_eq(x,y):
     return abs(x-y) < 1.e-18
 
