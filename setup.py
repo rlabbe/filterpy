@@ -5,7 +5,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -14,17 +14,17 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='1.2.0',
+    version='0.0.1dev',
 
-    description='A sample Python project',
+    description='Kalman filtering and optimal estimation library',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/pypa/sampleproject',
+    url='https://github.com/rlabbe/filterpy',
 
     # Author details
-    author='The Python Packaging Authority',
-    author_email='pypa-dev@googlegroups.com',
+    author='Roger Labbe',
+    author_email='rlabbejr@gmail.com',
 
     # Choose your license
     license='MIT',
@@ -38,7 +38,7 @@ setup(
         'Development Status :: 3 - Alpha',
 
         # Indicate who your project is intended for
-        'Intended Audience :: Developers',
+        'Intended Audience :: Developers, Engineers',
         'Topic :: Software Development :: Build Tools',
 
         # Pick your license as you wish (should match "license" above)
@@ -56,7 +56,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='sample setuptools development',
+    keywords='Kalman filters filtering  optimal estimation tracking',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().

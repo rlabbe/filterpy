@@ -45,6 +45,45 @@ from filterpy.memory import FadingMemoryFilter
 my_filter = KalmanFilter(3,4)
 ```
 
+Requirements
+--
+numpy and scipy
+Python 2 or 3
+matplotlib
+
+I haven't extensively tested backwards compatibility - I use the Anaconda
+distribution, and so I am on Python 3.4 and 2.7.5, along with whatever
+version of numpy, scipy, and matplotlib they provide. But I am using pretty
+basic Python - numpy.array, maybe a list comprehension in my tests.
+
+I import from __future__ to ensure the code works in Python 2 and 3.
+
+The matplotlib library is required because, *for now*, 'tests' are very
+visual. Meaning I generate some data, plot the data against the filtered
+results, and eyeball it. That is great for my personal development, and
+terrible as a foundation for regression testing. If you don't have
+matplotlib installed you won't be able to run the tests, but I'm not sure
+the tests will have a lot of meaning to you anyway.
+
+There is one import from the code from my book to plot ellipses. That
+dependency needs to be removed. This only affects the tests.
+
+
+Testing
+--
+
+All tests are written to work with py.test. Just type _py.text_ at the
+command line.
+
+As explained above, the tests are not robust. I'm still at the stage where
+visual plots are the best way to see how things are working. Apologies, but
+I think it is a sound choice for development. It is easy for a filter to
+perform within theoretical limits (which we can write a non-visual test for)
+yet be 'off' in some way. The code itself contains tests in the form of
+asserts and properties that ensure that arrays are of the proper dimension, 
+etc. 
+
+
 References
 --
 

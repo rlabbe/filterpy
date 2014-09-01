@@ -16,8 +16,6 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from math import sqrt
 
-from numba import jit, void
-
 
 class LeastSquaresFilter(object):
     """Implements a Least Squares recursive filter. Formulation is per
