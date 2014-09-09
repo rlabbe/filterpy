@@ -21,7 +21,7 @@ from filterpy.common import setter, setter_scalar, dot3
 class HInfinityFilter(object):
 
     def __init__(self, dim_x, dim_z, dim_u, gamma):
-        """ Create a Kalman filter. You are responsible for setting the
+        """ Create an H-Infinity filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
