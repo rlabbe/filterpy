@@ -9,11 +9,23 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-from filterpy.common import linear_ode_discretation
+from filterpy.common import linear_ode_discretation, Q_DWPA
 from numpy import array
 
 def near_eq(x,y):
     return abs(x-y) < 1.e-18
+
+
+def test_Q_DWPA():
+
+    Q = Q_DWPA (2)
+    assert Q[0,0] == .25
+    assert Q[1,0] == .5
+    assert Q[0,1] == .5
+    assert Q[1,1] == 1
+
+    assert Q.shape == (2,2)
+
 
 def test_linear_ode():
 
@@ -66,6 +78,7 @@ def test_linear_ode():
 
 if __name__ == "__main__":
     test_linear_ode()
+    test_Q_DWPA()
 
     F = array([[0,0,1,0,0,0],
                [0,0,0,1,0,0],

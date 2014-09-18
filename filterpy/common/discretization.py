@@ -13,6 +13,36 @@ from numpy import array, zeros, vstack, eye
 from scipy.linalg import expm, inv
 
 
+def Q_DWPA(dim, dt=1., var=1.):
+    """ Returns the Q matrix for the Discrete Wiener Process Acceleration
+    Model. dim may be either 2 or 3, dt is the time step, and sigma is the
+    variance in the noise.
+
+    Paramaeters
+    -----------
+    dim : int (2 or 3)
+        dimension for Q, where the final dimension is (dim x dim)
+
+    dt : float, default=1.0
+        time step in whatever units your filter is using for time. i.e. the
+        amount of time between innovations
+
+    var : float, default=1.0
+        variance in the noise
+    """
+
+    assert dim == 2 or dim == 3
+    if dim == 2:
+        Q = array([[.25*dt**4, .5*dt**3],
+                   [ .5*dt**3,    dt**2]], dtype=float)
+    else:
+        Q = array([[.25*dt**4, .5*dt**3, .5*dt**2],
+                   [ .5*dt**3,    dt**2,       dt],
+                   [ .5*dt**2,       dt,        1]], dtype=float)
+
+    return Q * var
+
+
 def van_loan_discretization(F, G, dt):
 
     """ Discretizes a linear differential equation which includes white noise
@@ -38,9 +68,9 @@ def van_loan_discretization(F, G, dt):
 
     >>> F = np.array([[0,1],[-1,0]], dtype=float)
     >>> G = np.array([[0.],[2.]])
-    >>> sigma, Q = van_loan_discretization(F, G, 0.1)
+    >>> phi, Q = van_loan_discretization(F, G, 0.1)
 
-    >>> sigma
+    >>> phi
     array([[ 0.99500417,  0.09983342],
            [-0.09983342,  0.99500417]])
 
