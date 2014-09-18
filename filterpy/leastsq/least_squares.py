@@ -192,5 +192,3 @@ class LeastSquaresFilter(object):
     def __repr__(self):
         return 'LeastSquareFilter x={}'.format(self.x)
 
-
-

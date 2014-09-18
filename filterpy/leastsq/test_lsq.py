@@ -18,14 +18,52 @@ import numpy.random as random
 import matplotlib.pyplot as plt
 import numpy as np
 from math import sqrt
+from numpy import dot
+from numpy.linalg import inv
+from filterpy.common import dot3
 from filterpy.leastsq import LeastSquaresFilter
-
 from filterpy.gh import GHFilter
 
 
 
 def near_equal(x,y, e=1.e-14):
     return abs(x-y) < e
+
+
+
+class LSQ(object):
+
+    def __init__(self, dim_x):
+        self.dim_x = dim_x
+
+        self.I = np.eye(dim_x)
+        self.H = 0
+        self.x = np.zeros((dim_x, 1))
+        self.I = np.eye(dim_x)
+        self.k = 0
+
+
+    def update(self,Z):
+        self.x += 1
+        self.k += 1
+        print('k=', self.k, 1/self.k, 1/(self.k+1))
+
+        S = dot3(self.H, self.P, self.H.T) + self.R
+        K1 = dot3(self.P, self.H.T, inv(S))
+        #K1 = dot3(self.P, self.H.T, inv(self.R))
+
+        print('K1=', K1[0,0])
+        #print(K)
+
+        I_KH = self.I - dot(K1, self.H)
+        y = Z - dot(self.H, self.x)
+        print('y=', y)
+        self.x = self.x + dot(K1, y)
+        self.P = dot(I_KH, self.P)
+        print(self.P)
+
+        #assert self.P[[0,0] - K
+
 
 
 class LeastSquaresFilterOriginal(object):
@@ -277,10 +315,43 @@ def test_listing_3_4():
     plt.plot(ys)
 
 
+
+def lsq2_plot():
+    fl = LSQ(2)
+    fl.H = np.array([[1., 1.],[0., 1.]])
+    fl.R = np.eye(2)
+    fl.P = np.array([[2., .5], [.5, 2.]])
+
+    for x in range(10):
+        fl.update(np.array([[x], [x]], dtype=float))
+        plt.scatter(x, fl.x[0,0])
+
+fl = LSQ(1)
+fl.H = np.eye(1)
+fl.R = np.eye(1)
+fl.P = np.eye(1)
+
+lsf = LeastSquaresFilter(0.1, order=2)
+
+random.seed(234)
+for x in range(40):
+    z = x + random.randn() * 5
+    plt.scatter(x, z, c='r', marker='+')
+
+    fl.update(np.array([[z]], dtype=float))
+    plt.scatter(x, fl.x[0,0], c='b')
+
+    y = lsf.update(z)[0]
+    plt.scatter(x, y, c='g', alpha=0.5)
+
+
+    plt.plot([0,40], [0,40])
+
 if __name__ == "__main__":
+    pass
     #test_listing_3_4()
 
     #test_second_order()
     #fig_3_8()
 
-    test_second_order()
+    #test_second_order()
