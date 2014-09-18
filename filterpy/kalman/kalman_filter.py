@@ -43,6 +43,33 @@ class KalmanFilter(object):
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
+
+
+        Instance Variables
+        ------------------
+        You will have to assign reasonable values to all of these before
+        running the filter. All must have dtype of float
+
+        x : ndarray (dim_x, 1), default = [0,0,0...0]
+            state of the filter
+
+        P : ndarray (dim_x, dim_x), default identity matrix
+            covariance matrix
+
+        Q : ndarray (dim_x, dim_x), default identity matrix
+            Process uncertainty matrix
+
+        R : ndarray (dim_z, dim_z), default identity matrix
+            measurement uncertainty
+
+        H : ndarray (dim_z, dim_x)
+            measurement function
+
+        F : ndarray (dim_x, dim_x)
+            state transistion matrix
+
+        B : ndarray (dim_x, dim_u), default 0
+            control transition matrix
         """
 
         assert dim_x > 0
