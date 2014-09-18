@@ -28,7 +28,7 @@ class KalmanFilter(object):
 
         Parameters
         ----------
-        
+
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
@@ -273,6 +273,7 @@ class KalmanFilter(object):
 
     @property
     def H(self):
+        """ Measurement function"""
         return self._H
 
 
@@ -283,6 +284,7 @@ class KalmanFilter(object):
 
     @property
     def F(self):
+        """ state transition matrix"""
         return self._F
 
 
@@ -304,6 +306,7 @@ class KalmanFilter(object):
 
     @property
     def x(self):
+        """ filter state vector."""
         return self._x
 
 
