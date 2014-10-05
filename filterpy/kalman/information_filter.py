@@ -13,7 +13,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-import scipy.linalg as linalg
+from scipy.linalg import inv
 from numpy import dot, zeros, eye, asarray
 from filterpy.common import setter, setter_scalar, dot3
 
@@ -54,12 +54,13 @@ class InformationFilter(object):
         self.dim_u = dim_u
 
         self._x = zeros((dim_x,1)) # state
-        self._P = eye(dim_x)       # uncertainty covariance
+        self._P_inv = eye(dim_x)   # uncertainty covariance
         self._Q = eye(dim_x)       # process uncertainty
         self._B = 0                # control transition matrix
         self._F = 0                # state transition matrix
+        self._F_inv = 0            # state transition matrix
         self._H = 0                # Measurement function
-        self._R = eye(dim_z)       # state uncertainty
+        self._R_inv = eye(dim_z)   # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -72,7 +73,7 @@ class InformationFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def update(self, Z, R=None):
+    def update(self, Z, R_inv=None):
         """
         Add a new measurement (Z) to the kalman filter. If Z is None, nothing
         is changed.
@@ -90,14 +91,15 @@ class InformationFilter(object):
         if Z is None:
             return
 
-        if R is None:
-            R = self._R
-        elif np.isscalar(R):
-            R = eye(self.dim_z) * R
+        if R_inv is None:
+            R_inv = self._R_inv
+        elif np.isscalar(R_inv):
+            R_inv = eye(self.dim_z) * R_inv
 
         # rename for readability and a tiny extra bit of speed
         H = self._H
-        P = self._P
+        H_T = H.T
+        P_inv = self._P_inv
         x = self._x
 
         # y = Z - Hx
@@ -106,22 +108,13 @@ class InformationFilter(object):
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        S = dot3(H, P, H.T) + R
-
-        # K = PH'inv(S)
-        # map system uncertainty into kalman gain
-        K = dot3(P, H.T, linalg.inv(S))
+        self._S = P_inv + dot(H_T, R_inv).dot (H)
+        self._K = dot3(inv(self._S), H_T, R_inv)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x = x + dot(K, self._y)
-
-        # P = (I-KH)P(I-KH)' + KRK'
-        I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
-
-        self._S = S
-        self._K = K
+        self._x = x + dot(self._K, self._y)
+        self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
 
     def predict(self, u=0):
@@ -136,8 +129,9 @@ class InformationFilter(object):
         # x = Fx + Bu
         self._x = dot(self._F, self.x) + dot(self._B, u)
 
-        # P = FPF' + Q
-        self._P = dot3(self._F, self._P, self._F.T) + self._Q
+        A = dot3(self._F_inv.T, self._P_inv, self._F_inv)
+        self._P_inv = inv(inv(A) + self._Q)
+
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -251,25 +245,25 @@ class InformationFilter(object):
         self._Q = setter_scalar(value, self.dim_x)
 
     @property
-    def P(self):
-        """ covariance matrix"""
-        return self._P
+    def P_inv(self):
+        """ inverse covariance matrix"""
+        return self._P_inv
 
 
-    @P.setter
-    def P(self, value):
-        self._P = setter_scalar(value, self.dim_x)
+    @P_inv.setter
+    def P_inv(self, value):
+        self._P_inv = setter_scalar(value, self.dim_x)
 
 
     @property
-    def R(self):
+    def R_inv(self):
         """ measurement uncertainty"""
-        return self._R
+        return self._R_inv
 
 
-    @R.setter
-    def R(self, value):
-        self._R = setter_scalar(value, self.dim_z)
+    @R_inv.setter
+    def R_inv(self, value):
+        self._R_inv = setter_scalar(value, self.dim_z)
 
     @property
     def H(self):
@@ -283,12 +277,13 @@ class InformationFilter(object):
 
     @property
     def F(self):
-        return self._F
+        return self._F_inv
 
 
     @F.setter
     def F(self, value):
         self._F = setter(value, self.dim_x, self.dim_x)
+        self._F_inv = inv(self._F)
 
     @property
     def B(self):
