@@ -71,6 +71,7 @@ class InformationFilter(object):
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
+        self._no_information = False
 
 
     def update(self, Z, R_inv=None):
@@ -102,19 +103,23 @@ class InformationFilter(object):
         P_inv = self._P_inv
         x = self._x
 
-        # y = Z - Hx
-        # error (residual) between measurement and prediction
-        self._y = Z - dot(H, x)
+        if self._no_information:
+            self._x = dot(P_inv, x) + dot3(H_T, R_inv, Z)
+            self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
-        # S = HPH' + R
-        # project system uncertainty into measurement space
-        self._S = P_inv + dot(H_T, R_inv).dot (H)
-        self._K = dot3(inv(self._S), H_T, R_inv)
+        else:       # y = Z - Hx
+            # error (residual) between measurement and prediction
+            self._y = Z - dot(H, x)
 
-        # x = x + Ky
-        # predict new x with residual scaled by the kalman gain
-        self._x = x + dot(self._K, self._y)
-        self._P_inv = P_inv + dot3(H_T, R_inv, H)
+            # S = HPH' + R
+            # project system uncertainty into measurement space
+            self._S = P_inv + dot(H_T, R_inv).dot (H)
+            self._K = dot3(inv(self._S), H_T, R_inv)
+
+            # x = x + Ky
+            # predict new x with residual scaled by the kalman gain
+            self._x = x + dot(self._K, self._y)
+            self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
 
     def predict(self, u=0):
@@ -127,11 +132,32 @@ class InformationFilter(object):
         """
 
         # x = Fx + Bu
-        self._x = dot(self._F, self.x) + dot(self._B, u)
 
         A = dot3(self._F_inv.T, self._P_inv, self._F_inv)
-        self._P_inv = inv(inv(A) + self._Q)
+        try:
+            AI = inv(A)
+            invertable = True
+            if self._no_information:
+                try:
+                    self._x = dot(inv(self._P_inv), self._x)
+                except:
+                    self._x = dot(0, self._x)
+                self._no_information = False
+        except:
+            invertable = False
+            self._no_information  = True
 
+        if invertable:
+            self._x = dot(self._F, self.x) + dot(self._B, u)
+            self._P_inv = inv(AI + self._Q)
+        else:
+            I_PF = self._I - dot(self._P_inv,self._F_inv)
+            FTI = inv(self._F.T)
+            FTIX = dot(FTI, self._x)
+            print('Q=', self._Q)
+            print('A=', A)
+            AQI = inv(A + self._Q)
+            self._x = dot(FTI, dot3(I_PF, AQI, FTIX))
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -285,7 +311,7 @@ class InformationFilter(object):
 
     @property
     def F(self):
-        return self._F_inv
+        return self._F
 
 
     @F.setter
