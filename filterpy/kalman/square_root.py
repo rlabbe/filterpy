@@ -29,6 +29,15 @@ class SquareRootKalmanFilter(object):
         the numerical precision of the filter, Therebuy reducing the effect
         of round off errors.
 
+        It is likely that you do not need to use this algorithm; we understand
+        divergence issues very well now. However, if you expect the covariance
+        matrix P to vary by 20 or more orders of magnitude then perhaps this
+        will be useful to you, as the square root will vary by 10 orders
+        of magnitude. From my point of view this is merely a 'reference'
+        algorithm; I have not used this code in real world software. Brown[1]
+        has a useful discussion of when you might need to use the square
+        root form of this algorithm.
+
         You are responsible for setting the various state variables to
         reasonable values; the defaults below will not give you a functional
         filter.
@@ -77,6 +86,13 @@ class SquareRootKalmanFilter(object):
 
         B : ndarray (dim_x, dim_u), default 0
             control transition matrix
+
+
+        References
+        ----------
+
+        [1] Robert Grover Brown. Introduction to Random Signals and Applied
+            Kalman Filtering. Wiley and sons, 2012.
         """
 
         assert dim_x > 0
