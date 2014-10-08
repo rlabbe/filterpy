@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import KalmanFilter
 
+DO_PLOT = False
 def test_noisy_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)
 
@@ -55,16 +56,18 @@ def test_noisy_1d():
     m,c = f.batch_filter(zs,update_first=False)
 
     # plot data
-    p1, = plt.plot(measurements,'r', alpha=0.5)
-    p2, = plt.plot (results,'b')
-    p4, = plt.plot(m[:,0], 'm')
-    p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
-    plt.legend([p1,p2, p3, p4],
-               ["noisy measurement", "KF output", "ideal", "batch"], 4)
+    if DO_PLOT:
+        p1, = plt.plot(measurements,'r', alpha=0.5)
+        p2, = plt.plot (results,'b')
+        p4, = plt.plot(m[:,0], 'm')
+        p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
+        plt.legend([p1,p2, p3, p4],
+                   ["noisy measurement", "KF output", "ideal", "batch"], 4)
 
 
-    plt.show()
+        plt.show()
 
 
 if __name__ == "__main__":
+    DO_PLOT = True
     test_noisy_1d()

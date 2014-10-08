@@ -18,10 +18,11 @@ import numpy.random as random
 from numpy.random import randn
 import math
 import numpy as np
-import stats
+#import stats
 from filterpy.kalman import UKF
 
 
+DO_PLOT = False
 
 def plot_sigma_test():
     """ Test to make sure sigma's correctly mirror the shape and orientation
@@ -135,18 +136,20 @@ def test_radar():
         xs[i,:] = kf.X
         rs.append(r)
 
-    print(xs[:,0].shape)
+    if DO_PLOT:
+        print(xs[:,0].shape)
 
-    plt.subplot(311)
-    plt.plot(t, xs[:,0])
-    plt.subplot(312)
-    plt.plot(t, xs[:,1])
-    plt.subplot(313)
+        plt.subplot(311)
+        plt.plot(t, xs[:,0])
+        plt.subplot(312)
+        plt.plot(t, xs[:,1])
+        plt.subplot(313)
 
-    plt.plot(t, xs[:,2])
+        plt.plot(t, xs[:,2])
 
 
 if __name__ == "__main__":
+    DO_PLOT = True
 
     '''test_1D_sigma_points()
     #plot_sigma_test ()

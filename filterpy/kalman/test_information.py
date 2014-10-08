@@ -29,11 +29,11 @@ def test_1d():
                      [0.,1.]]))    # state transition matrix
 
     inf.F = f.F.copy()
-    f.H = np.array([[1.,0.]])    # Measurement function
+    f.H = np.array([[1.,0.]])      # Measurement function
     inf.H = np.array([[1.,0.]])    # Measurement function
-    f.R = 5.                 # state uncertainty
-    inf.R_inv = 1./5                 # state uncertainty
-    f.Q = 0.0001                 # process uncertainty
+    f.R = 5.                       # state uncertainty
+    inf.R_inv = 1./5               # state uncertainty
+    f.Q = 0.0001                   # process uncertainty
     inf.Q = 0.0001
 
     m = []
@@ -65,7 +65,6 @@ def test_1d():
         plt.plot(m)
         plt.plot(r)
         plt.plot(r2)
-
 
 
 if __name__ == "__main__":
