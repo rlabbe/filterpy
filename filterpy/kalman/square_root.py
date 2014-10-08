@@ -171,21 +171,6 @@ class SquareRootKalmanFilter(object):
 
 
 
-# transition_covariance = Q
-# transition_matrix = F
-# predicted_state_covariance, 2current_state_covariance = P
-# predicted_state_mean = x
-# current_state_mean = x
-# transition_offset = B*u
-# kalman_gain = K
-# predicted_observation_covariance = S
-# observation_matrix = H
-# observation_covariance = R
-# corrected_state_mean = x
-# corrected_state_covariance = P
-# predicted_observation_mean = H*x
-# observation = Z
-
     def predict(self, u=0):
         """ Predict next position.
         Parameters
@@ -201,83 +186,6 @@ class SquareRootKalmanFilter(object):
         # P = FPF' + Q
         T,P2 = qr(np.hstack([dot(self._F, self._P1_2), self._Q1_2]).T)
         self._P1_2 = P2[:self.dim_x, :self.dim_x].T
-
-
-    def batch_filter(self, Zs, Rs=None, update_first=False):
-        """ Batch processes a sequences of measurements.
-
-        Parameters
-        ----------
-        Zs : list-like
-            list of measurements at each time step `self.dt` Missing
-            measurements must be represented by 'None'.
-
-        Rs : list-like, optional
-            optional list of values to use for the measurement error
-            covariance; a value of None in any position will cause the filter
-            to use `self.R` for that time step.
-
-        update_first : bool, optional,
-            controls whether the order of operations is update followed by
-            predict, or predict followed by update. Default is predict->update.
-
-        Returns
-        -------
-
-        means: np.array((n,dim_x,1))
-            array of the state for each time step. Each entry is an np.array.
-            In other words `means[k,:]` is the state at step `k`.
-
-        covariance: np.array((n,dim_x,dim_x))
-            array of the covariances for each time step. In other words
-            `covariance[k,:,:]` is the covariance at step `k`.
-        """
-
-        n = np.size(Zs,0)
-        if Rs is None:
-            Rs = [None]*n
-
-        # mean estimates from Kalman Filter
-        means = zeros((n,self.dim_x,1))
-
-        # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x,self.dim_x))
-
-        if update_first:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
-                self.update(z,r)
-                means[i,:] = self._x
-                covariances[i,:,:] = self._P
-                self.predict()
-        else:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
-                self.predict()
-                self.update(z,r)
-
-                means[i,:] = self._x
-                covariances[i,:,:] = self._P
-
-        return (means, covariances)
-
-
-    def get_prediction(self, u=0):
-        """ Predicts the next state of the filter and returns it. Does not
-        alter the state of the filter.
-
-        Parameters
-        ----------
-        u : np.array
-            optional control input
-
-        Returns
-        -------
-        (x, P)
-            State vector and covariance array of the prediction.
-        """
-
-        x = dot(self._F, self._x) + dot(self._B, u)
-        P = dot3(self._F, self._P, self._F.T) + self.Q
-        return (x, P)
 
 
     def residual_of(self, z):
