@@ -124,7 +124,7 @@ of the Kalman filtering literature. First is Paul Zarchan's
 far the best Kalman filtering book out there if you are interested in
 practical applications more than writing a thesis. The second book I use
 is Eli Brookner's 'Tracking and Kalman Filtering Made Easy'. This is an
-astonishing good bood; its first chapter is actually readable by the
+astonishingly good book; its first chapter is actually readable by the
 layperson! Brookner starts from the g-h filter, and shows how all other
 filters - the Kalman filter, least squares, fading memory, etc., all
 derive from the g-h filter. It greatly simplifies many aspects of
