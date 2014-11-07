@@ -14,13 +14,13 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import numpy.linalg as linalg
+from numpy.linalg import inv
 from numpy import dot, zeros
 from filterpy.common import dot3
 
 
-            
-def rks_smoother(Xs, Ps, F, Q):
+
+def rks_smoother(Xs, Ps, F, Q, Xs_p=None, Ps_p=None):
     """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
     means and covariances computed by a Kalman filter. The usual input
     would come from the output of `KalmanFilter.batch_filter()`.
@@ -52,23 +52,44 @@ def rks_smoother(Xs, Ps, F, Q):
 
     'C' : numpy.ndarray
         smoother gain at each step
-    
+
+
+    Example
+    -------
+
+    zs = [t + random.randn()*4 for t in range (40)]
+
+    (mu, cov, _, _) = kalman.batch_filter(zs)
+    (X, P, C) = rks_smoother(mu, cov, fk.F, fk.Q)
+
 
     """
-    X = Xs.copy()
-    P = Ps.copy()
     assert len(X) == len(P)
-
     n, dim_x, _ = X.shape
 
     # smoother gain
     C = zeros((n,dim_x,dim_x))
 
-    for k in range(n-2,-1,-1):
-        P_pred = dot3(F, P[k], F.T) + Q
+    X = Xs.copy()
+    P = Ps.copy()
 
-        C[k] = dot3(P[k], F.T, linalg.inv(P_pred))
-        X[k] = X[k] + dot (C[k], X[k+1] - dot(F, X[k]))
-        P[k] = P[k] + dot3 (C[k], P[k+1] - P_pred, C[k].T)
+    if Xs_p is not None:
+        assert Ps_p is not None
+
+        for k in range(n-2,-1,-1):
+
+            C[k] = dot3(P[k], F.T, inv(Ps_p[k]))
+            X[k] = X[k] + dot (C[k], Xs_k[k] - dot(F, X[k]))
+            P[k] = P[k] + dot3 (C[k], P[k+1] - Ps_p[k], C[k].T)
+
+
+    else:
+
+        for k in range(n-2,-1,-1):
+            P_pred = dot3(F, P[k], F.T) + Q
+
+            C[k] = dot3(P[k], F.T, inv(P_pred))
+            X[k] = X[k] + dot (C[k], X[k+1] - dot(F, X[k]))
+            P[k] = P[k] + dot3 (C[k], P[k+1] - P_pred, C[k].T)
 
     return (X,P,C)
