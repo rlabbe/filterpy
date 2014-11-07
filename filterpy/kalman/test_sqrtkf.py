@@ -80,7 +80,7 @@ def test_noisy_1d():
     # give slightly different P so result is slightly different
     f.x = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
-    m,c = f.batch_filter(zs,update_first=False)
+    m,c,_,_ = f.batch_filter(zs,update_first=False)
 
     # plot data
     if DO_PLOT:
