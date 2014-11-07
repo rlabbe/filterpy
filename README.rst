@@ -69,7 +69,7 @@ broken up into subdirectories: gh, kalman, memory, leastsq, and so on.
 Each subdirectory contains python files relating to that form of filter.
 The functions and methods contain pretty good docstrings on use.
 
-My book http://rlabbe.github.io/Kalman-and-Bayesian-Filters-in-Python/
+My book https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/
 uses this library, and is the place to go if you are trying to learn
 about Kalman filtering. These two are not exactly in sync - my normal
 development cycle is to add files here, test them, figure out how to
