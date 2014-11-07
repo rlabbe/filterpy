@@ -189,12 +189,22 @@ class KalmanFilter(object):
         -------
 
         means: np.array((n,dim_x,1))
-            array of the state for each time step. Each entry is an np.array.
-            In other words `means[k,:]` is the state at step `k`.
+            array of the state for each time step after the update. Each entry
+            is an np.array. In other words `means[k,:]` is the state at step
+            `k`.
 
         covariance: np.array((n,dim_x,dim_x))
-            array of the covariances for each time step. In other words
-            `covariance[k,:,:]` is the covariance at step `k`.
+            array of the covariances for each time step after the update.
+            In other words `covariance[k,:,:]` is the covariance at step `k`.
+
+        means_predictions: np.array((n,dim_x,1))
+            array of the state for each time step after the predictions. Each
+            entry is an np.array. In other words `means[k,:]` is the state at
+            step `k`.
+
+        covariance_predictions: np.array((n,dim_x,dim_x))
+            array of the covariances for each time step after the prediction.
+            In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
         n = np.size(Zs,0)
@@ -202,26 +212,33 @@ class KalmanFilter(object):
             Rs = [None]*n
 
         # mean estimates from Kalman Filter
-        means = zeros((n,self.dim_x,1))
+        means   = zeros((n,self.dim_x,1))
+        means_p = zeros((n,self.dim_x,1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x,self.dim_x))
+        covariances   = zeros((n,self.dim_x,self.dim_x))
+        covariances_p = zeros((n,self.dim_x,self.dim_x))
 
         if update_first:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.update(z,r)
-                means[i,:] = self._x
+                means[i,:]         = self._x
                 covariances[i,:,:] = self._P
+
                 self.predict()
+                means_p[i,:]         = self._x
+                covariances_p[i,:,:] = self._P
         else:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.predict()
-                self.update(z,r)
+                means_p[i,:]         = self._x
+                covariances_p[i,:,:] = self._P
 
-                means[i,:] = self._x
+                self.update(z,r)
+                means[i,:]         = self._x
                 covariances[i,:,:] = self._P
 
-        return (means, covariances)
+        return (means, covariances, means_p, covariances_p)
 
 
     def get_prediction(self, u=0):
