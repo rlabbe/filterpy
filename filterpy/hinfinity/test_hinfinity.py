@@ -23,7 +23,7 @@ def test_Hinfinity():
                  [0., 1.]])
 
     f.H = array([[0., 1.]])
-    f.x = array([[0., 0.]]).T
+    f.X = array([[0., 0.]]).T
     #f.G = array([[dt**2 / 2, dt]]).T
 
     f.P = 0.01
@@ -38,9 +38,9 @@ def test_Hinfinity():
 
     for i in range(1,40):
         f.update (5)
-        print(f.x.T)
-        xs.append(f.x[0,0])
-        vs.append(f.x[1,0])
+        print(f.X.T)
+        xs.append(f.X[0,0])
+        vs.append(f.X[1,0])
         f.predict()
 
     plt.subplot(211)

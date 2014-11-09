@@ -21,3 +21,5 @@ from .square_root import *
 from .information_filter import *
 from .rks_smoother import *
 from .UKF import *
+from .fading_memory import *
+

@@ -53,7 +53,7 @@ class InformationFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._x = zeros((dim_x,1)) # state
+        self._X = zeros((dim_x,1)) # state
         self._P_inv = eye(dim_x)   # uncertainty covariance
         self._Q = eye(dim_x)       # process uncertainty
         self._B = 0                # control transition matrix
@@ -101,15 +101,14 @@ class InformationFilter(object):
         H = self._H
         H_T = H.T
         P_inv = self._P_inv
-        x = self._x
 
         if self._no_information:
-            self._x = dot(P_inv, x) + dot3(H_T, R_inv, Z)
+            self._X = dot(P_inv, self._X) + dot3(H_T, R_inv, Z)
             self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
         else:       # y = Z - Hx
             # error (residual) between measurement and prediction
-            self._y = Z - dot(H, x)
+            self._y = Z - dot(H, self._X)
 
             # S = HPH' + R
             # project system uncertainty into measurement space
@@ -118,7 +117,7 @@ class InformationFilter(object):
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
-            self._x = x + dot(self._K, self._y)
+            self._X += dot(self._K, self._y)
             self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
 
@@ -139,25 +138,23 @@ class InformationFilter(object):
             invertable = True
             if self._no_information:
                 try:
-                    self._x = dot(inv(self._P_inv), self._x)
+                    self._X = dot(inv(self._P_inv), self._X)
                 except:
-                    self._x = dot(0, self._x)
+                    self._X = dot(0, self._X)
                 self._no_information = False
         except:
             invertable = False
             self._no_information  = True
 
         if invertable:
-            self._x = dot(self._F, self.x) + dot(self._B, u)
+            self._X = dot(self._F, self._X) + dot(self._B, u)
             self._P_inv = inv(AI + self._Q)
         else:
             I_PF = self._I - dot(self._P_inv,self._F_inv)
             FTI = inv(self._F.T)
-            FTIX = dot(FTI, self._x)
-            print('Q=', self._Q)
-            print('A=', A)
+            FTIX = dot(FTI, self._X)
             AQI = inv(A + self._Q)
-            self._x = dot(FTI, dot3(I_PF, AQI, FTIX))
+            self._X = dot(FTI, dot3(I_PF, AQI, FTIX))
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -208,7 +205,7 @@ class InformationFilter(object):
         if update_first:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.update(z,r)
-                means[i,:] = self._x
+                means[i,:] = self._X
                 covariances[i,:,:] = self._P
                 self.predict()
         else:
@@ -216,7 +213,7 @@ class InformationFilter(object):
                 self.predict()
                 self.update(z,r)
 
-                means[i,:] = self._x
+                means[i,:] = self._X
                 covariances[i,:,:] = self._P
 
         return (means, covariances)
@@ -238,7 +235,7 @@ class InformationFilter(object):
         """
         raise "Not implemented yet"
 
-        x = dot(self._F, self._x) + dot(self._B, u)
+        x = dot(self._F, self._X) + dot(self._B, u)
         P = dot3(self._F, self._P, self._F.T) + self.Q
         return (x, P)
 
@@ -248,7 +245,7 @@ class InformationFilter(object):
         the state of the filter.
         """
         raise "Not implemented yet"
-        return z - dot(self._H, self._x)
+        return z - dot(self._H, self._X)
 
 
     def measurement_of_state(self, x):
@@ -332,13 +329,21 @@ class InformationFilter(object):
 
 
     @property
+    def X(self):
+        return self._X
+
+
+    @X.setter
+    def X(self, value):
+        self._X = setter(value, self.dim_x, 1)
+
+    @property
     def x(self):
-        return self._x
-
-
+        assert False
     @x.setter
     def x(self, value):
-        self._x = setter(value, self.dim_x, 1)
+        assert False
+
 
     @property
     def K(self):

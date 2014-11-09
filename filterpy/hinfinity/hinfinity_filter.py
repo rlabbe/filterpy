@@ -47,7 +47,7 @@ class HInfinityFilter(object):
         self.dim_u = dim_u
         self.gamma = gamma
 
-        self.x = zeros((dim_x,1)) # state
+        self._X = zeros((dim_x,1)) # state
 
         self._G = 0                # control transistion matrx
         self._F = 0                # state transition matrix
@@ -88,7 +88,7 @@ class HInfinityFilter(object):
         Q = self._Q
         H = self._H
         P = self._P
-        x = self._x
+        x = self._X
         V_inv = self._V_inv
         F = self._F
         W = self._W
@@ -107,7 +107,7 @@ class HInfinityFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x = self._x + dot(K, self.residual)
+        self._X += dot(K, self.residual)
         self._P = dot3(F, PL, F.T) + W
 
         # force P to be symmetric
@@ -133,7 +133,7 @@ class HInfinityFilter(object):
         """
 
         # x = Fx + Gu
-        self._x = dot(self._F, self._x) + dot(self._G, u)
+        self._X = dot(self._F, self._X) + dot(self._G, u)
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -208,15 +208,14 @@ class HInfinityFilter(object):
             State vecto of the prediction.
         """
 
-        x = dot(self._F, self._x) + dot(self._G, u)
-        return x
+        return dot(self._F, self._X) + dot(self._G, u)
 
 
     def residual_of(self, z):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._x)
+        return z - dot(self._H, self._X)
 
 
     def measurement_of_state(self, x):
@@ -236,14 +235,23 @@ class HInfinityFilter(object):
 
 
     @property
+    def X(self):
+        return self._X
+
+
+    @X.setter
+    def X(self, value):
+        self._X = setter(value, self.dim_x, 1)
+
+
+    @property
     def x(self):
-        return self._x
+        assert False
 
 
     @x.setter
     def x(self, value):
-        self._x = setter(value, self.dim_x, 1)
-
+        assert False
 
     @property
     def G(self):
