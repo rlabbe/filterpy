@@ -1,0 +1,7 @@
+Version 0.0.3
+=============
+
+* Reverted the name change of .x to .X in the various classes. I have no idea what I was thinking - x is a vector, so it should be lower case.
+
+* Moved some code to a new /examples directory to reduce clutter. It is worth noting that the code in there does not run now - it is based on the old procedural unscented KF code, not the new OO based code. However, the test_UKF.py code basically implements this example as a test using the new code. This is more a change for the future.
+
