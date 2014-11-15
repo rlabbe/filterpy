@@ -66,7 +66,7 @@ class SquareRootKalmanFilter(object):
         You will have to assign reasonable values to all of these before
         running the filter. All must have dtype of float
 
-        X : ndarray (dim_x, 1), default = [0,0,0...0]
+        x : ndarray (dim_x, 1), default = [0,0,0...0]
             state of the filter
 
         P : ndarray (dim_x, dim_x), default identity matrix
@@ -103,7 +103,7 @@ class SquareRootKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._X = zeros((dim_x,1)) # state
+        self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)      # uncertainty covariance
         self._P1_2 = eye(dim_x)      # sqrt uncertainty covariance
         self._Q = eye(dim_x)      # sqrt process uncertainty
@@ -162,11 +162,11 @@ class SquareRootKalmanFilter(object):
 
         # y = Z - Hx
         # error (residual) between measurement and prediction
-        self._y = Z - dot(self._H, self._X)
+        self._y = Z - dot(self._H, self._x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._X += dot3(self._K, pinv(N), self._y)
+        self._x += dot3(self._K, pinv(N), self._y)
         self._P1_2 = S[dim_z:, dim_z:].T
 
 
@@ -181,7 +181,7 @@ class SquareRootKalmanFilter(object):
         """
 
         # x = Fx + Bu
-        self._X = dot(self._F, self._X) + dot(self._B, u)
+        self._x = dot(self._F, self.x) + dot(self._B, u)
 
         # P = FPF' + Q
         T,P2 = qr(np.hstack([dot(self._F, self._P1_2), self._Q1_2]).T)
@@ -192,7 +192,7 @@ class SquareRootKalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._X)
+        return z - dot(self._H, self._x)
 
 
     def measurement_of_state(self, x):
@@ -296,23 +296,14 @@ class SquareRootKalmanFilter(object):
 
 
     @property
-    def X(self):
-        """ filter state vector."""
-        return self._X
-
-
-    @X.setter
-    def X(self, value):
-        self._X = setter(value, self.dim_x, 1)
-
-
-    @property
     def x(self):
-        assert False
+        """ filter state vector."""
+        return self._x
+
+
     @x.setter
     def x(self, value):
-        assert False
-
+        self._x = setter(value, self.dim_x, 1)
 
     @property
     def K(self):

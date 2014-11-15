@@ -20,10 +20,10 @@ def test_1d_0P():
     f = KalmanFilter (dim_x=2, dim_z=1)
     inf = InformationFilter (dim_x=2, dim_z=1)
 
-    f.X = np.array([[2.],
+    f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
-    inf.X = f.X.copy()
+    inf.x = f.x.copy()
     f.F = (np.array([[1.,1.],
                      [0.,1.]]))    # state transition matrix
 
@@ -57,11 +57,11 @@ def test_1d_0P():
         inf.update(z)
 
         # save data
-        r.append (f.X[0,0])
-        r2.append (inf.X[0,0])
+        r.append (f.x[0,0])
+        r2.append (inf.x[0,0])
         m.append(z)
 
-        #assert abs(f.X[0,0] - inf.X[0,0]) < 1.e-12
+        #assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12
 
     if DO_PLOT:
         plt.plot(m)
@@ -74,10 +74,10 @@ def test_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)
     inf = InformationFilter (dim_x=2, dim_z=1)
 
-    f.X = np.array([[2.],
+    f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
-    inf.X = f.X.copy()
+    inf.x = f.x.copy()
     f.F = (np.array([[1.,1.],
                      [0.,1.]]))    # state transition matrix
 
@@ -108,11 +108,11 @@ def test_1d():
         inf.predict()
 
         # save data
-        r.append (f.X[0,0])
-        r2.append (inf.X[0,0])
+        r.append (f.x[0,0])
+        r2.append (inf.x[0,0])
         m.append(z)
 
-        assert abs(f.X[0,0] - inf.X[0,0]) < 1.e-12
+        assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12
 
     if DO_PLOT:
         plt.plot(m)

@@ -64,8 +64,8 @@ def rks_smoother(Xs, Ps, F, Q, Xs_p=None, Ps_p=None):
 
 
     """
-    assert len(Xs) == len(Ps)
-    n, dim_x, _ = Xs.shape
+    assert len(X) == len(P)
+    n, dim_x, _ = X.shape
 
     # smoother gain
     C = zeros((n,dim_x,dim_x))

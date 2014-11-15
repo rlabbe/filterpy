@@ -50,7 +50,7 @@ class KalmanFilter(object):
         You will have to assign reasonable values to all of these before
         running the filter. All must have dtype of float
 
-        X : ndarray (dim_x, 1), default = [0,0,0...0]
+        x : ndarray (dim_x, 1), default = [0,0,0...0]
             state of the filter
 
         P : ndarray (dim_x, dim_x), default identity matrix
@@ -80,7 +80,7 @@ class KalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._X = zeros((dim_x,1)) # state
+        self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
         self._Q = eye(dim_x)       # process uncertainty
         self._B = 0                # control transition matrix
@@ -125,10 +125,11 @@ class KalmanFilter(object):
         # rename for readability and a tiny extra bit of speed
         H = self._H
         P = self._P
+        x = self._x
 
         # y = Z - Hx
         # error (residual) between measurement and prediction
-        self._y = Z - dot(H, self._X)
+        self._y = Z - dot(H, x)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -140,7 +141,7 @@ class KalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._X += dot(K, self._y)
+        self._x = x + dot(K, self._y)
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(K, H)
@@ -160,7 +161,7 @@ class KalmanFilter(object):
         """
 
         # x = Fx + Bu
-        self._X = dot(self._F, self._X) + dot(self._B, u)
+        self._x = dot(self._F, self.x) + dot(self._B, u)
 
         # P = FPF' + Q
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
@@ -221,20 +222,20 @@ class KalmanFilter(object):
         if update_first:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.update(z,r)
-                means[i,:]         = self._X
+                means[i,:]         = self._x
                 covariances[i,:,:] = self._P
 
                 self.predict()
-                means_p[i,:]         = self._X
+                means_p[i,:]         = self._x
                 covariances_p[i,:,:] = self._P
         else:
             for i,(z,r) in enumerate(zip(Zs,Rs)):
                 self.predict()
-                means_p[i,:]         = self._X
+                means_p[i,:]         = self._x
                 covariances_p[i,:,:] = self._P
 
                 self.update(z,r)
-                means[i,:]         = self._X
+                means[i,:]         = self._x
                 covariances[i,:,:] = self._P
 
         return (means, covariances, means_p, covariances_p)
@@ -255,7 +256,7 @@ class KalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self._F, self._X) + dot(self._B, u)
+        x = dot(self._F, self._x) + dot(self._B, u)
         P = dot3(self._F, self._P, self._F.T) + self.Q
         return (x, P)
 
@@ -264,10 +265,10 @@ class KalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._X)
+        return z - dot(self._H, self._x)
 
 
-    def measurement_of_state(self, X):
+    def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
         Parameters
@@ -280,7 +281,7 @@ class KalmanFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-        return dot(self._H, X)
+        return dot(self._H, x)
 
 
     @property
@@ -348,21 +349,14 @@ class KalmanFilter(object):
 
 
     @property
-    def X(self):
-        """ filter state vector."""
-        return self._X
-
-    @X.setter
-    def X(self, value):
-        self._X = setter(value, self.dim_x, 1)
-
-
-    @property
     def x(self):
-        assert False
+        """ filter state vector."""
+        return self._x
+
+
     @x.setter
     def x(self, value):
-        assert False
+        self._x = setter(value, self.dim_x, 1)
 
     @property
     def K(self):
@@ -405,7 +399,7 @@ class ExtendedKalmanFilter(object):
         self.dim_x = dim_x
         self.dim_z = dim_z
 
-        self._X = zeros((dim_x,1)) # state
+        self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
         self._B = 0                # control transition matrix
         self._F = 0                # state transition matrix
@@ -445,7 +439,7 @@ class ExtendedKalmanFilter(object):
         P = self._P
         Q = self._Q
         R = self._R
-        x = self._X
+        x = self._x
 
         H = HJabobian(x)
 
@@ -457,7 +451,7 @@ class ExtendedKalmanFilter(object):
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        self._X = x + dot(K, (z - Hx(x)))
+        self._x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
@@ -484,18 +478,17 @@ class ExtendedKalmanFilter(object):
 
         P = self._P
         R = self._R
-        x = self._X
+        x = self._x
 
         H = HJabobian(x)
 
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        self._X = x + dot(K, (z - Hx(x)))
+        self.x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
-
 
 
     def predict_x(self, lin_x):
@@ -503,7 +496,6 @@ class ExtendedKalmanFilter(object):
         compute the next state yourself, override this function."""
 
         self._X = dot(self._F, self._X) + dot(self._B, u)
-
 
     def predict(self, lin_x):
         """ Predict next position.
@@ -513,6 +505,7 @@ class ExtendedKalmanFilter(object):
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
         """
+
         self.predict_x(lin_x)
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
 
@@ -554,6 +547,7 @@ class ExtendedKalmanFilter(object):
     def H(self):
         return self._H
 
+
     @H.setter
     def H(self, value):
         self._H = setter(value, self.dim_z, self.dim_x)
@@ -581,8 +575,8 @@ class ExtendedKalmanFilter(object):
 
 
     @property
-    def X(self):
-        return self._X
+    def x(self):
+        return self._x
 
     @property
     def K(self):

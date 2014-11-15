@@ -19,7 +19,7 @@ DO_PLOT = False
 def test_noisy_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)
 
-    f.X = np.array([[2.],
+    f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
     f.F = np.array([[1.,1.],
@@ -44,14 +44,14 @@ def test_noisy_1d():
         f.predict()
 
         # save data
-        results.append (f.X[0,0])
+        results.append (f.x[0,0])
         measurements.append(z)
 
 
     # now do a batch run with the stored z values so we can test that
     # it is working the same as the recursive implementation.
     # give slightly different P so result is slightly different
-    f.X = np.array([[2.,0]]).T
+    f.x = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
     m,c,_,_ = f.batch_filter(zs,update_first=False)
 

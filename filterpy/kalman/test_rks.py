@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     fk = KalmanFilter(dim_x=2, dim_z=1)
 
-    fk.X = np.array([[-1.],
+    fk.x = np.array([[-1.],
                     [1.]])         # initial state (location and velocity)
 
     fk.F = np.array([[1.,1.],
@@ -33,12 +33,12 @@ if __name__ == '__main__':
 
 
     zs = [t + random.randn()*4 for t in range (40)]
-
-    mu, cov,_,_ = fk.batch_filter (zs)
+    
+    mu, cov, _, _ = fk.batch_filter (zs)
     mus = [x[0,0] for x in mu]
-
+    
     M,P,C = rks_smoother(mu, cov, fk.F, fk.Q)
-
+        
 
 
     # plot data

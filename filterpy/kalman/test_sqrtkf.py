@@ -19,7 +19,7 @@ DO_PLOT = False
 def test_noisy_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)
 
-    f.X = np.array([[2.],
+    f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
     f.F = np.array([[1.,1.],
@@ -32,7 +32,7 @@ def test_noisy_1d():
 
     fsq = SquareRootKalmanFilter (dim_x=2, dim_z=1)
 
-    fsq.X = np.array([[2.],
+    fsq.x = np.array([[2.],
                       [0.]])     # initial state (location and velocity)
 
     fsq.F = np.array([[1.,1.],
@@ -59,11 +59,11 @@ def test_noisy_1d():
         fsq.update(z)
         fsq.predict()
 
-        assert abs(f.X[0,0] - fsq.X[0,0]) < 1.e-12
-        assert abs(f.X[1,0] - fsq.X[1,0]) < 1.e-12
+        assert abs(f.x[0,0] - fsq.x[0,0]) < 1.e-12
+        assert abs(f.x[1,0] - fsq.x[1,0]) < 1.e-12
 
         # save data
-        results.append (f.X[0,0])
+        results.append (f.x[0,0])
         measurements.append(z)
 
 
@@ -78,7 +78,7 @@ def test_noisy_1d():
     # now do a batch run with the stored z values so we can test that
     # it is working the same as the recursive implementation.
     # give slightly different P so result is slightly different
-    f.X = np.array([[2.,0]]).T
+    f.x = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
     m,c,_,_ = f.batch_filter(zs,update_first=False)
 

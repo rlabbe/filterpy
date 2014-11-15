@@ -13,12 +13,10 @@ from __future__ import (absolute_import, division, print_function,
 
 
 import matplotlib.pyplot as plt
-
 import numpy.random as random
 from numpy.random import randn
 import math
 import numpy as np
-#import stats
 from filterpy.kalman import UKF
 
 
