@@ -19,7 +19,7 @@ from __future__ import (absolute_import, division, print_function,
 from .kalman_filter import *
 from .square_root import *
 from .information_filter import *
-from .rks_smoother import *
+from .rts_smoother import *
 from .UKF import *
 from .fading_memory import *
 

@@ -13,7 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from numpy import random
 import matplotlib.pyplot as plt
-from filterpy.kalman import KalmanFilter, rks_smoother
+from filterpy.kalman import KalmanFilter, rts_smoother
 
 
 if __name__ == '__main__':
@@ -33,12 +33,12 @@ if __name__ == '__main__':
 
 
     zs = [t + random.randn()*4 for t in range (40)]
-    
+
     mu, cov, _, _ = fk.batch_filter (zs)
     mus = [x[0,0] for x in mu]
-    
-    M,P,C = rks_smoother(mu, cov, fk.F, fk.Q)
-        
+
+    M,P,C = rts_smoother(mu, cov, fk.F, fk.Q)
+
 
 
     # plot data
