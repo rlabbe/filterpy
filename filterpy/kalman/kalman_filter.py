@@ -457,7 +457,7 @@ class ExtendedKalmanFilter(object):
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
-    def update(self, z, HJabobian, Hx):
+    def update(self, z, HJabobian, Hx, R=None):
         """ Performs the update innovation of the extended Kalman filter.
 
         Parameters
@@ -477,7 +477,8 @@ class ExtendedKalmanFilter(object):
         """
 
         P = self._P
-        R = self._R
+        if R is None:
+            R = self._R
         x = self._x
 
         H = HJabobian(x)
@@ -485,19 +486,22 @@ class ExtendedKalmanFilter(object):
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        self.x = x + dot(K, (z - Hx(x)))
+        self._x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
-    def predict_x(self, lin_x):
-        """ predicts the next state of X. If, as is likely, you need to
-        compute the next state yourself, override this function."""
+    def predict_x(self, u=0):
+        """ predicts the next state of X. If you need to
+        compute the next state yourself, override this function. You would
+        need to do this, for example, if the usual Taylor expansion to
+        generate F is not providing accurate results for you. """
 
-        self._X = dot(self._F, self._X) + dot(self._B, u)
+        self._x = dot(self._F, self._x) + dot(self._B, u)
 
-    def predict(self, lin_x):
+
+    def predict(self, u=0):
         """ Predict next position.
         Parameters
         ----------
@@ -506,7 +510,7 @@ class ExtendedKalmanFilter(object):
             to create the control input into the system.
         """
 
-        self.predict_x(lin_x)
+        self.predict_x()
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
 
 
@@ -577,6 +581,10 @@ class ExtendedKalmanFilter(object):
     @property
     def x(self):
         return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = setter(value, self.dim_x, 1)
 
     @property
     def K(self):
