@@ -1,5 +1,5 @@
-Kalman filters and other optimal and non-optimal estimation filters in Python.
-------------------------------------------------------------------------------
+FilterPy - Kalman filters and other optimal and non-optimal estimation filters in Python.
+-----------------------------------------------------------------------------------------
 
 This library provides Kalman filtering and various related optimal and
 non-optimal filtering software written in Python. It contains Kalman
@@ -21,7 +21,7 @@ Zarchan present the written out form, not the linear algebra form. It is
 hard for me to choose which presentation is 'clearer' - it depends on
 the audience. In that case I usually opt for the faster implementation.
 
-I use numpy and scipy for all of the computations. I have experimented
+I use NumPy and SciPy for all of the computations. I have experimented
 with Numba, Continuum Analytics just in time compiler, and it yields
 impressive speed ups with minimal costs, but I am not convinced that I
 want to add that requirement to my project. It is still on my list of
@@ -81,7 +81,7 @@ in the book.
 Requirements
 ------------
 
-numpy and scipy Python 2 or 3 matplotlib
+NumPy and SciPy Python 2 or 3 matplotlib
 
 I haven't extensively tested backwards compatibility - I use the
 Anaconda distribution, and so I am on Python 3.4 and 2.7.5, along with

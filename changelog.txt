@@ -1,3 +1,9 @@
+Version 0.0.4
+=============
+* Tests and fixes for the ExtendedKalmanFilter
+* Minor name changes for the methods that compute Q in common
+
+
 Version 0.0.3
 =============
 
