@@ -13,8 +13,8 @@ from numpy import array, zeros, vstack, eye
 from scipy.linalg import expm, inv
 
 
-def Q_DWPA(dim, dt=1., var=1.):
-    """ Returns the Q matrix for the Discrete Wiener Process Acceleration
+def Q_discrete_white_noise(dim, dt=1., var=1.):
+    """ Returns the Q matrix for the Discrete Constant White Noise
     Model. dim may be either 2 or 3, dt is the time step, and sigma is the
     variance in the noise.
 
@@ -41,6 +41,35 @@ def Q_DWPA(dim, dt=1., var=1.):
                    [ .5*dt**2,       dt,        1]], dtype=float)
 
     return Q * var
+
+def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
+    """ Returns the Q matrix for the Discretized Continuous White Noise
+    Model. dim may be either 2 or 3, dt is the time step, and sigma is the
+    variance in the noise.
+
+    Paramaeters
+    -----------
+    dim : int (2 or 3)
+        dimension for Q, where the final dimension is (dim x dim)
+
+    dt : float, default=1.0
+        time step in whatever units your filter is using for time. i.e. the
+        amount of time between innovations
+
+    spectral_density : float, default=1.0
+        spectral density for the continuous process
+    """
+
+    assert dim == 2 or dim == 3
+    if dim == 2:
+        Q = array([[(dt**4)/3, (dt**2)/2],
+                   [(dt**2)/2,    dt]])
+    else:
+        Q = array([[(dt**5)/20, (dt**4)/8, (dt**3)/6],
+                   [ (dt**4)/8, (dt**3)/3, (dt**2)/2],
+                   [ (dt**3)/6, (dt**2)/2,        dt]], dtype=float)
+
+    return Q * spectral_density
 
 
 def van_loan_discretization(F, G, dt):
