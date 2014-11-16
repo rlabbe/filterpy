@@ -17,4 +17,3 @@ from filterpy.kalman import ExtendedKalmanFilter
 
 rf = ExtendedKalmanFilter(dim_x=3, dim_z=1)
 
-rf.
