@@ -13,7 +13,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function, 
                         unicode_literals)
 
-__all__=["fading_memory"]
+#__all__=["fading_memory"]
 
 from .fading_memory import *
 

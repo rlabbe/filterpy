@@ -62,7 +62,7 @@ def test_noisy_1d():
         p4, = plt.plot(m[:,0], 'm')
         p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
         plt.legend([p1,p2, p3, p4],
-                   ["noisy measurement", "KF output", "ideal", "batch"], 4)
+                   ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
 
 
         plt.show()

@@ -99,7 +99,7 @@ class KalmanFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def update(self, Z, R=None):
+    def update(self, Z, R=None, H=None):
         """
         Add a new measurement (Z) to the kalman filter. If Z is None, nothing
         is changed.
@@ -123,7 +123,8 @@ class KalmanFilter(object):
             R = eye(self.dim_z) * R
 
         # rename for readability and a tiny extra bit of speed
-        H = self._H
+        if H is None:
+            H = self._H
         P = self._P
         x = self._x
 

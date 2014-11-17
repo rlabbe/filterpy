@@ -34,7 +34,6 @@ def dotest_2d_data():
 
 
 
-
 def dotest_1d(order, beta):
     fm = FadingMemoryFilter(x0=0, dt=1, order=order, beta=beta)
 
@@ -70,6 +69,8 @@ def test_ghk_formulation():
         f2.update(z)
 
         assert abs(f1.x-f2.x[0]) < 1.e-80
+
+
 
 if __name__ == "__main__":
     test_ghk_formulation()
