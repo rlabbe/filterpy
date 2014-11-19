@@ -200,7 +200,7 @@ class FixedLagSmoother(object):
         
         
 
-    def smooth_batch(self, Zs, N, us=None):
+    def smooth_batch(self, zs, N, us=None):
         """ batch smooths the set of measurements using a fixed lag smoother.
         I consider this function a somewhat pedalogical exercise; why would
         you not use a RTS smoother if you are able to batch process your data?
@@ -213,7 +213,7 @@ class FixedLagSmoother(object):
         Parameters
         ----------
         
-        Zs : ndarray of measurements
+        zs : ndarray of measurements
         
             iterable list (usually ndarray, but whatever works for you) of
             measurements that you want to smooth, one per time step.
@@ -244,10 +244,10 @@ class FixedLagSmoother(object):
         Q = self.Q
         B = self.B
 
-        xSmooth = zeros((len(Zs), self.dim_x, 1))
-        xhat    = zeros((len(Zs), self.dim_x, 1))
+        xSmooth = zeros((len(zs), self.dim_x, 1))
+        xhat    = zeros((len(zs), self.dim_x, 1))
 
-        for k, z in enumerate(Zs):
+        for k, z in enumerate(zs):
 
             # predict step of normal Kalman filter
             x_pre = dot(F, x)

@@ -74,14 +74,14 @@ class InformationFilter(object):
         self._no_information = False
 
 
-    def update(self, Z, R_inv=None):
+    def update(self, z, R_inv=None):
         """
-        Add a new measurement (Z) to the kalman filter. If Z is None, nothing
+        Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
         Parameters
         ----------
-        Z : np.array
+        z : np.array
             measurement for this update.
 
         R : np.array, scalar, or None
@@ -89,7 +89,7 @@ class InformationFilter(object):
             one call, otherwise  self.R will be used.
         """
 
-        if Z is None:
+        if z is None:
             return
 
         if R_inv is None:
@@ -104,12 +104,12 @@ class InformationFilter(object):
         x = self._x
 
         if self._no_information:
-            self._x = dot(P_inv, x) + dot3(H_T, R_inv, Z)
+            self._x = dot(P_inv, x) + dot3(H_T, R_inv, z)
             self._P_inv = P_inv + dot3(H_T, R_inv, H)
 
-        else:       # y = Z - Hx
+        else:       # y = z - Hx
             # error (residual) between measurement and prediction
-            self._y = Z - dot(H, x)
+            self._y = z - dot(H, x)
 
             # S = HPH' + R
             # project system uncertainty into measurement space
@@ -160,12 +160,12 @@ class InformationFilter(object):
             self._x = dot(FTI, dot3(I_PF, AQI, FTIX))
 
 
-    def batch_filter(self, Zs, Rs=None, update_first=False):
+    def batch_filter(self, zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
         Parameters
         ----------
-        Zs : list-like
+        zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
 
@@ -195,7 +195,7 @@ class InformationFilter(object):
         ''' this is a copy of the code from kalman_filter, it has not been
         turned into the informatio filter yet. DO NOT USE.'''
 
-        n = np.size(Zs,0)
+        n = np.size(zs,0)
         if Rs is None:
             Rs = [None]*n
 
@@ -206,13 +206,13 @@ class InformationFilter(object):
         covariances = zeros((n,self.dim_x,self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.update(z,r)
                 means[i,:] = self._x
                 covariances[i,:,:] = self._P
                 self.predict()
         else:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.predict()
                 self.update(z,r)
 

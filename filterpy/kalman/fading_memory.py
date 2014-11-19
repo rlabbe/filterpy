@@ -107,14 +107,14 @@ class FadingKalmanFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def update(self, Z, R=None):
+    def update(self, z, R=None):
         """
-        Add a new measurement (Z) to the kalman filter. If Z is None, nothing
+        Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
         Parameters
         ----------
-        Z : np.array
+        z : np.array
             measurement for this update.
 
         R : np.array, scalar, or None
@@ -122,7 +122,7 @@ class FadingKalmanFilter(object):
             one call, otherwise  self.R will be used.
         """
 
-        if Z is None:
+        if z is None:
             return
 
         if R is None:
@@ -135,9 +135,9 @@ class FadingKalmanFilter(object):
         P = self._P
         x = self._X
 
-        # y = Z - Hx
+        # y = z - Hx
         # error (residual) between measurement and prediction
-        self._y = Z - dot(H, x)
+        self._y = z - dot(H, x)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -175,12 +175,12 @@ class FadingKalmanFilter(object):
         self._P = self.alpha_sq*dot3(self._F, self._P, self._F.T) + self._Q
 
 
-    def batch_filter(self, Zs, Rs=None, update_first=False):
+    def batch_filter(self, zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
         Parameters
         ----------
-        Zs : list-like
+        zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
 
@@ -215,7 +215,7 @@ class FadingKalmanFilter(object):
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        n = np.size(Zs,0)
+        n = np.size(zs,0)
         if Rs is None:
             Rs = [None]*n
 
@@ -228,7 +228,7 @@ class FadingKalmanFilter(object):
         covariances_p = zeros((n,self.dim_x,self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.update(z,r)
                 means[i,:]         = self._X
                 covariances[i,:,:] = self._P
@@ -237,7 +237,7 @@ class FadingKalmanFilter(object):
                 means_p[i,:]         = self._X
                 covariances_p[i,:,:] = self._P
         else:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.predict()
                 means_p[i,:]         = self._X
                 covariances_p[i,:,:] = self._P

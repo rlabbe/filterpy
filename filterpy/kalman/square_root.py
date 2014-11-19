@@ -124,14 +124,14 @@ class SquareRootKalmanFilter(object):
         self._M = np.zeros((dim_z + dim_x, dim_z + dim_x))
 
 
-    def update(self, Z, R2=None):
+    def update(self, z, R2=None):
         """
-        Add a new measurement (Z) to the kalman filter. If Z is None, nothing
+        Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
         Parameters
         ----------
-        Z : np.array
+        z : np.array
             measurement for this update.
 
         R2 : np.array, scalar, or None
@@ -140,7 +140,7 @@ class SquareRootKalmanFilter(object):
             be used.
         """
 
-        if Z is None:
+        if z is None:
             return
 
         if R2 is None:
@@ -160,9 +160,9 @@ class SquareRootKalmanFilter(object):
         self._K = S[0:dim_z,  dim_z:].T
         N = S[0:dim_z, 0:dim_z].T
 
-        # y = Z - Hx
+        # y = z - Hx
         # error (residual) between measurement and prediction
-        self._y = Z - dot(self._H, self._x)
+        self._y = z - dot(self._H, self._x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
