@@ -1,3 +1,11 @@
+Version 0.0.5
+=============
+
+* Fixed and included the fixed lag smoother algorithm.
+* name change - all Z and Zs to z and zs. They are vectors, not matrices.
+* Optional H parameter in KalmanFilter.update() to override the H matrix. Useful if you have a variable number of measurements on each update.
+
+
 Version 0.0.4
 =============
 * Tests and fixes for the ExtendedKalmanFilter
