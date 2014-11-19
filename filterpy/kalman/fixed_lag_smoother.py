@@ -117,30 +117,29 @@ class FixedLagSmoother(object):
     def smooth(self, z, u=None):
         """ Smooths the measurement using a fixed lag smoother.
         
+        On return, self.xSmooth is populated with the N previous smoothed 
+        estimates,  where self.xSmooth[k] is the kth time step. self.x 
+        merely contains the current Kalman filter output of the most recent 
+        measurement, and is not smoothed at all (beyond the normal Kalman
+        filter processing). 
         
+        self.xSmooth grows in length on each call. If you run this 1 million
+        times, it will contain 1 million elements. Sure, we could minimize
+        this, but then this would make the caller's code much more cumbersome.
         
+        This also means that you cannot use this filter to track more than
+        one data set; as data will be hopelessly intermingled. If you want
+        to filter something else, create a new FixedLagSmoother object.
+
         Parameters
         ----------
         
-        Zs : ndarray of measurements
-        
-            iterable list (usually ndarray, but whatever works for you) of
-            measurements that you want to smooth, one per time step.
-            
-        N : int
-           size of fixed lag in time steps 
-           
-        us : ndarray, optional
-        
-            If provided, control input to the filter for each time step
-        
-        
-        Returns
-        -------
-        (xhat_smooth, xhat) : ndarray, ndarray
+        z : ndarray or scalar
+            measurement to be smoothed
 
-            xhat_smooth is the output of the N step fix lag smoother        
-            xhat is the filter output of the standard Kalman filter
+           
+        u : ndarray, optional       
+            If provided, control input to the filter
         """ 
                  
         # take advantage of the fact that np.array are assigned by reference.
