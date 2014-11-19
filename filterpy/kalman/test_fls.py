@@ -45,10 +45,10 @@ kf.Q *= 0.001
 
 N = 4 # size of lag
 
-nom =  np.array([t/2. for t in range (0,20)])
+nom =  np.array([t/2. for t in range (0,40)])
 zs = np.array([t + random.randn()*1.1 for t in nom])
 
-x, xs = fls.smooth2(zs, N)
+xs, x = fls.smooth_batch(zs, N)
 
 M,P,_,_ = kf.batch_filter(zs)
 rks_x,_,_ = rts_smoother(M, P, kf.F, kf.Q)
