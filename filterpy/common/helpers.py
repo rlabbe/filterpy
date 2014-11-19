@@ -17,6 +17,10 @@ def dot3(A,B,C):
     """ Returns the matrix multiplication of A*B*C"""
     return dot(A, dot(B,C))
 
+def dot4(A,B,C,D):
+    """ Returns the matrix multiplication of A*B*C"""
+    return dot(A, dot(B, dot(C,D)))
+    
 
 def dotn(*args):
     """ returns the matrix multiplication of 2 or more matrices"""
