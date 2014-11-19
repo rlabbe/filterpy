@@ -22,4 +22,4 @@ from .information_filter import *
 from .rts_smoother import *
 from .UKF import *
 from .fading_memory import *
-
+from .fixed_lag_smoother import FixedLagSmoother
