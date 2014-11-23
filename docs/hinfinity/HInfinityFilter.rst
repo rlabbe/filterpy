@@ -3,7 +3,7 @@ HInfinityFilter
 
 Introduction and Overview
 -------------------------
-.
+
 
 .. automodule:: filterpy.hinfinity
 

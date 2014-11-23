@@ -14,9 +14,10 @@ import scipy.linalg as linalg
 import numpy as np
 
 
-class UKF(object):
+class UnscentedKalmanFilter(object):
 
     def __init__(self, dim_x, dim_z, kappa, dt):
+        """docstring"""
 
         self.Q = np.eye(dim_x)
         self.R = 100
@@ -33,6 +34,7 @@ class UKF(object):
 
 
     def update(self, z, fx, hx):
+        """docstring"""
 
         num_sigmas = 2*self.n + 1
 

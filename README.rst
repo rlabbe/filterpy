@@ -35,6 +35,9 @@ questions or needs and I will either answer directly or shift my
 development to address your problem (assuming your question is a planned
 part of this library.
 
+Sphinx generated documentation lives at http://filterpy.readthedocs.org/
+
+
 Installation
 ------------
 
