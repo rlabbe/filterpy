@@ -10,7 +10,7 @@ for more information.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import numpy.linalg as linalg
+import scipy.linalg as linalg
 import numpy as np
 
 

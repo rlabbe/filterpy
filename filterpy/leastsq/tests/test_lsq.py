@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sqrt
 from numpy import dot
-from numpy.linalg import inv
+from scipy.linalg import inv
 from filterpy.common import dot3
 from filterpy.leastsq import LeastSquaresFilter
 from filterpy.gh import GHFilter

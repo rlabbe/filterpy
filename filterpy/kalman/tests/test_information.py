@@ -11,7 +11,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.linalg import inv
+from scipy.linalg import inv
 from filterpy.kalman import KalmanFilter, InformationFilter
 
 

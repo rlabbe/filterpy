@@ -14,7 +14,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from numpy.linalg import inv
+from scipy.linalg import inv
 from numpy import dot, zeros
 from filterpy.common import dot3
 
