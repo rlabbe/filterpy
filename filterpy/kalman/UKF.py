@@ -71,16 +71,16 @@ def sigma_points (X, P, kappa):
     sigma_points (5, 9, 2) # mean 5, covariance 9
     sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
 
-    Parameters
-    ----------
+    **Parameters**
+
     X An array of the means for each dimension in the problem space.
         Can be a scalar if 1D.
         examples: 1, [1,2], np.array([1,2])
 
     P : scalar, or2
 
-    Returns
-    -------
+    **Returns**
+
     sigmas : np.array, of size (n, 2n+1)
         Two dimensional array of sigma points. Each column contains all of
         the sigmas for one dimension in the problem space.
@@ -118,7 +118,6 @@ def sigma_points (X, P, kappa):
         Xi[n+k+1] = X - U[k]
 
     return (Xi, W)
-
 
 
 

@@ -24,8 +24,8 @@ def rts_smoother(Xs, Ps, F, Q):
     means and covariances computed by a Kalman filter. The usual input
     would come from the output of `KalmanFilter.batch_filter()`.
 
-    Parameters
-    ----------
+    **Parameters**
+
 
     Xs : numpy.array
        array of the means (state variable x) of the output of a Kalman
@@ -41,8 +41,8 @@ def rts_smoother(Xs, Ps, F, Q):
         Process noise of the Kalman filter
 
 
-    Returns
-    -------
+    **Returns**
+
     'X' : numpy.ndarray
        smoothed means
 
@@ -53,8 +53,7 @@ def rts_smoother(Xs, Ps, F, Q):
         smoother gain at each step
 
 
-    Example
-    -------
+    **Example**
 
     zs = [t + random.randn()*4 for t in range (40)]
 

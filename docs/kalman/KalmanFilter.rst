@@ -175,3 +175,4 @@ Kalman filter
 .. autoclass:: KalmanFilter
     :members:
 
+    .. automethod:: __init__

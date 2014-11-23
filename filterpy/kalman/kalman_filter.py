@@ -26,8 +26,7 @@ class KalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        Parameters
-        ----------
+        **Parameters**
 
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
@@ -45,31 +44,6 @@ class KalmanFilter(object):
             Default value of 0 indicates it is not used.
 
 
-        Instance Variables
-        ------------------
-        You will have to assign reasonable values to all of these before
-        running the filter. All must have dtype of float
-
-        x : ndarray (dim_x, 1), default = [0,0,0...0]
-            state of the filter
-
-        P : ndarray (dim_x, dim_x), default identity matrix
-            covariance matrix
-
-        Q : ndarray (dim_x, dim_x), default identity matrix
-            Process uncertainty matrix
-
-        R : ndarray (dim_z, dim_z), default identity matrix
-            measurement uncertainty
-
-        H : ndarray (dim_z, dim_x)
-            measurement function
-
-        F : ndarray (dim_x, dim_x)
-            state transistion matrix
-
-        B : ndarray (dim_x, dim_u), default 0
-            control transition matrix
         """
 
         assert dim_x > 0
@@ -87,6 +61,7 @@ class KalmanFilter(object):
         self._F = 0                # state transition matrix
         self._H = 0                # Measurement function
         self._R = eye(dim_z)       # state uncertainty
+        self._alpha_sq = 1.        # fading memory control
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -104,8 +79,8 @@ class KalmanFilter(object):
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
-        Parameters
-        ----------
+        **Parameters**
+
         z : np.array
             measurement for this update.
 
@@ -154,8 +129,9 @@ class KalmanFilter(object):
 
     def predict(self, u=0):
         """ Predict next position.
-        Parameters
-        ----------
+
+        **Parameters**
+
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
@@ -165,14 +141,14 @@ class KalmanFilter(object):
         self._x = dot(self._F, self.x) + dot(self._B, u)
 
         # P = FPF' + Q
-        self._P = dot3(self._F, self._P, self._F.T) + self._Q
+        self._P = self._alpha_sq * dot3(self._F, self._P, self._F.T) + self._Q
 
 
     def batch_filter(self, zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
-        Parameters
-        ----------
+        **Parameters**
+
         zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
@@ -186,8 +162,8 @@ class KalmanFilter(object):
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
-        Returns
-        -------
+        **Returns**
+
 
         means: np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry
@@ -246,19 +222,19 @@ class KalmanFilter(object):
         """ Predicts the next state of the filter and returns it. Does not
         alter the state of the filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         u : np.array
             optional control input
 
-        Returns
-        -------
+        **Returns**
+
         (x, P)
             State vector and covariance array of the prediction.
         """
 
         x = dot(self._F, self._x) + dot(self._B, u)
-        P = dot3(self._F, self._P, self._F.T) + self.Q
+        P = self._alpha_sq * dot3(self._F, self._P, self._F.T) + self._Q
         return (x, P)
 
 
@@ -272,18 +248,30 @@ class KalmanFilter(object):
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        Parameters
-        ----------
+        **Parameters**
+
         x : np.array
             kalman state vector
 
-        Returns
-        -------
+        **Returns**
+
         z : np.array
             measurement corresponding to the given state
         """
+
         return dot(self._H, x)
 
+
+    @property
+    def alpha(self):
+        return self._alpha_sq**.5
+
+    @alpha.setter
+    def alpha(self, value):
+        assert np.isscalar(value)
+        assert value > 0
+
+        self._alpha_sq = value**2
 
     @property
     def Q(self):
@@ -371,7 +359,7 @@ class KalmanFilter(object):
 
     @property
     def S(self):
-        """ system uncertainy in measurement space """
+        """ system uncertainty in measurement space """
         return self._S
 
 
@@ -383,8 +371,8 @@ class ExtendedKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
@@ -416,8 +404,8 @@ class ExtendedKalmanFilter(object):
         """ Performs the predict/update innovation of the extended Kalman
         filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         z : np.array
             measurement for this step.
             If `None`, only predict step is perfomed.
@@ -461,8 +449,8 @@ class ExtendedKalmanFilter(object):
     def update(self, z, HJabobian, Hx, R=None):
         """ Performs the update innovation of the extended Kalman filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         z : np.array
             measurement for this step.
             If `None`, only predict step is perfomed.
@@ -504,8 +492,9 @@ class ExtendedKalmanFilter(object):
 
     def predict(self, u=0):
         """ Predict next position.
-        Parameters
-        ----------
+
+        **Parameters**
+
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
@@ -599,7 +588,7 @@ class ExtendedKalmanFilter(object):
 
     @property
     def S(self):
-        """ system uncertainy in measurement space """
+        """ system uncertainty in measurement space """
         return self._S
 
 

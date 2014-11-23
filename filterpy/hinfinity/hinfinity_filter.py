@@ -25,8 +25,8 @@ class HInfinityFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
@@ -73,8 +73,8 @@ class HInfinityFilter(object):
         Add a new measurement (Z) to the kalman filter. If Z is None, nothing
         is changed.
 
-        Parameters
-        ----------
+        **Parameters**
+
         Z : np.array
             measurement for this update.
         """
@@ -125,8 +125,9 @@ class HInfinityFilter(object):
 
     def predict(self, u=0):
         """ Predict next position.
-        Parameters
-        ----------
+
+        **Parameters**
+
         u : np.array
             Optional control vector. If non-zero, it is multiplied by G
             to create the control input into the system.
@@ -139,8 +140,8 @@ class HInfinityFilter(object):
     def batch_filter(self, Zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
-        Parameters
-        ----------
+        **Parameters**
+
         Zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
@@ -197,13 +198,13 @@ class HInfinityFilter(object):
         """ Predicts the next state of the filter and returns it. Does not
         alter the state of the filter.
 
-        Parameters
-        ----------
+        **Parameters**
+
         u : np.array
             optional control input
 
-        Returns
-        -------
+        **Returns**
+
         x : numpy.ndarray
             State vecto of the prediction.
         """
@@ -222,13 +223,13 @@ class HInfinityFilter(object):
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        Parameters
-        ----------
+        **Parameters**
+
         x : np.array
             kalman state vector
 
-        Returns
-        -------
+        **Returns**
+
         z : np.array
             measurement corresponding to the given state
         """

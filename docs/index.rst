@@ -1,10 +1,8 @@
 .. FilterPy documentation master file
 
 
-Welcome to FilterPy's documentation!
-====================================
-
-Contents:
+FilterPy
+========
 
 .. toctree::
    :maxdepth: 2
@@ -60,52 +58,92 @@ submodule, construct the objects, and then execute your code. Something lke
 
     >>> from filterpy.kalman import KalmanFilter
     >>> kf = KalmanFilter(dim_x=3, dim_z=1)
-    
+
+
+
 
 
 filterpy.kalman Module
 ++++++++++++++++++++++
 
-These are the classes that are implemented in the filterpy.kalman submodule.
-To import one you would use
-
-   >>> from filterpy.kalman import KalmanFilter**
+The classes in this submodule implement the various Kalman filters. There is
+also support for smoother functions. 
    
    
 .. toctree::
    :maxdepth: 1
 
-   KalmanFilter
-   ExtendedKalmanFilter
+   kalman/KalmanFilter
+   kalman/ExtendedKalmanFilter
    kalman/FixedLagSmoother
-   RTS_smoother
-   SquareRootFilter
-   InformationFilter
-   UnscentedKalmanFilter
+   kalman/RTS_smoother
+   kalman/SquareRootFilter
+   kalman/InformationFilter
+   kalman/UnscentedKalmanFilter
 
 
 filterpy.common Module
 ++++++++++++++++++++++
 
-   Common
+Contains various useful functions that are not filters, but support the
+filtering classes and functions.
+
+.. toctree::
+   :maxdepth: 1
+   
+   common/common
+
 
 
 filterpy.gh Module
 ++++++++++++++++++
 
+These classes various g-h filters. The functions are helpers that provide
+settings for the *g* and *h* parameters for various common filters.
+
+.. toctree::
+   :maxdepth: 1
+   
+   gh/GHFilterOrder
+   gh/GHFilter
+   gh/GHKFilter
+   gh/optimal_noise_smoothing
+   gh/least_squares_parameters
+   gh/critical_damping_parameters
+   gh/benedict_bornder_constants
+   
+   
 
 filterpy.memory Module
 ++++++++++++++++++++++
+
+Implements a polynomial fading memory filter. You can achieve the same
+results, and more, using the KalmanFilter class. However, some books
+use this form of the fading memory filter, so it is here for completeness.
+I suppose some would also find this simpler to use than the standard
+Kalman filter.
+
+.. toctree::
+   :maxdepth: 1
+   
+   memory/FadingMemoryFilter
 
 
 filterpy.hinfinity Module
 +++++++++++++++++++++++++
 
+.. toctree::
+   :maxdepth: 1
+   
+   hinfinity/HInfinityFilter
 
 filterpy.leastsq Module
 +++++++++++++++++++++++
 
-
+.. toctree::
+   :maxdepth: 1
+   
+   leastsq/LeastSquaresFilter
 
 **References**
 

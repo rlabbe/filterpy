@@ -42,8 +42,7 @@ class SquareRootKalmanFilter(object):
         reasonable values; the defaults below will not give you a functional
         filter.
 
-        Parameters
-        ----------
+        **Parameters**
 
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
@@ -61,8 +60,8 @@ class SquareRootKalmanFilter(object):
             Default value of 0 indicates it is not used.
 
 
-        Instance Variables
-        ------------------
+        **Instance Variables:**
+
         You will have to assign reasonable values to all of these before
         running the filter. All must have dtype of float
 
@@ -88,8 +87,7 @@ class SquareRootKalmanFilter(object):
             control transition matrix
 
 
-        References
-        ----------
+        **References**
 
         [1] Robert Grover Brown. Introduction to Random Signals and Applied
             Kalman Filtering. Wiley and sons, 2012.
@@ -129,8 +127,8 @@ class SquareRootKalmanFilter(object):
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
-        Parameters
-        ----------
+        **Parameters**
+
         z : np.array
             measurement for this update.
 
@@ -173,8 +171,9 @@ class SquareRootKalmanFilter(object):
 
     def predict(self, u=0):
         """ Predict next position.
-        Parameters
-        ----------
+
+        **Parameters**
+
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
@@ -192,19 +191,20 @@ class SquareRootKalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
+
         return z - dot(self._H, self._x)
 
 
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        Parameters
-        ----------
+        **Parameters**
+
         x : np.array
             kalman state vector
 
-        Returns
-        -------
+        **Returns**
+
         z : np.array
             measurement corresponding to the given state
         """

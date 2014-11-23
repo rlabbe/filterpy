@@ -50,3 +50,4 @@ Classes
 .. autoclass:: ExtendedKalmanFilter
     :members:
 
+    .. automethod:: __init__

@@ -19,7 +19,7 @@ from math import sqrt
 
 class LeastSquaresFilter(object):
     """Implements a Least Squares recursive filter. Formulation is per
-    Zarchan [1].
+    Zarchan [1]_.
 
     Filter may be of order 0 to 2. Order 0 assumes the value being tracked is
     a constant, order 1 assumes that it moves in a line, and order 2 assumes
@@ -27,8 +27,7 @@ class LeastSquaresFilter(object):
 
     It is implemented to be directly callable like a function. See examples.
 
-    Examples
-    --------
+    **Examples**
 
     lsq = LeastSquaresFilter(dt=0.1, order=1, noise_sigma=2.3)
 
@@ -38,9 +37,8 @@ class LeastSquaresFilter(object):
         print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
 
 
-    Member Variables
-    ----------------
-
+    **Member Variables**
+    
     n : int
         step in the recursion. 0 prior to first call, 1 after the first call,
         etc.
@@ -54,11 +52,15 @@ class LeastSquaresFilter(object):
         derivative of x, 'ddx' is the second derivative.
 
 
-    References
-    ----------
+    **References**
+    
     [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
         Approach." Third Edition. AIAA, 2009.
 
+    |
+    |
+    
+    **Methods**
     """
 
 
@@ -143,8 +145,8 @@ class LeastSquaresFilter(object):
         """ Computes and returns the error and  standard deviation  of the
         filter at this time step.
 
-        Returns
-        -------
+        **Returns**
+
         error : np.array size 1xorder+1
         std : np.array size 1xorder+1
         """

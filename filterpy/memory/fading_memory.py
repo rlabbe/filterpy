@@ -22,8 +22,8 @@ class FadingMemoryFilter(object):
 
         """ Creates a fading memory filter of order 0, 1, or 2.
 
-        Parameters
-        ----------
+        **Parameters**
+
         x0 : 1D np.array or scalar
             Initial value for the filter state. Each value can be a scalar
             or a np.array.
@@ -47,8 +47,7 @@ class FadingMemoryFilter(object):
         beta : float
             filter gain parameter.
 
-        Members
-        -------
+        **Members**
 
         self.x : np.array
             State of the filter.

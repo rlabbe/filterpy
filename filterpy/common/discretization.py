@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 20 18:48:18 2014
+#
+#Created on Wed Aug 20 18:48:18 2014
+#
+#@author: rlabbe
+#
 
-@author: rlabbe
+"""Copyright 2014 Roger R Labbe Jr.
+
+FilterPy library.
+http://github.com/rlabbe/filterpy
+
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
+
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -18,8 +28,8 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     Model. dim may be either 2 or 3, dt is the time step, and sigma is the
     variance in the noise.
 
-    Paramaeters
-    -----------
+    **Paramaeters**
+
     dim : int (2 or 3)
         dimension for Q, where the final dimension is (dim x dim)
 
@@ -47,8 +57,8 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
     Model. dim may be either 2 or 3, dt is the time step, and sigma is the
     variance in the noise.
 
-    Paramaeters
-    -----------
+    **Paramaeters**
+
     dim : int (2 or 3)
         dimension for Q, where the final dimension is (dim x dim)
 
@@ -84,8 +94,7 @@ def van_loan_discretization(F, G, dt):
     that discretizes that equation.
 
 
-    Example:
-    -------
+    **Example:**
 
     Given y'' + y = 2u(t), we create the continuous state model of
 
@@ -110,8 +119,8 @@ def van_loan_discretization(F, G, dt):
     (example taken from Brown[2])
 
 
-    References
-    ----------
+    **References**
+
     [1] C. F. van Loan. "Computing Integrals Involving the Matrix Exponential."
         IEEE Trans. Automomatic Control, AC-23 (3): 395-404 (June 1978)
 

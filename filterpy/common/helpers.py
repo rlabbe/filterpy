@@ -2,12 +2,13 @@
 
 """Copyright 2014 Roger R Labbe Jr.
 
-filterpy library.
+FilterPy library.
 http://github.com/rlabbe/filterpy
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+
 
 from numpy import asarray, isscalar, eye, dot
 from functools import reduce
