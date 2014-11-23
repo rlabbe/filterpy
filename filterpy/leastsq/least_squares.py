@@ -27,18 +27,20 @@ class LeastSquaresFilter(object):
 
     It is implemented to be directly callable like a function. See examples.
 
-    **Examples**
+    **Example**::
 
-    lsq = LeastSquaresFilter(dt=0.1, order=1, noise_sigma=2.3)
+        from filterpy.leastsq import LeastSquaresFilter
 
-    while True:
-        z = sensor_reading()  # get a measurement
-        x = lsq(z)            # get the filtered estimate.
-        print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
+        lsq = LeastSquaresFilter(dt=0.1, order=1, noise_sigma=2.3)
+
+        while True:
+            z = sensor_reading()  # get a measurement
+            x = lsq(z)            # get the filtered estimate.
+            print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
 
 
     **Member Variables**
-    
+
     n : int
         step in the recursion. 0 prior to first call, 1 after the first call,
         etc.
@@ -53,13 +55,13 @@ class LeastSquaresFilter(object):
 
 
     **References**
-    
-    [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
-        Approach." Third Edition. AIAA, 2009.
+
+    .. [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
+          Approach." Third Edition. AIAA, 2009.
 
     |
     |
-    
+
     **Methods**
     """
 
@@ -67,8 +69,8 @@ class LeastSquaresFilter(object):
     def __init__(self, dt, order, noise_sigma=0.):
         """ Least Squares filter of order 0 to 2.
 
-        Parameters
-        ----------
+        **Parameters**
+
         dt : float
            time step per update
 

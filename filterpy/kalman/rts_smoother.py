@@ -14,7 +14,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from scipy.linalg import inv
+from numpy.linalg import inv
 from numpy import dot, zeros
 from filterpy.common import dot3
 
@@ -25,7 +25,6 @@ def rts_smoother(Xs, Ps, F, Q):
     would come from the output of `KalmanFilter.batch_filter()`.
 
     **Parameters**
-
 
     Xs : numpy.array
        array of the means (state variable x) of the output of a Kalman
@@ -43,7 +42,7 @@ def rts_smoother(Xs, Ps, F, Q):
 
     **Returns**
 
-    'X' : numpy.ndarray
+    'x' : numpy.ndarray
        smoothed means
 
     'P' : numpy.ndarray
@@ -53,12 +52,12 @@ def rts_smoother(Xs, Ps, F, Q):
         smoother gain at each step
 
 
-    **Example**
+    **Example**::
 
-    zs = [t + random.randn()*4 for t in range (40)]
+        zs = [t + random.randn()*4 for t in range (40)]
 
-    (mu, cov, _, _) = kalman.batch_filter(zs)
-    (X, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
+        (mu, cov, _, _) = kalman.batch_filter(zs)
+        (x, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
 
     """
 

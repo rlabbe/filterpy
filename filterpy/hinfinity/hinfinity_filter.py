@@ -155,8 +155,7 @@ class HInfinityFilter(object):
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
-        Returns
-        -------
+        **Returns**
 
         means: np.array((n,dim_x,1))
             array of the state for each time step. Each entry is an np.array.
@@ -238,6 +237,7 @@ class HInfinityFilter(object):
 
     @property
     def x(self):
+        """ state vector property"""
         return self._x
 
 
@@ -258,7 +258,7 @@ class HInfinityFilter(object):
 
     @property
     def P(self):
-        """ covariance matrix"""
+        """ covariance matrix property"""
         return self._P
 
 

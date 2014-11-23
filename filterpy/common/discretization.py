@@ -94,29 +94,29 @@ def van_loan_discretization(F, G, dt):
     that discretizes that equation.
 
 
-    **Example:**
+    **Example**::
 
-    Given y'' + y = 2u(t), we create the continuous state model of
+        Given y'' + y = 2u(t), we create the continuous state model of
 
-    x' = | 0 1| * x + |0|*u(t)
-         |-1 0|       |2|
+        x' = | 0 1| * x + |0|*u(t)
+             |-1 0|       |2|
 
-    and a time step of 0.1:
+        and a time step of 0.1:
 
 
-    >>> F = np.array([[0,1],[-1,0]], dtype=float)
-    >>> G = np.array([[0.],[2.]])
-    >>> phi, Q = van_loan_discretization(F, G, 0.1)
+        >>> F = np.array([[0,1],[-1,0]], dtype=float)
+        >>> G = np.array([[0.],[2.]])
+        >>> phi, Q = van_loan_discretization(F, G, 0.1)
 
-    >>> phi
-    array([[ 0.99500417,  0.09983342],
-           [-0.09983342,  0.99500417]])
+        >>> phi
+        array([[ 0.99500417,  0.09983342],
+               [-0.09983342,  0.99500417]])
 
-    >>> Q
-    array([[ 0.00133067,  0.01993342],
-           [ 0.01993342,  0.39866933]])
+        >>> Q
+        array([[ 0.00133067,  0.01993342],
+               [ 0.01993342,  0.39866933]])
 
-    (example taken from Brown[2])
+        (example taken from Brown[2])
 
 
     **References**

@@ -27,14 +27,14 @@ class GHFilterOrder(object):
 
     |
     |
-    
+
     **Methods**
     """
 
-        
+
     def __init__(self, x0, dt, order, g, h=None, k=None):
         """ Creates a g-h filter of order 0, 1, or 2.
-        
+
         **Parameters**
 
         x0 : 1D np.array or scalar
@@ -157,6 +157,7 @@ class GHFilter(object):
     Create a basic filter for a scalar value with g=.8, h=.2.
     Initialize to 0, with a derivative(velocity) of 0.
 
+    >>> from filterpy.gh import GHFilter
     >>> f = GHFilter (x=0., dx=0., dt=1., g=.8, h=.2)
 
     Incorporate the measurement of 1
@@ -190,13 +191,13 @@ class GHFilter(object):
 
     |
     |
-    
+
     **Methods**
     """
-    
+
     def __init__(self, x, dx, dt, g, h):
         """ Creates a g-h filter.
-        
+
         **Parameters**
 
         x : 1D np.array or scalar
@@ -222,7 +223,7 @@ class GHFilter(object):
         h : float
             filter h gain parameter.
         """
-        
+
         assert np.isscalar(dt)
         assert np.isscalar(g)
         assert np.isscalar(h)
@@ -423,7 +424,7 @@ class GHKFilter(object):
 
     def __init__(self, x, dx, ddx, dt, g, h, k):
         """ Creates a g-h filter.
-        
+
         **Parameters**
 
         x : 1D np.array or scalar
@@ -455,7 +456,7 @@ class GHKFilter(object):
         k : float
             filter k gain parameter.
         """
-        
+
         assert np.isscalar(dt)
         assert np.isscalar(g)
         assert np.isscalar(h)
@@ -492,7 +493,7 @@ class GHKFilter(object):
 
         x filter output for x
         dx filter output for dx (derivative of x
-        
+
         """
 
         if g is None:
@@ -681,11 +682,13 @@ def optimal_noise_smoothing(g):
         values for g,h,k that provide optimal smoothing of noise
 
 
-    **Examples**
+    **Example**::
 
-    >>> g,h,k = opetimal_noise_smoothing(g)
-    >>> f = GHKFilter(0,0,0,1,g,h,k)
-    >>> f.update(1.)
+        from filterpy.gh import GHKFilter, optimal_noise_smoothing
+
+        g,h,k = optimal_noise_smoothing(g)
+        f = GHKFilter(0,0,0,1,g,h,k)
+        f.update(1.)
 
 
     **References**
@@ -725,13 +728,15 @@ def least_squares_parameters(n):
     (g,h)  : (float, float)
         g and h parameters for this time step for the least-squares filter
 
-    **Examples**
+    **Example**::
 
-    >>> lsf = GHFilter (0, 0, 1, 0, 0)
-    >>> z = 10
-    >>> for i in range(10):
-    >>>     g,h = least_squares_parameters(i)
-    >>>     lsf.update(z, g, h)
+        from filterpy.gh import GHFilter, least_squares_parameters
+
+        lsf = GHFilter (0, 0, 1, 0, 0)
+        z = 10
+        for i in range(10):
+            g,h = least_squares_parameters(i)
+            lsf.update(z, g, h)
 
     """
     den = (n+2)*(n+1)
@@ -792,10 +797,12 @@ def critical_damping_parameters(theta, order=2):
     k : scalar
         optimal value for g in the g-h-k filter
 
-    **Example**
+    **Example**::
 
-    >>> g,h = critical_damping_parameters(0.3)
-    >>> critical_filter = GHFilter(0, 0, 1, g, h)
+        from filterpy.gh import GHFilter, critical_damping_parameters
+
+        g,h = critical_damping_parameters(0.3)
+        critical_filter = GHFilter(0, 0, 1, g, h)
 
     **References**
 
@@ -846,10 +853,11 @@ def benedict_bornder_constants(g, critical=False):
     h : float
         scaling factor h that minimizes the transient errors
 
-    **Examples**
+    **Example**::
 
-    >>> g, h = benedict_bornder_constants(.855)
-    >>> f = GHFilter(0, 0, 1, g, h)
+        from filterpy.gh import GHFilter, benedict_bornder_constants
+        g, h = benedict_bornder_constants(.855)
+        f = GHFilter(0, 0, 1, g, h)
 
     **References**
 

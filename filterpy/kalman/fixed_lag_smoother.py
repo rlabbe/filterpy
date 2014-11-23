@@ -38,25 +38,24 @@ class FixedLagSmoother(object):
     November 18, 2014.
 
 
-    **Example**
+    **Example**::
 
+        fls = FixedLagSmoother(dim_x=2, dim_z=1)
 
-    fls = FixedLagSmoother(dim_x=2, dim_z=1)
+        fls.x = np.array([[0.],
+                          [.5]])
 
-    fls.x = np.array([[0.],
-                      [.5]])
+        fls.F = np.array([[1.,1.],
+                          [0.,1.]])
 
-    fls.F = np.array([[1.,1.],
-                      [0.,1.]])
+        fls.H = np.array([[1.,0.]])
 
-    fls.H = np.array([[1.,0.]])
+        fls.P *= 200
+        fls.R *= 5.
+        fls.Q *= 0.001
 
-    fls.P *= 200
-    fls.R *= 5.
-    fls.Q *= 0.001
-
-    zs = [...some measurements...]
-    xhatsmooth, xhat = fls.smooth_batch(zs, N=4)
+        zs = [...some measurements...]
+        xhatsmooth, xhat = fls.smooth_batch(zs, N=4)
 
 
     **References**
@@ -67,7 +66,7 @@ class FixedLagSmoother(object):
 
     |
     |
-    
+
     **Methods**
     """
 
