@@ -18,7 +18,7 @@ from numpy.random import randn
 import math
 import numpy as np
 from filterpy.kalman import UnscentedKalmanFilter as UKF
-from filterpy.kalman import JulierPoints, WanMerlePoints
+from filterpy.kalman import SigmaPoints, ScaledPoints
 from filterpy.common import stats
 
 DO_PLOT = False
@@ -34,11 +34,11 @@ def test_sigma_plot():
     kappa = .1
 
     # if kappa is larger, than points shoudld be closer together
-    jp0 = JulierPoints(2, kappa)
-    jp1 = JulierPoints(2, kappa*1000)
+    sp0 = SigmaPoints(2, kappa)
+    sp1 = SigmaPoints(2, kappa*1000)
 
-    Xi0 = jp0.sigma_points (x, P)
-    Xi1 = jp1.sigma_points (x, P)
+    Xi0 = sp0.sigma_points (x, P)
+    Xi1 = sp1.sigma_points (x, P)
 
     assert max(Xi1[:,0]) > max(Xi0[:,0])
     assert max(Xi1[:,1]) > max(Xi0[:,1])
@@ -46,13 +46,13 @@ def test_sigma_plot():
     if DO_PLOT:
         plt.figure()
         for i in range(Xi0.shape[0]):
-            plt.scatter((Xi0[i,0]-x[0, 0])*jp0.Wm[i] + x[0, 0],
-                        (Xi0[i,1]-x[0, 1])*jp0.Wm[i] + x[0, 1],
+            plt.scatter((Xi0[i,0]-x[0, 0])*sp0.Wm[i] + x[0, 0],
+                        (Xi0[i,1]-x[0, 1])*sp0.Wm[i] + x[0, 1],
                          color='blue')
 
         for i in range(Xi1.shape[0]):
-            plt.scatter((Xi1[i, 0]-x[0, 0]) * jp1.Wm[i] + x[0,0],
-                        (Xi1[i, 1]-x[0, 1]) * jp1.Wm[i] + x[0,1],
+            plt.scatter((Xi1[i, 0]-x[0, 0]) * sp1.Wm[i] + x[0,0],
+                        (Xi1[i, 1]-x[0, 1]) * sp1.Wm[i] + x[0,1],
                          color='green')
 
         stats.plot_covariance_ellipse([1, 2], P)
@@ -66,29 +66,29 @@ def test_julier_weights():
             assert abs(sum(jp.Wm) - 1) < 1.e-12
             assert abs(sum(jp.Wc) - 1) < 1.e-12
 
-def test_wan_merle_weights():
+def test_scaled_weights():
     for n in range(1,5):
         for alpha in np.linspace(0.99, 1.01, 100):
             for beta in range(0,2):
                 for kappa in range(0,2):
-                    p = WanMerlePoints(n, alpha, beta, kappa)
+                    p = ScaledPoints(n, alpha, 0, 3-n)
                     assert abs(sum(p.Wm) - 1) < 1.e-1
                     assert abs(sum(p.Wc) - 1) < 1.e-1
 
 def test_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
-    jp = JulierPoints(1, 0.)
-    assert jp.Wc.all() == jp.Wm.all()
+    points = SigmaPoints(1, 0.)
+    assert points.Wc.all() == points.Wm.all()
 
     mean = 5
     cov = 9
 
-    Xi = jp.sigma_points (mean, cov)
-    xm, ucov = UKF.unscented_transform(Xi, jp.Wm, jp.Wc, 0)
+    Xi = points.sigma_points (mean, cov)
+    xm, ucov = UKF.unscented_transform(Xi, points.Wm, points.Wc, 0)
 
     # sum of weights*sigma points should be the original mean
     m = 0.0
-    for x,w in zip(Xi, jp.Wm):
+    for x,w in zip(Xi, points.Wm):
         m += x*w
 
     assert abs(m-mean) < 1.e-12
@@ -96,7 +96,7 @@ def test_sigma_points_1D():
     assert abs(ucov[0,0]-cov) < 1.e-12
 
     assert Xi.shape == (3,1)
-    assert len(jp.Wc) == 3
+    assert len(points.Wc) == 3
 
 
 class RadarSim(object):
@@ -126,9 +126,7 @@ def test_radar():
 
     dt = 0.05
 
-    jp = JulierPoints(3,0)
-
-    kf = UKF(3, 1, dt, jp)
+    kf = UKF(3, 1, dt, SigmaPoints(3,0))
 
     kf.Q *= 0.01
     kf.R = 10
@@ -187,7 +185,7 @@ if __name__ == "__main__":
     test_radar()
     test_sigma_plot()
     test_julier_weights()
-    test_wan_merle_weights()
+    test_scaled_weights()
 
     #print('xi=\n',Xi)
     """

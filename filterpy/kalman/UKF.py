@@ -218,7 +218,7 @@ class UnscentedKalmanFilter(object):
         return (X, P + noise_cov)
 
 
-class JulierPoints(object):
+class SigmaPoints(object):
     # pylint: disable=C0103
 
     """ Computes sigma points and weights for for an unscented Kalman
@@ -331,11 +331,13 @@ class JulierPoints(object):
         return Xi
 
 
-class WanMerlePoints(object):
+class ScaledPoints(object):
     # pylint: disable=C0103
 
     """ Computes sigma points and weights for for an unscented Kalman
-    filter based on the Wan and Merle [1] paper.
+    filter based on the Wan and Merle [1] paper. The additional terms
+    allow you to scale the sigma points to account for severe
+    nonlinearities.
 
     **References**
 
@@ -383,6 +385,7 @@ class WanMerlePoints(object):
         self.alpha = alpha
         self.kappa = kappa
 
+
     @property
     def Wm(self):
         """Weights for the means."""
@@ -411,6 +414,7 @@ class WanMerlePoints(object):
         Wm[0] = lambda_ / (n+lambda_)
 
         return Wc, Wm
+
 
     def sigma_points(self, x, P, alpha=None, kappa=None):
         """ Computes the sigma pointsfor an unscented Kalman filter
