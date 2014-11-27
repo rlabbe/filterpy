@@ -15,7 +15,7 @@ import numpy as np
 import scipy.linalg as linalg
 import matplotlib.pyplot as plt
 from GetRadar import GetRadar
-from filterpy.kalman import UnscentedKalmanFilter as UKF, JulierPoints
+from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.common import Q_discrete_white_noise
 
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     dt = 0.05
 
-    radarUKF = UKF(dim_x=3, dim_z=1, dt=dt, points_alg=JulierPoints(3, 0.))
+    radarUKF = UKF(dim_x=3, dim_z=1, dt=dt, kappa=0.)
     radarUKF.Q *= Q_discrete_white_noise(3, 1, .01)
     radarUKF.R *= 10
     radarUKF.x = np.array([0., 90., 1100.])
@@ -53,8 +53,7 @@ if __name__ == "__main__":
         r = GetRadar(dt)
         rs.append(r)
 
-        radarUKF.predict(fx)
-        radarUKF.update(r, hx)
+        radarUKF.update(r, hx, fx)
 
         xs.append(radarUKF.x)
 

@@ -15,10 +15,10 @@ from __future__ import (absolute_import, division, print_function,
 import matplotlib.pyplot as plt
 import numpy.random as random
 from numpy.random import randn
-import math
 import numpy as np
 from filterpy.kalman import UnscentedKalmanFilter as UKF
-from filterpy.kalman import SigmaPoints, ScaledPoints
+from filterpy.kalman import ScaledUnscentedKalmanFilter as SUKF
+from filterpy.kalman import unscented_transform
 from filterpy.common import stats
 
 DO_PLOT = False
@@ -34,11 +34,11 @@ def test_sigma_plot():
     kappa = .1
 
     # if kappa is larger, than points shoudld be closer together
-    sp0 = SigmaPoints(2, kappa)
-    sp1 = SigmaPoints(2, kappa*1000)
+    sp0 = UKF.weights(2, kappa)
+    sp1 = UKF.weights(2, kappa*1000)
 
-    Xi0 = sp0.sigma_points (x, P)
-    Xi1 = sp1.sigma_points (x, P)
+    Xi0 = UKF.sigma_points (x, P, kappa)
+    Xi1 = UKF.sigma_points (x, P, kappa*1000)
 
     assert max(Xi1[:,0]) > max(Xi0[:,0])
     assert max(Xi1[:,1]) > max(Xi0[:,1])
@@ -46,13 +46,13 @@ def test_sigma_plot():
     if DO_PLOT:
         plt.figure()
         for i in range(Xi0.shape[0]):
-            plt.scatter((Xi0[i,0]-x[0, 0])*sp0.Wm[i] + x[0, 0],
-                        (Xi0[i,1]-x[0, 1])*sp0.Wm[i] + x[0, 1],
+            plt.scatter((Xi0[i,0]-x[0, 0])*sp0[i] + x[0, 0],
+                        (Xi0[i,1]-x[0, 1])*sp0[i] + x[0, 1],
                          color='blue')
 
         for i in range(Xi1.shape[0]):
-            plt.scatter((Xi1[i, 0]-x[0, 0]) * sp1.Wm[i] + x[0,0],
-                        (Xi1[i, 1]-x[0, 1]) * sp1.Wm[i] + x[0,1],
+            plt.scatter((Xi1[i, 0]-x[0, 0]) * sp1[i] + x[0,0],
+                        (Xi1[i, 1]-x[0, 1]) * sp1[i] + x[0,1],
                          color='green')
 
         stats.plot_covariance_ellipse([1, 2], P)
@@ -61,34 +61,40 @@ def test_sigma_plot():
 def test_julier_weights():
     for n in range(1,15):
         for k in np.linspace(0,5,0.1):
-            jp = JulierPoints(n, k)
+            Wm = UKF.weights(n, k)
 
-            assert abs(sum(jp.Wm) - 1) < 1.e-12
-            assert abs(sum(jp.Wc) - 1) < 1.e-12
+            assert abs(sum(Wm) - 1) < 1.e-12
+
 
 def test_scaled_weights():
     for n in range(1,5):
         for alpha in np.linspace(0.99, 1.01, 100):
             for beta in range(0,2):
                 for kappa in range(0,2):
-                    p = ScaledPoints(n, alpha, 0, 3-n)
-                    assert abs(sum(p.Wm) - 1) < 1.e-1
-                    assert abs(sum(p.Wc) - 1) < 1.e-1
+                    Wm, Wc = SUKF.weights(n, alpha, 0, 3-n)
+                    assert abs(sum(Wm) - 1) < 1.e-1
+                    assert abs(sum(Wc) - 1) < 1.e-1
+
 
 def test_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
-    points = SigmaPoints(1, 0.)
-    assert points.Wc.all() == points.Wm.all()
+
+    kappa = 0.
+    ukf = UKF(dim_x=1, dim_z=1, dt=0.1, kappa=kappa)
+    assert ukf.Wc.all() == ukf.Wm.all()
+
+    points = ukf.weights(1, 0.)
+    assert len(points) == 3
 
     mean = 5
     cov = 9
 
-    Xi = points.sigma_points (mean, cov)
-    xm, ucov = UKF.unscented_transform(Xi, points.Wm, points.Wc, 0)
+    Xi = ukf.sigma_points (mean, cov, kappa)
+    xm, ucov = unscented_transform(Xi, ukf.Wm, ukf.Wc, 0)
 
     # sum of weights*sigma points should be the original mean
     m = 0.0
-    for x,w in zip(Xi, points.Wm):
+    for x,w in zip(Xi, ukf.Wm):
         m += x*w
 
     assert abs(m-mean) < 1.e-12
@@ -96,7 +102,7 @@ def test_sigma_points_1D():
     assert abs(ucov[0,0]-cov) < 1.e-12
 
     assert Xi.shape == (3,1)
-    assert len(points.Wc) == 3
+    assert len(ukf.Wc) == 3
 
 
 class RadarSim(object):
@@ -126,7 +132,7 @@ def test_radar():
 
     dt = 0.05
 
-    kf = UKF(3, 1, dt, SigmaPoints(3,0))
+    kf = UKF(3, 1, dt, kappa=0.)
 
     kf.Q *= 0.01
     kf.R = 10
@@ -146,8 +152,7 @@ def test_radar():
     for i in range(len(t)):
         r = radar.get_range()
         #r = GetRadar(dt)
-        kf.predict(fx)
-        kf.update(r, hx)
+        kf.update(r, hx, fx)
 
         xs[i,:] = kf.x
         rs.append(r)
