@@ -4,7 +4,7 @@ GHFilterOrder
 Introduction and Overview
 -------------------------
 
-Classes
+
 -------
 
 .. automodule:: filterpy.gh

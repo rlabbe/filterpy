@@ -4,7 +4,7 @@ GHKFilter
 Introduction and Overview
 -------------------------
 
-Classes
+
 -------
 
 .. automodule:: filterpy.gh

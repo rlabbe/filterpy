@@ -7,8 +7,7 @@ Introduction and Overview
 This implements a fixed lag Kalman smoother.
 
 
-Class
------
+-------
 
 .. automodule:: filterpy.kalman
 

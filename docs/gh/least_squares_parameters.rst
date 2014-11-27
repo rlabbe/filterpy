@@ -4,8 +4,8 @@ least_squares_parameters
 Introduction and Overview
 -------------------------
 
-Method
-------
+
+--------
 
 .. automodule:: filterpy.gh
 

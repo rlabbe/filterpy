@@ -1,9 +1,8 @@
 LeastSquaresFilter
 ==================
 
-Introduction and Overview
--------------------------
 
+-----
 
 
 .. automodule:: filterpy.leastsq

@@ -165,7 +165,7 @@ PDF version (often lags the two sources above)
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/Kalman_and_Bayesian_Filters_in_Python.pdf
 
 
-Classes
+
 -------
 
 .. automodule:: filterpy.kalman

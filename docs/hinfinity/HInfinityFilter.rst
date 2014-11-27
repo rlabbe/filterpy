@@ -5,6 +5,9 @@ Introduction and Overview
 -------------------------
 
 
+--------
+
+
 .. automodule:: filterpy.hinfinity
 
 .. autoclass:: HInfinityFilter

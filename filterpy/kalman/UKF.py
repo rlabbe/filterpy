@@ -28,8 +28,6 @@ from filterpy.common import dot3
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=C0103
-
-
     """ Implements the Unscented Kalman filter (UKF) as defined by Simon J.
     Julier and Jeffery K. Uhlmann [1]. Succintly, the UKF selects a set of
     sigma points and weights inside the covariance matrix of the filter's

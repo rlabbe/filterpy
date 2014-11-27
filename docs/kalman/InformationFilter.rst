@@ -6,7 +6,7 @@ Introduction and Overview
 
 This is a basic implementation of the information filter.
 
-Classes
+
 -------
 
 .. automodule:: filterpy.kalman

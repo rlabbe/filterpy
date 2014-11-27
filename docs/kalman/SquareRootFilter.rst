@@ -13,12 +13,10 @@ the rage these days, that calculus has changed. But, will you really run
 a Kalman filter in Python on a tiny chip? No. So, this is for learning.
 
 
-Classes
 -------
 
 .. automodule:: filterpy.kalman
 
-Kalman filter
 
 .. autoclass:: SquareRootKalmanFilter
     :members:
