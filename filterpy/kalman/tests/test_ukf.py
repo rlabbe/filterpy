@@ -17,7 +17,8 @@ import numpy.random as random
 from numpy.random import randn
 import math
 import numpy as np
-from filterpy.kalman import UnscentedKalmanFilter as UKF, JulierPoints
+from filterpy.kalman import UnscentedKalmanFilter as UKF
+from filterpy.kalman import JulierPoints, WanMerlePoints
 from filterpy.common import stats
 
 DO_PLOT = False
@@ -56,6 +57,23 @@ def test_sigma_plot():
 
         stats.plot_covariance_ellipse([1, 2], P)
 
+
+def test_julier_weights():
+    for n in range(1,15):
+        for k in np.linspace(0,5,0.1):
+            jp = JulierPoints(n, k)
+
+            assert abs(sum(jp.Wm) - 1) < 1.e-12
+            assert abs(sum(jp.Wc) - 1) < 1.e-12
+
+def test_wan_merle_weights():
+    for n in range(1,5):
+        for alpha in np.linspace(0.99, 1.01, 0.005):
+            for beta in range(0,6):
+                for kappa in range(0,5):
+                    p = WanMerlePoints(n, alpha, beta, kappa)
+                    assert abs(sum(p.Wm) - 1) < 1.e-12
+                    assert abs(sum(p.Wc) - 1) < 1.e-12
 
 def test_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
@@ -154,7 +172,7 @@ if __name__ == "__main__":
     test_sigma_points_1D()
 
 
-    DO_PLOT = True
+    DO_PLOT = False
 
     '''test_1D_sigma_points()
     #plot_sigma_test ()
@@ -168,8 +186,8 @@ if __name__ == "__main__":
     xm, cov = unscented_transform(xi, w)'''
     test_radar()
     test_sigma_plot()
-
-
+    test_julier_weights()
+    test_wan_merle_weights()
 
     #print('xi=\n',Xi)
     """

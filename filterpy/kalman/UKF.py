@@ -369,7 +369,7 @@ class WanMerlePoints(object):
         **References**
 
         [1] E. A. Wan and R. Van der Merwe, “The unscented Kalman filter for
-            nonlinear estimation,” in Proc. Symp. Adaptive Syst. Signal 
+            nonlinear estimation,” in Proc. Symp. Adaptive Syst. Signal
             Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
 
             https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
@@ -380,7 +380,8 @@ class WanMerlePoints(object):
         """
 
         self.wc, self.wm = self.weights(n, alpha, beta, kappa)
-
+        self.alpha = alpha
+        self.kappa = kappa
 
     @property
     def Wm(self):
@@ -401,18 +402,17 @@ class WanMerlePoints(object):
         parameters.
         """
 
-
-        lambda_ = (alpha**2)*(n+kappa) - n
+        lambda_ = (alpha**2)*(n+kappa)-n
 
         c = 1. / (2*(n+lambda_))
         Wc = np.full(2*n+1, c)
         Wm = np.full(2*n+1, c)
-        Wc[0] = lambda_ / (n+lambda_) + (1 - alpha**2 + beta)
+        Wc[0] = lambda_ / ((n+lambda_) + (1 - alpha**2 + beta))
         Wm[0] = lambda_ / (n+lambda_)
 
         return Wc, Wm
 
-    def sigma_points_wan_merle(self, x, P, alpha=None, kappa=None):
+    def sigma_points(self, x, P, alpha=None, kappa=None):
         """ Computes the sigma pointsfor an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
         kappa is an arbitrary constant
