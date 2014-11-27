@@ -6,18 +6,13 @@ Created on Wed Nov 26 20:07:18 2014
 """
 
 import math
-from numpy import array, dot, asarray
+from numpy import array, asarray
 from numpy.random import randn
 import matplotlib.pyplot as plt
 
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import ScaledUnscentedKalmanFilter as SUKF
 from filterpy.common import Q_discrete_white_noise
-
-
-""" Note that the commented out code contains code from the old formulation
-of the scaled unscented transform which no longer exists"""
-
 
 
 """ This is an example of the bearing only problem. You have a platform,
