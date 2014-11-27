@@ -9,6 +9,6 @@ from .kalman_filter import *
 from .square_root import *
 from .information_filter import *
 from .rts_smoother import *
-from .UKF import UnscentedKalmanFilter, sigma_points, unscented_transform
+from .UKF import UnscentedKalmanFilter, JulierPoints, WanMerlePoints
 from .fading_memory import *
 from .fixed_lag_smoother import FixedLagSmoother

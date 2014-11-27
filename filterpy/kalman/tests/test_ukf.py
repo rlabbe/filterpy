@@ -17,50 +17,68 @@ import numpy.random as random
 from numpy.random import randn
 import math
 import numpy as np
-from filterpy.kalman import UKF
-
+from filterpy.kalman import UnscentedKalmanFilter as UKF, JulierPoints
+from filterpy.common import stats
 
 DO_PLOT = False
 
-def plot_sigma_test():
+
+def test_sigma_plot():
     """ Test to make sure sigma's correctly mirror the shape and orientation
     of the covariance array."""
 
-    x = np.array([[1,2]])
+    x = np.array([[1, 2]])
     P = np.array([[2, 1.2],
                   [1.2, 2]])
     kappa = .1
 
     # if kappa is larger, than points shoudld be closer together
+    jp0 = JulierPoints(2, kappa)
+    jp1 = JulierPoints(2, kappa*1000)
 
-    Xi, W = sigma_points (x, P, kappa)
-    for i in range(Xi.shape[0]):
-        plt.scatter((Xi[i,0]-x[0,0])*W[i]+x[0,0],
-                    (Xi[i,1]-x[0,1])*W[i]+x[0,1], color='blue')
+    Xi0 = jp0.sigma_points (x, P)
+    Xi1 = jp1.sigma_points (x, P)
 
-    Xi, W = sigma_points (x, P, kappa*1000)
-    for i in range(Xi.shape[0]):
-        plt.scatter((Xi[i,0]-x[0,0])*W[i]+x[0,0],
-                    (Xi[i,1]-x[0,1])*W[i]+x[0,1], color='green')
+    assert max(Xi1[:,0]) > max(Xi0[:,0])
+    assert max(Xi1[:,1]) > max(Xi0[:,1])
 
-    stats.plot_covariance_ellipse([1,2],P)
+    if DO_PLOT:
+        plt.figure()
+        for i in range(Xi0.shape[0]):
+            plt.scatter((Xi0[i,0]-x[0, 0])*jp0.Wm[i] + x[0, 0],
+                        (Xi0[i,1]-x[0, 1])*jp0.Wm[i] + x[0, 1],
+                         color='blue')
+
+        for i in range(Xi1.shape[0]):
+            plt.scatter((Xi1[i, 0]-x[0, 0]) * jp1.Wm[i] + x[0,0],
+                        (Xi1[i, 1]-x[0, 1]) * jp1.Wm[i] + x[0,1],
+                         color='green')
+
+        stats.plot_covariance_ellipse([1, 2], P)
 
 
-def sigma_points_1D_tests():
+def test_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
-    Xi, W = sigma_points (5,9,2)
-    xm, cov = unscented_transform(Xi, W)
+    jp = JulierPoints(1, 0.)
+    assert jp.Wc.all() == jp.Wm.all()
+
+    mean = 5
+    cov = 9
+
+    Xi = jp.sigma_points (mean, cov)
+    xm, ucov = UKF.unscented_transform(Xi, jp.Wm, jp.Wc, 0)
+
+    # sum of weights*sigma points should be the original mean
+    m = 0.0
+    for x,w in zip(Xi, jp.Wm):
+        m += x*w
+
+    assert abs(m-mean) < 1.e-12
+    assert abs(xm[0] - mean) < 1.e-12
+    assert abs(ucov[0,0]-cov) < 1.e-12
 
     assert Xi.shape == (3,1)
-    assert len(W) == 3
-
-    print('Xi=',Xi)
-    print('W=',W)
-
-    print('xm',xm)
-    print('cov',cov)
-
-
+    assert len(jp.Wc) == 3
 
 
 class RadarSim(object):
@@ -69,34 +87,13 @@ class RadarSim(object):
         self.dt = dt
 
     def get_range(self):
-
-        vel = 100 * 5*randn()
+        vel = 100  + 5*randn()
         alt = 1000 + 10*randn()
         self.x += vel*self.dt
 
         v = self.x * 0.05*randn()
         rng = (self.x**2 + alt**2)**.5 + v
         return rng
-
-
-def GetRadar(dt):
-    """ Simulate radar range to object at 1K altidue and moving at 100m/s.
-    Adds about 5% measurement noise. Returns slant range to the object.
-    Call once for each new measurement at dt time from last call.
-    """
-
-    if not hasattr (GetRadar, "posp"):
-        GetRadar.posp = 0
-
-    vel = 100  + 5 * randn()
-    alt = 1000 + 10 * randn()
-    pos = GetRadar.posp + vel*dt
-
-    v = 0 + pos* 0.05*randn()
-    range = math.sqrt (pos**2 + alt**2) + v
-    GetRadar.posp = pos
-
-    return range
 
 
 def test_radar():
@@ -110,10 +107,14 @@ def test_radar():
         return np.sqrt (x[0]**2 + x[2]**2)
 
     dt = 0.05
-    kf = UKF(3,1,0,dt)
+
+    jp = JulierPoints(3,0)
+
+    kf = UKF(3, 1, dt, jp)
+
     kf.Q *= 0.01
-    kf.R = 100
-    kf.X = np.array([0., 90., 1100.])
+    kf.R = 10
+    kf.x = np.array([0., 90., 1100.])
     kf.P *= 100.
     radar = RadarSim(dt)
 
@@ -127,16 +128,18 @@ def test_radar():
     rs = []
     #xs = []
     for i in range(len(t)):
-        #r = radar.get_range()
-        r = GetRadar(dt)
-        kf.update(r, fx, hx)
+        r = radar.get_range()
+        #r = GetRadar(dt)
+        kf.predict(fx)
+        kf.update(r, hx)
 
-        xs[i,:] = kf.X
+        xs[i,:] = kf.x
         rs.append(r)
 
     if DO_PLOT:
         print(xs[:,0].shape)
 
+        plt.figure()
         plt.subplot(311)
         plt.plot(t, xs[:,0])
         plt.subplot(312)
@@ -147,6 +150,10 @@ def test_radar():
 
 
 if __name__ == "__main__":
+
+    test_sigma_points_1D()
+
+
     DO_PLOT = True
 
     '''test_1D_sigma_points()
@@ -160,6 +167,7 @@ if __name__ == "__main__":
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
     test_radar()
+    test_sigma_plot()
 
 
 

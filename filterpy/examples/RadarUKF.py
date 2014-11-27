@@ -10,93 +10,64 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import SigmaPoints as ukf
-from GetRadar import *
+
 import numpy as np
 import scipy.linalg as linalg
 import matplotlib.pyplot as plt
+from GetRadar import GetRadar
+from filterpy.kalman import UnscentedKalmanFilter as UKF, JulierPoints
+from filterpy.common import Q_discrete_white_noise
+
+
 
 def fx(x, dt):
-    A = np.eye(3) + dt * np.array ([[0, 1, 0],
-                                    [0, 0, 0],
-                                    [0, 0, 0]])
-    return A * x
+    """ state transition function for sstate [downrange, vel, altitude]"""
+    F = np.array([[1., dt, 0.],
+                  [0., 1., 0.],
+                  [0., 0., 1.]])
+
+    return np.dot(F, x)
 
 
 def hx(x):
-    return np.sqrt (x[0]**2 + x[2]**2)
+    """ returns slant range based on downrange distance and altitude"""
 
+    return (x[0]**2 + x[2]**2)**.5
 
-def RadarUKF (z, dt):
-    if not hasattr (RadarUKF, "Q"):
-        RadarUKF.Q = 0.01 * np.eye(3)
-        RadarUKF.R = 100
-        RadarUKF.x = np.array ([[0.,90., 1100.]]).T
-        RadarUKF.P = np.eye(3) * 100.
-        RadarUKF.n = 3
-        RadarUKF.m = 1
-
-    Xi, W = ukf.sigma_points (RadarUKF.x, RadarUKF.P, 0)
-    print(Xi, type(Xi))
-
-    fXi = np.zeros ((RadarUKF.n, 2*RadarUKF.n+1))
-    print(fXi)
-
-    a = fx(Xi[:,0], dt)
-    print('a=',a)
-    print ('fxi=',fXi[:,0])
-
-    for i in range (2*RadarUKF.n+1):
-        print(i)
-        fXi[:,i] = fx(Xi[:,i], dt)
-
-
-    xp, Pp = ukf.unscented_transform (fXi, W, RadarUKF.Q)
-
-    hXi = np.zeros((RadarUKF.m, 2*RadarUKF.n+1))
-    for i in range (2*RadarUKF.n+1):
-        hXi[:, i] = hx(fXi[:,i])
-
-    zp, Pz = ukf.unscented_transform(hXi, W, RadarUKF.R)
-    Pxz = np.zeros((RadarUKF.n,RadarUKF.m))
-
-    for i in range (2*RadarUKF.n+1):
-        Pxz = Pxz + W[i] * (fXi[:,i] - xp) * (hXi[:,i] - zp).T
-
-    K = Pxz * linalg.inv(Pz)
-
-    RadarUKF.x = xp + K * (z - zp)
-    RadarUKF.P = Pp - K * Pz * K.T
-
-    return RadarUKF.x
 
 if __name__ == "__main__":
+
     dt = 0.05
-    t = np.arange (0,20+dt, dt)
+
+    radarUKF = UKF(dim_x=3, dim_z=1, dt=dt, points_alg=JulierPoints(3, 0.))
+    radarUKF.Q *= Q_discrete_white_noise(3, 1, .01)
+    radarUKF.R *= 10
+    radarUKF.x = np.array([0., 90., 1100.])
+    radarUKF.P *= 100.
+
+    t = np.arange(0, 20+dt, dt)
     n = len(t)
-    print('n=', n)
-
-
-    x = np.zeros((3, n))
+    xs = []
     rs = []
-
-
     for i in range(n):
         r = GetRadar(dt)
-        #r = 991.95
         rs.append(r)
-        q = RadarUKF(r, dt)
-        x[:,i] = q
-        #print 'q=', q
 
-    plt.figure(1)
-    plt.plot(t, x.A[0,:])
+        radarUKF.predict(fx)
+        radarUKF.update(r, hx)
 
-    plt.figure(2)
-    plt.plot(t, x.A[1,:])
+        xs.append(radarUKF.x)
 
-    plt.figure (3)
-    plt.plot(t, x.A[2,:])
+    xs = np.asarray(xs)
 
+    plt.subplot(311)
+    plt.plot(t, xs[:, 0])
+    plt.title('distance')
 
+    plt.subplot(312)
+    plt.plot(t, xs[:, 1])
+    plt.title('velocity')
 
+    plt.subplot(313)
+    plt.plot(t, xs[:, 2])
+    plt.title('altitude')
