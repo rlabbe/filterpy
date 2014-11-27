@@ -20,7 +20,8 @@ import mock
  
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.linalg', 'numpy.linalg', 'matplotlib.pyplot',
-                'numpy.random']
+                'numpy.random', 'scipy.sparse', 'scipy.sparse.linalg',
+                'scipy.stats', 'matplotlib.patches']
                 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
@@ -34,6 +35,7 @@ sys.path.insert(0, os.path.abspath('../filterpy'))
 
 from filterpy import *
 import filterpy
+import filterpy.kalman
 
 # -- General configuration ------------------------------------------------
 
