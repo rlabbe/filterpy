@@ -17,5 +17,4 @@ Classes
     
     .. automethod:: __init__
 
-.. autofunction:: sigma_points
-.. autofunction:: unscented_transform
+
