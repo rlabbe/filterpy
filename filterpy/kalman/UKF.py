@@ -213,9 +213,9 @@ class UnscentedKalmanFilter(object):
         P = zeros((n, n))
         for k in range(kmax):
             y = Xi[k] - X
-            P += Wc[k] * np.outer(y, y) + noise_cov
+            P += Wc[k] * np.outer(y, y)
 
-        return (X, P)
+        return (X, P + noise_cov)
 
 
 class JulierPoints(object):
@@ -407,7 +407,7 @@ class WanMerlePoints(object):
         c = 1. / (2*(n+lambda_))
         Wc = np.full(2*n+1, c)
         Wm = np.full(2*n+1, c)
-        Wc[0] = lambda_ / ((n+lambda_) + (1 - alpha**2 + beta))
+        Wc[0] = lambda_ / (n+lambda_) + (1 - alpha**2 + beta)
         Wm[0] = lambda_ / (n+lambda_)
 
         return Wc, Wm
@@ -456,7 +456,6 @@ class WanMerlePoints(object):
         if kappa is None:
             kappa = self.kappa
 
-
         Xi = zeros((2*n+1, n)) # sigma points
 
         lambda_ = alpha**2 * (n+kappa)
@@ -465,7 +464,7 @@ class WanMerlePoints(object):
         #     U'*U = lambda_*P.
         # Returns lower triangular matrix.
         # Take transpose so we can access with U[i]
-        U = cholesky((lambda_)*P).T
+        U = cholesky(lambda_*P).T
         #U = sqrtm((lambda_)*P).T
 
         for k in range(n):
@@ -474,5 +473,6 @@ class WanMerlePoints(object):
 
         # handle value for the mean separately as special case
         Xi[0] = x
+
 
         return Xi
