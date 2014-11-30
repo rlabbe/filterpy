@@ -205,7 +205,8 @@ def covariance_ellipse(P, deviations=1):
     return (orientation, width, height)
 
 
-def plot_covariance_ellipse(mean, cov=None, variance = 1.0,
+def plot_covariance_ellipse(mean, cov=None,
+            variance = 1.0, std=None,
              ellipse=None, title=None, axis_equal=True,
              facecolor='none', edgecolor='#004080',
              alpha=1.0, xlim=None, ylim=None):
@@ -241,8 +242,17 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0,
         plt.title (title)
 
 
-    if np.isscalar(variance):
-        variance = [variance]
+    compute_std = False
+    if std is None:
+        std = variance
+        compute_std = True
+
+
+    if np.isscalar(std):
+            std = [std]
+
+    if compute_std:
+        std = np.sqrt(np.asarray(std))
 
     ax = plt.gca()
 
@@ -250,8 +260,7 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0,
     width = ellipse[1] * 2.
     height = ellipse[2] * 2.
 
-    for var in variance:
-        sd = np.sqrt(var)
+    for sd in std:
         e = Ellipse(xy=mean, width=sd*width, height=sd*height, angle=angle,
                     facecolor=facecolor,
                     edgecolor=edgecolor,
@@ -350,14 +359,25 @@ def _do_plot_test():
 
     plot_covariance_ellipse(mean=(0., 0.),
                             cov = p,
-                            variance=sd*sd,
+                            std=sd,
                             facecolor='none')
 
     print (count / len(x))
 
-if __name__ == '__main__':
 
-    do_plot_test()
+def plot_std_vs_var():
+    plt.figure()
+    x = (0,0)
+    P = np.array([[3,1],[1,3]])
+    plot_covariance_ellipse(x, P, std=[1,2,3], facecolor='g', alpha=.2)
+    plot_covariance_ellipse(x, P, variance=[1,2,3], facecolor='r', alpha=.5)
+
+
+if __name__ == '__main__':
+    plot_std_vs_var()
+    plt.figure()
+
+    _do_plot_test()
 
     #test_gaussian()
 

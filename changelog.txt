@@ -1,3 +1,10 @@
+Version 0.0.7
+=============
+
+Significant changes to Unscented filter. Now separate classes for the different
+sigma computations, and predict/update split out. Provision for supplying your own
+residual and unscented transform functions.
+
 Version 0.0.6
 =============
 

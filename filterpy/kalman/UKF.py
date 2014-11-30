@@ -24,6 +24,10 @@ from numpy import asarray, eye, zeros, dot
 from filterpy.common import dot3
 #from scipy.linalg import sqrtm
 
+def min_angle(x,y):
+    import math
+    return min(y-x, y-x+2*math.pi, y-x-2*math.pi, key=abs)
+
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -79,7 +83,7 @@ class UnscentedKalmanFilter(object):
         https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
-    def __init__(self, dim_x, dim_z, dt, kappa=0.):
+    def __init__(self, dim_x, dim_z, dt, hx, fx, kappa=0.):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -98,6 +102,14 @@ class UnscentedKalmanFilter(object):
 
         dt : float
             Time between steps in seconds.
+
+        hx : function(x)
+            Measurement function. Converts state vector x into a measurement
+            vector of shape (dim_z).
+
+        fx : function(x,dt)
+            function that returns the state x transformed by the
+            state transistion function. dt is the time step in seconds.
 
         kappa : float, default=0.
             Scaling factor that can reduce high order errors. kappa=0 gives
@@ -124,6 +136,8 @@ class UnscentedKalmanFilter(object):
         self._dt = dt
         self._num_sigmas = 2*dim_x + 1
         self.kappa = kappa
+        self.hx = hx
+        self.fx = fx
 
         # weights for the means and covariances. In this formation
         # both are the same.
@@ -136,25 +150,28 @@ class UnscentedKalmanFilter(object):
         self.hX = zeros((self._num_sigmas, self._dim_z))
 
 
-    def update(self, z, hx, fx):
+    def update(self, z, residual=np.subtract, UT=None):
         """ Update the UKF with the given measurements. On return,
-        self.x and self.P contain the new mean and covariance of the filter,
-        and self.xp and self.Pp contain the prediction only, if that is
-        of interest to you.
-
+        self.x and self.P contain the new mean and covariance of the filter.
 
         **Parameters**
 
         z : numpy.array of shape (dim_z)
             measurement vector
 
-        hz : function(x)
-            Measurement function. Converts state vector x into a measurement
-            vector of shape (dim_z).
+        residual : function (z, z2), optional
+            Optional function that computes the residual (difference) between
+            the two measurement vectors. If you do not provide this, then the
+            built in minus operator will be used. You will normally want to use
+            the built in unless your residual computation is nonlinear (for
+            example, if they are angles)
 
-        fx : function(x,dt)
-            function that returns the state x transformed by the
-            state transistion function. dt is the time step in seconds.
+        UT : function(sigmas, Wm, Wc, noise_cov), optional
+            Optional function to compute the unscented transform for the sigma
+            points passed through hx. Typically the default function will
+            work, but if for example you are using angles the default method
+            of computing means and residuals will not work, and you will have
+            to define how to compute it.
         """
 
         # rename for readability
@@ -163,35 +180,50 @@ class UnscentedKalmanFilter(object):
         Wm = self.Wm
         Wc = self.Wc
 
-        # Prediction step
+        # transform sigma points into measurement space
+        for i in range(self._num_sigmas):
+            hX[i] = self.hx(fX[i])
+
+        # mean and covariance of prediction passed through UT
+        if UT is None:
+            zp, Pz = unscented_transform(hX, Wm, Wc, self.R, residual)
+        else:
+            zp, Pz = UT(hX, Wm, Wc, self.R)
+
+        # compute cross variance of the state and the measurements
+        Pxz = zeros((self._dim_x, self._dim_z))
+        for i in range(self._num_sigmas):
+            Pxz += Wc[i] * np.outer(fX[i] - self.xp, residual(hX[i], zp))
+
+        K = dot(Pxz, inv(Pz)) # Kalman gain
+
+        y = residual(z, zp)
+
+        self.x = self.xp + dot(K, y)
+        self.P = self.Pp - dot3(K, Pz, K.T)
+
+
+    def predict(self):
+        """ Performs the predict step of the UKF. On return, self.xp and
+        self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
+        stands for prediction.
+
+        Important: this MUST be called before update() is called for the first
+        time.
+        """
+
+        # rename for readability
+        Wm = self.Wm
+        Wc = self.Wc
 
         # calculate sigma points for given mean and covariance
         X = self.sigma_points(self.x, self.P, self.kappa)
 
         for i in range(self._num_sigmas):
-            fX[i] = fx(X[i], self._dt)
+            self.fX[i] = self.fx(X[i], self._dt)
 
-        self.xp, self.Pp = unscented_transform(fX, Wm, Wc, self.Q)
+        self.xp, self.Pp = unscented_transform(self.fX, Wm, Wc, self.Q)
 
-
-        # update step
-
-        # transform sigma points into measurement space
-        for i in range(self._num_sigmas):
-            hX[i] = hx(fX[i])
-
-        # mean and covariance of prediction passed through UT
-        zp, Pz = unscented_transform(hX, Wm, Wc, self.R)
-
-        # compute cross variance of the state and the measurements
-        Pxz = zeros((self._dim_x, self._dim_z))
-        for i in range(self._num_sigmas):
-            Pxz += Wc[i] * np.outer(fX[i] - self.xp, hX[i] - zp)
-
-        K = dot(Pxz, inv(Pz)) # Kalman gain
-
-        self.x = self.xp + dot(K, z-zp)
-        self.P = self.Pp - dot3(K, Pz, K.T)
 
 
     @staticmethod
@@ -204,6 +236,7 @@ class UnscentedKalmanFilter(object):
         W = np.full(2*n+1, k)
         W[0] = kappa / (n+kappa)
         return W
+
 
     @staticmethod
     def sigma_points(x, P, kappa):
@@ -321,7 +354,7 @@ class ScaledUnscentedKalmanFilter(object):
         https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
     """
 
-    def __init__(self, dim_x, dim_z, dt, alpha, beta, kappa=0.):
+    def __init__(self, dim_x, dim_z, dt, alpha, hx, fx, beta, kappa=0.):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -340,6 +373,14 @@ class ScaledUnscentedKalmanFilter(object):
 
         dt : float
             Time between steps in seconds.
+
+        hx : function(x)
+            Measurement function. Converts state vector x into a measurement
+            vector of shape (dim_z).
+
+        fx : function(x,dt)
+            function that returns the state x transformed by the
+            state transistion function. dt is the time step in seconds.
 
         alpha : float
             Determins the spread of the sigma points around the mean.
@@ -384,6 +425,8 @@ class ScaledUnscentedKalmanFilter(object):
         self.alpha = alpha
         self.beta = beta
         self.kappa = kappa
+        self.hx = hx
+        self.fx = fx
 
         # weights for the means and covariances. In this formation
         # both are the same.
@@ -396,25 +439,51 @@ class ScaledUnscentedKalmanFilter(object):
         self.hX = zeros((self._num_sigmas, self._dim_z))
 
 
-    def update(self, z, hx, fx):
-        """ Update the UKF with the given measurements. On return,
-        self.x and self.P contain the new mean and covariance of the filter,
-        and self.xp and self.Pp contain the prediction only, if that is
-        of interest to you.
 
+    def predict(self):
+        """ Performs the predict step of the UKF. On return, self.xp and
+        self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
+        stands for prediction.
+
+        Important: this MUST be called before update() is called for the first
+        time.
+        """
+
+        # rename for readability
+        Wm = self.Wm
+        Wc = self.Wc
+
+        # calculate sigma points for given mean and covariance
+        X = self.sigma_points(self.x, self.P, self.kappa)
+
+        for i in range(self._num_sigmas):
+            self.fX[i] = self.fx(X[i], self._dt)
+
+        self.xp, self.Pp = unscented_transform(self.fX, Wm, Wc, self.Q)
+
+
+    def update(self, z, residual=np.subtract, UT=None):
+        """ Update the UKF with the given measurements. On return,
+        self.x and self.P contain the new mean and covariance of the filter.
 
         **Parameters**
 
         z : numpy.array of shape (dim_z)
             measurement vector
 
-        hz : function(x)
-            Measurement function. Converts state vector x into a measurement
-            vector of shape (dim_z).
+        residual : function (z, z2), optional
+            Optional function that computes the residual (difference) between
+            the two measurement vectors. If you do not provide this, then the
+            built in minus operator will be used. You will normally want to use
+            the built in unless your residual computation is nonlinear (for
+            example, if they are angles)
 
-        fx : function(x,dt)
-            function that returns the state x transformed by the
-            state transistion function. dt is the time step in seconds.
+        UT : function(sigmas, Wm, Wc, noise_cov), optional
+            Optional function to compute the unscented transform for the sigma
+            points passed through hx. Typically the default function will
+            work, but if for example you are using angles the default method
+            of computing means and residuals will not work, and you will have
+            to define how to compute it.
         """
 
         # rename for readability
@@ -423,37 +492,28 @@ class ScaledUnscentedKalmanFilter(object):
         Wm = self.Wm
         Wc = self.Wc
 
-        #################
-        # Prediction step
-
-        # calculate sigma points for given mean and covariance
-        X = self.sigma_points(self.x, self.P, self.alpha, self.kappa)
-
-        for i in range(self._num_sigmas):
-            fX[i] = fx(X[i], self._dt)
-
-        self.xp, self.Pp = unscented_transform(fX, Wm, Wc, self.Q)
-
-        #################
-        # update step
-
         # transform sigma points into measurement space
         for i in range(self._num_sigmas):
-            hX[i] = hx(fX[i])
+            hX[i] = self.hx(fX[i])
 
         # mean and covariance of prediction passed through UT
-        zp, Pz = unscented_transform(hX, Wm, Wc, self.R)
+        if UT is None:
+            zp, Pz = unscented_transform(hX, Wm, Wc, self.R, residual)
+        else:
+            zp, Pz = UT(hX, Wm, Wc, self.R)
 
         # compute cross variance of the state and the measurements
         Pxz = zeros((self._dim_x, self._dim_z))
         for i in range(self._num_sigmas):
-            Pxz += Wc[i] * np.outer(fX[i] - self.xp, hX[i] - zp)
+            Pxz += Wc[i] * np.outer(fX[i] - self.xp, residual(hX[i], zp))
 
         K = dot(Pxz, inv(Pz)) # Kalman gain
 
-        # compute new estimates
-        self.x = self.xp + dot(K, z-zp)
+        y = residual(z, zp)
+
+        self.x = self.xp + dot(K, y)
         self.P = self.Pp - dot3(K, Pz, K.T)
+
 
 
     @staticmethod
@@ -534,7 +594,7 @@ class ScaledUnscentedKalmanFilter(object):
         return Sigmas
 
 
-def unscented_transform(Xi, Wm, Wc, noise_cov):
+def unscented_transform(Xi, Wm, Wc, noise_cov, residual=None):
     """ Computes unscented transform of a set of sigma points and weights.
     returns the mean and covariance in a tuple.
     """
@@ -548,7 +608,11 @@ def unscented_transform(Xi, Wm, Wc, noise_cov):
     # times the weights
     P = zeros((n, n))
     for k in range(kmax):
-        y = Xi[k] - X
+        if residual is None:
+            y = Xi[k] - X
+        else:
+            y = residual(Xi[k], X)
+
         P += Wc[k] * np.outer(y, y)
 
     return (X, P + noise_cov)

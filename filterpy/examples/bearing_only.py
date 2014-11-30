@@ -57,7 +57,8 @@ for i in range(300):
     sf.update(angle, hx, fx)
     xs_scaled.append(sf.x)
 
-    f.update(angle, hx, fx)
+    f.predict(fx)
+    f.update(angle, hx)
     xs.append(f.x)
 
 

@@ -80,7 +80,7 @@ def test_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
 
     kappa = 0.
-    ukf = UKF(dim_x=1, dim_z=1, dt=0.1, kappa=kappa)
+    ukf = UKF(dim_x=1, dim_z=1, dt=0.1, hx=None, fx=None, kappa=kappa)
     assert ukf.Wc.all() == ukf.Wm.all()
 
     points = ukf.weights(1, 0.)
@@ -132,7 +132,7 @@ def test_radar():
 
     dt = 0.05
 
-    kf = UKF(3, 1, dt, kappa=0.)
+    kf = UKF(3, 1, dt, fx=fx, hx=hx, kappa=0.)
 
     kf.Q *= 0.01
     kf.R = 10
@@ -152,7 +152,8 @@ def test_radar():
     for i in range(len(t)):
         r = radar.get_range()
         #r = GetRadar(dt)
-        kf.update(r, hx, fx)
+        kf.predict()
+        kf.update(z=r)
 
         xs[i,:] = kf.x
         rs.append(r)
@@ -175,7 +176,7 @@ if __name__ == "__main__":
     test_sigma_points_1D()
 
 
-    DO_PLOT = False
+    DO_PLOT = True
 
     '''test_1D_sigma_points()
     #plot_sigma_test ()
