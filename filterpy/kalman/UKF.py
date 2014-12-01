@@ -286,21 +286,42 @@ class UnscentedKalmanFilter(object):
         return sigmas
 
 
-def unscented_transform(Sigmas, Wm, Wc, noise_cov):
-    """ Computes unscented transform of a set of sigma points and weights.
-    returns the mean and covariance in a tuple.
+def unscented_transform(sigmas, Wm, Wc, noise_cov):
+    """ Computes the mean and covariance of a set of sigma points.
+
+
+    **Parameters**
+
+    Sigmas : np.array((n, 2n+1)
+        sigma points
+
+    Wm : np.array(2n+1)
+        weights for the means
+
+    Wc : np.array(2n+1)
+        weights for the covariance
+
+    noise_cov : np.array((n, n))
+        covariance matrix of noise in system
+
+    **Returns**
+    x : np.array(n)
+        mean of the sigma points
+
+    P : np.array(n, n)
+        covariance of the sigma points
     """
 
-    kmax, n = Sigmas.shape
+    kmax, n = sigmas.shape
 
     # new mean is just the sum of the sigmas * weight
-    x = dot(Wm, Sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
+    x = dot(Wm, sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
 
     # new covariance is the sum of the outer product of the residuals
     # times the weights
     P = zeros((n, n))
     for k in range(kmax):
-        y = Sigmas[k] - x
+        y = sigmas[k] - x
         P += Wc[k] * np.outer(y, y)
 
     return (x, P + noise_cov)

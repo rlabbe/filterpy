@@ -173,7 +173,6 @@ class ScaledUnscentedKalmanFilter(object):
 
         # calculate sigma points for given mean and covariance
         sigmas = self.sigma_points(self.x, self.P, self.kappa)
-
         for i in range(self._num_sigmas):
             self.sigmas_f[i] = self.fx(sigmas[i], self._dt)
 
@@ -213,8 +212,12 @@ class ScaledUnscentedKalmanFilter(object):
             UT = unscented_transform
 
         # transform sigma points into measurement space
+        sigmas_h2 = self.hx(sigmas_f)
+
         for i in range(self._num_sigmas):
             sigmas_h[i] = self.hx(sigmas_f[i])
+
+        assert sigmas_h2.all() == sigmas_h.all()
 
         # mean and covariance of prediction passed through UT
         zp, Pz = UT(sigmas_h, Wm, Wc, self.R)
@@ -290,7 +293,7 @@ class ScaledUnscentedKalmanFilter(object):
         if  np.isscalar(P):
             P = eye(n)*P
 
-        Sigmas = zeros((2*n+1, n)) # sigma points
+        sigmas = zeros((2*n+1, n)) # sigma points
 
         # efficient square root of matrix calculation. Implements
         #     U'*U = lambda_*P.
@@ -301,10 +304,10 @@ class ScaledUnscentedKalmanFilter(object):
         #U = sqrtm((lambda_)*P).T
 
         for k in range(n):
-            Sigmas[k+1]   = x + U[k]
-            Sigmas[n+k+1] = x - U[k]
+            sigmas[k+1]   = x + U[k]
+            sigmas[n+k+1] = x - U[k]
 
         # handle value for the mean separately as special case
-        Sigmas[0] = x
+        sigmas[0] = x
 
-        return Sigmas
+        return sigmas
