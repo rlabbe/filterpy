@@ -1,3 +1,9 @@
+Version 0.0.8
+=============
+
+Minor changes to Unscented filter, mainly naming of local variables.
+
+
 Version 0.0.7
 =============
 
