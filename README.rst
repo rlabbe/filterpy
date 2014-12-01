@@ -22,7 +22,7 @@ hard for me to choose which presentation is 'clearer' - it depends on
 the audience. In that case I usually opt for the faster implementation.
 
 I use NumPy and SciPy for all of the computations. I have experimented
-with Numba, Continuum Analytics just in time compiler, and it yields
+with Numba, Continuum Analytics' just in time compiler, and it yields
 impressive speed ups with minimal costs, but I am not convinced that I
 want to add that requirement to my project. It is still on my list of
 things to figure out, however.
@@ -35,8 +35,15 @@ questions or needs and I will either answer directly or shift my
 development to address your problem (assuming your question is a planned
 part of this library.
 
-Sphinx generated documentation lives at http://filterpy.readthedocs.org/
+Sphinx generated documentation lives at http://filterpy.readthedocs.org/.
+Generation is triggered by git when I do a check in, so this will always
+be bleeding edge development version - it will often be ahead of the
+released version. 
 
+You can also find the documentation at https://pythonhosted.org/filterpy/
+but that currently requires me to manually upload the documentation, so 
+it is possible that it will be out of date. It will never be of a development
+version, however.
 
 Installation
 ------------
@@ -51,6 +58,12 @@ If you prefer to download the source yourself
     git clone http://github.com/rlabbe/filterpy
     python setup.py install
 
+And, if you want to install from the bleeding edge git version
+
+::
+
+    pip install git+https://github.com/rlabbe/filterpy.git
+
 Note: at the moment github will probably be much more 'bleeding edge' than
 the pip install. I need to formalize this into a dev and stable path, but
 have yet to do so.
@@ -59,32 +72,63 @@ have yet to do so.
 Basic use
 ---------
 
+First, import the filters and helper functions.
+
 ::
-
+    import numpy as np
     from filterpy.kalman import KalmanFilter
-    from filterpy.memory import FadingMemoryFilter
+    from filterpy.common import Q_discrete_white_noise
+
+Now, create the filter
+
+::
+    my_filter = KalmanFilter(dim_x=2, dim_z=1)
 
 
-    my_filter = KalmanFilter(dim_x=9, dim_z=2)
+Initialize the filter's matrices.
 
-Sorry, that is the extent of the documentation. However, the library is
-broken up into subdirectories: gh, kalman, memory, leastsq, and so on.
+::
+    f.x = np.array([[2.],
+                    [0.]])       # initial state (location and velocity)
+
+    f.F = np.array([[1.,1.],
+                    [0.,1.]])    # state transition matrix
+
+    f.H = np.array([[1.,0.]])    # Measurement function
+    f.P *= 1000.                 # covariance matrix
+    f.R = 5                      # state uncertainty
+    f.Q = Q_discrete_white_noise(2, dt, .1) # process uncertainty
+
+
+Finally, run the filter.
+
+::
+    while True:
+        my_filter.predict()
+        my_filter.update(get_some_measurement())
+
+        # do something with the output
+        x = my_filter.x
+        do_something_amazing(x)
+
+Sorry, that is the extent of the documentation here. However, the library
+is broken up into subdirectories: gh, kalman, memory, leastsq, and so on.
 Each subdirectory contains python files relating to that form of filter.
 The functions and methods contain pretty good docstrings on use.
 
 My book https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/
 uses this library, and is the place to go if you are trying to learn
-about Kalman filtering. These two are not exactly in sync - my normal
-development cycle is to add files here, test them, figure out how to
-present them pedalogically, then write the appropriate section or chapter
-in the book. So there are files here that are not even discussed yet
-in the book.
+about Kalman filtering and/or this library. These two are not exactly in 
+sync - my normal development cycle is to add files here, test them, figure 
+out how to present them pedalogically, then write the appropriate section
+or chapterin the book. So there is code here that is not discussed
+yet in the book.
 
 
 Requirements
 ------------
 
-NumPy and SciPy Python 2 or 3 matplotlib
+This library uses NumPy, SciPy, Matplotlib, and Python. 
 
 I haven't extensively tested backwards compatibility - I use the
 Anaconda distribution, and so I am on Python 3.4 and 2.7.5, along with
@@ -92,7 +136,7 @@ whatever version of numpy, scipy, and matplotlib they provide. But I am
 using pretty basic Python - numpy.array, maybe a list comprehension in
 my tests.
 
-I import from **future** to ensure the code works in Python 2 and 3.
+I import from **__future__** to ensure the code works in Python 2 and 3.
 
 The matplotlib library is required because, *for now*, 'tests' are very
 visual. Meaning I generate some data, plot the data against the filtered
