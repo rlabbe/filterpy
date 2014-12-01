@@ -81,7 +81,6 @@ def test_sigma_points_1D():
 
     kappa = 0.
     ukf = UKF(dim_x=1, dim_z=1, dt=0.1, hx=None, fx=None, kappa=kappa)
-    assert ukf.Wc.all() == ukf.Wm.all()
 
     points = ukf.weights(1, 0.)
     assert len(points) == 3
@@ -90,11 +89,11 @@ def test_sigma_points_1D():
     cov = 9
 
     Xi = ukf.sigma_points (mean, cov, kappa)
-    xm, ucov = unscented_transform(Xi, ukf.Wm, ukf.Wc, 0)
+    xm, ucov = unscented_transform(Xi, ukf.W, ukf.W, 0)
 
     # sum of weights*sigma points should be the original mean
     m = 0.0
-    for x,w in zip(Xi, ukf.Wm):
+    for x,w in zip(Xi, ukf.W):
         m += x*w
 
     assert abs(m-mean) < 1.e-12
@@ -102,7 +101,7 @@ def test_sigma_points_1D():
     assert abs(ucov[0,0]-cov) < 1.e-12
 
     assert Xi.shape == (3,1)
-    assert len(ukf.Wc) == 3
+    assert len(ukf.W) == 3
 
 
 class RadarSim(object):
