@@ -124,8 +124,6 @@ class UnscentedKalmanFilter(object):
         self.R = eye(dim_z)
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
-        self.xp = None
-        self.Pp = None
         self._dim_x = dim_x
         self._dim_z = dim_z
         self._dt = dt
@@ -143,7 +141,7 @@ class UnscentedKalmanFilter(object):
         self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
 
-    def update(self, z, residual=np.subtract, UT=None):
+    def update(self, z, R=None, residual=np.subtract, UT=None):
         """ Update the UKF with the given measurements. On return,
         self.x and self.P contain the new mean and covariance of the filter.
 
@@ -151,6 +149,10 @@ class UnscentedKalmanFilter(object):
 
         z : numpy.array of shape (dim_z)
             measurement vector
+
+        R : numpy.array((dim_z, dim_z)), optional
+            Measurement noise. If provided, overrides self.R for
+            this function call.
 
         residual : function (z, z2), optional
             Optional function that computes the residual (difference) between
@@ -167,9 +169,17 @@ class UnscentedKalmanFilter(object):
             to define how to compute it.
         """
 
+        dim_z = len(z)
+
+        if R is None:
+            R = self._R
+        elif np.isscalar(R):
+            R = eye(self.dim_z) * R
+
         # rename for readability
         sigmas_f = self.sigmas_f
-        sigmas_h = self.sigmas_h
+        sigmas_h = zeros((self._num_sigmas, dim_z))
+
 
         if UT is None:
             UT = unscented_transform
@@ -179,20 +189,20 @@ class UnscentedKalmanFilter(object):
             sigmas_h[i] = self.hx(sigmas_f[i])
 
         # mean and covariance of prediction passed through inscented transform
-        zp, Pz = UT(sigmas_h, self.W, self.W, self.R)
+        zp, Pz = UT(sigmas_h, self.W, self.W, R)
 
         # compute cross variance of the state and the measurements
-        Pxz = zeros((self._dim_x, self._dim_z))
+        Pxz = zeros((self._dim_x, dim_z))
         for i in range(self._num_sigmas):
-            Pxz += self.W[i] * np.outer(sigmas_f[i] - self.xp,
+            Pxz += self.W[i] * np.outer(sigmas_f[i] - self.x,
                                         residual(sigmas_h[i], zp))
 
         K = dot(Pxz, inv(Pz)) # Kalman gain
 
         y = residual(z, zp)
 
-        self.x = self.xp + dot(K, y)
-        self.P = self.Pp - dot3(K, Pz, K.T)
+        self.x = self.x + dot(K, y)
+        self.P = self.P - dot3(K, Pz, K.T)
 
 
     def predict(self):
@@ -210,7 +220,7 @@ class UnscentedKalmanFilter(object):
         for i in range(self._num_sigmas):
             self.sigmas_f[i] = self.fx(sigmas[i], self._dt)
 
-        self.xp, self.Pp = unscented_transform(
+        self.x, self.P = unscented_transform(
                            self.sigmas_f, self.W, self.W, self.Q)
 
 
@@ -286,42 +296,21 @@ class UnscentedKalmanFilter(object):
         return sigmas
 
 
-def unscented_transform(sigmas, Wm, Wc, noise_cov):
-    """ Computes the mean and covariance of a set of sigma points.
-
-
-    **Parameters**
-
-    Sigmas : np.array((n, 2n+1)
-        sigma points
-
-    Wm : np.array(2n+1)
-        weights for the means
-
-    Wc : np.array(2n+1)
-        weights for the covariance
-
-    noise_cov : np.array((n, n))
-        covariance matrix of noise in system
-
-    **Returns**
-    x : np.array(n)
-        mean of the sigma points
-
-    P : np.array(n, n)
-        covariance of the sigma points
+def unscented_transform(Sigmas, Wm, Wc, noise_cov):
+    """ Computes unscented transform of a set of sigma points and weights.
+    returns the mean and covariance in a tuple.
     """
 
-    kmax, n = sigmas.shape
+    kmax, n = Sigmas.shape
 
     # new mean is just the sum of the sigmas * weight
-    x = dot(Wm, sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
+    x = dot(Wm, Sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
 
     # new covariance is the sum of the outer product of the residuals
     # times the weights
     P = zeros((n, n))
     for k in range(kmax):
-        y = sigmas[k] - x
+        y = Sigmas[k] - x
         P += Wc[k] * np.outer(y, y)
 
     return (x, P + noise_cov)
