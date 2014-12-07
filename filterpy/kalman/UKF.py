@@ -172,7 +172,7 @@ class UnscentedKalmanFilter(object):
         dim_z = len(z)
 
         if R is None:
-            R = self._R
+            R = self.R
         elif np.isscalar(R):
             R = eye(self.dim_z) * R
 

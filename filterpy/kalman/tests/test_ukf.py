@@ -152,7 +152,7 @@ def test_radar():
         r = radar.get_range()
         #r = GetRadar(dt)
         kf.predict()
-        kf.update(z=r)
+        kf.update(z=[r])
 
         xs[i,:] = kf.x
         rs.append(r)
