@@ -13,17 +13,14 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-import scipy.linalg as linalg
 from scipy.linalg import inv
 from numpy import dot, zeros, eye, outer
 from numpy.random import multivariate_normal
-from filterpy.common import setter, setter_scalar, dot3
-
 
 
 class EnsembleKalmanFilter(object):
 
-    def __init__(self, dim_x, dim_z, dt, N, hx, fx):
+    def __init__(self, x, P, dim_z, dt, N, hx, fx):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -48,35 +45,42 @@ class EnsembleKalmanFilter(object):
 
         """
 
-        assert dim_x > 0
         assert dim_z > 0
 
-        self.dim_x = dim_x
+        self.dim_x = len(x)
         self.dim_z = dim_z
         self.dt = dt
         self.N = N
         self.hx = hx
         self.fx = fx
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.Q = eye(dim_x)       # process uncertainty
-        self.R = eye(dim_z)       # state uncertainty
+        self.Q = eye(self.dim_x)       # process uncertainty
+        self.R = eye(self.dim_z)       # state uncertainty
+        self.mean = [0]*self.dim_x
+        self.initialize(x, P)
 
-        self.sigmas = None
-        self.sigmas_f = zeros((N, dim_x))
 
     def initialize(self, x, P):
-        if x.ndim == 2:
-            m = x[:,0]
-        else:
-            assert x.ndim == 1
-            m = x
-        self.sigmas = multivariate_normal(mean=m, cov=P, size=self.N)
+        """ Initializes the filter with the specified mean and
+        covariance. Only need to call this if you are using the filter
+        to filter more than one set of data; this is called by __init__
+
+        **Parameters**
+
+        x : np.array(dim_z)
+            state mean
+
+        P : np.array((dim_x, dim_x))
+            covariance of the state
+        """
+        assert x.ndim == 1
+        self.sigmas = multivariate_normal(mean=x, cov=P, size=self.N)
+
+        self.x = x
+        self.P = P
 
 
-
-    def update(self, z, R=None, H=None):
+    def update(self, z, R=None):
         """
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
@@ -106,56 +110,51 @@ class EnsembleKalmanFilter(object):
         sigmas_h = zeros((N, dim_z))
 
         # transform sigma points into measurement space
-        for i, sigma in enumerate(self.sigmas):
-            sigmas_h[i] = self.hx(sigma)
+        for i in range(N):
+            sigmas_h[i] = self.hx(self.sigmas[i])
 
-        z_k = np.mean(sigmas_h, axis=0)
-
+        z_k = np.sum(sigmas_h, axis=0) / (N)
 
         P_zz = 0
         for sigma in sigmas_h:
-            P_zz += outer(sigma, sigma)
+            s = sigma - z_k
+            P_zz += outer(s, s)
 
-        P_zz = (P_zz / N) - outer(z_k, z_k) + R
+        P_zz = (P_zz / (N)) + R# - outer(z_k, z_k) + R
 
         P_xz = 0
         for i in range(N):
             P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_k)
-        P_xz /= N
+
+        P_xz /= (N)
 
         K = dot(P_xz, inv(P_zz))
 
         e_r = multivariate_normal([0]*dim_z, R, N)
 
+        y = z - z_k
+
         for i in range(N):
-            self.sigmas[i] += dot(K[i], z + e_r[i] - z_k)
+            self.sigmas[i] += dot(K, z + e_r[i] - sigmas_h[i])
 
-        self.x = np.mean(self.sigmas_f, axis=0)
-        self.P = self.P - dot3(K, P_zz, K.T)
+        #self.sigmas += dot(K, z - z_k)
+
+        self.x = np.sum(self.sigmas, axis=0) / (N)
+        #self.P = self.P - dot3(K, P_zz, K.T)
 
 
-    def predict(self, u=0):
-        """ Predict next position.
-
-        **Parameters**
-
-        u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
-            to create the control input into the system.
-        """
+    def predict(self):
+        """ Predict next position. """
 
         x = 0
-        P = 0
-        mean = [0]*self.dim_x
-        for i, s in enumerate(self.sigmas):
-            sigma = self.fx(s, self.dt)
-            e = multivariate_normal(mean, self.Q)
-            x += sigma + e
-            P += outer(sigma, sigma)
-            self.sigmas_f[i] = sigma+e
 
-        self.xp = x / self.N
-        self.Pp = P / self.N - outer (self.x, self.x)
+        e = multivariate_normal(self.mean, self.Q, self.N)
+        for i, s in enumerate(self.sigmas):
+            self.sigmas[i] = self.fx(s, self.dt)
+
+        self.sigmas += e
+
+        self.x = np.sum(self.sigmas, axis=0) / (self.N-1)
 
 
 def f1():
