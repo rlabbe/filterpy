@@ -20,6 +20,22 @@ from filterpy.common import dot3
 
 
 class EnsembleKalmanFilter(object):
+    """ This implements the ensemble Kalman filter (EnKF). The EnKF uses
+    an ensemble of hundreds to thousands of state vectors that are randomly
+    sampled around the estimate, and adds perturbations at each update and
+    predict step. It is useful for extremely large systems such as found
+    in hydrophysics. As such, this class is admittedly a toy as it is far
+    too slow with large N.
+
+    There are many versions of this sort of this filter. This formulation is
+    due to Crassidis and Junkins [1]. It works with both linear and nonlinear
+    systems.
+
+    **References**
+
+    - [1] John L Crassidis and John L. Junkins. "Optimal Estimation of
+      Dynamic Systems. CRC Press, second edition. 2012. pp, 257-9.
+    """
 
     def __init__(self, x, P, dim_z, dt, N, hx, fx):
         """ Create a Kalman filter. You are responsible for setting the
@@ -28,21 +44,57 @@ class EnsembleKalmanFilter(object):
 
         **Parameters**
 
-        dim_x : int
-            Number of state variables for the Kalman filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
+        x : np.array(dim_z)
+            state mean
 
-            This is used to set the default size of P, Q, and u
+        P : np.array((dim_x, dim_x))
+            covariance of the state
 
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
 
-        dim_u : int (optional)
-            size of the control input, if it is being used.
-            Default value of 0 indicates it is not used.
+        dt : float
+            time step in seconds
 
+        N : int
+            number of sigma points (ensembles). Must be greater than 1.
+
+        hx : function hx(x)
+            Measurement function. May be linear or nonlinear - converts state
+            x into a measurement. Return must be an np.array of the same
+            dimensionality as the measurement vector.
+
+        fx : function fx(x, dt)
+            State transition function. May be linear or nonlinear. Projects
+            state x into the next time period. Returns the projected state x.
+
+        **Example**
+
+        .. code::
+
+            def hx(x):
+               return np.array([x[0]])
+
+            F = np.array([[1., 1.],
+                          [0., 1.]])
+            def fx(x, dt):
+                return np.dot(F, x)
+
+            x = np.array([0., 1.])
+            P = np.eye(2) * 100.
+            dt = 0.1
+            f = EnKF(x=x, P=P, dim_z=1, dt=dt, N=8,
+                     hx=hx, fx=fx)
+
+            std_noise = 3.
+            f.R *= std_noise**2
+            f.Q = Q_discrete_white_noise(2, dt, .01)
+
+            while True:
+                z = read_sensor()
+                f.predict()
+                f.update(np.asarray([z]))
 
         """
 
@@ -101,12 +153,10 @@ class EnsembleKalmanFilter(object):
 
         if R is None:
             R = self.R
-
         if np.isscalar(R):
             R = eye(self.dim_z) * R
 
         N = self.N
-
         dim_z = len(z)
         sigmas_h = zeros((N, dim_z))
 
@@ -120,39 +170,31 @@ class EnsembleKalmanFilter(object):
         for sigma in sigmas_h:
             s = sigma - z_k
             P_zz += outer(s, s)
-
-        P_zz = (P_zz / (N-1)) + R
+        P_zz = P_zz / (N-1) + R
 
         P_xz = 0
         for i in range(N):
             P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_k)
-
-        P_xz /= (N-1)
+        P_xz /= N-1
 
         K = dot(P_xz, inv(P_zz))
 
         e_r = multivariate_normal([0]*dim_z, R, N)
-
-        y = z - z_k
-
         for i in range(N):
             self.sigmas[i] += dot(K, z + e_r[i] - sigmas_h[i])
 
         self.x = np.mean(self.sigmas, axis=0)
         self.P = self.P - dot3(K, P_zz, K.T)
 
-        print(self.P)
-
 
     def predict(self):
         """ Predict next position. """
 
-        N= self.N
+        N = self.N
         for i, s in enumerate(self.sigmas):
             self.sigmas[i] = self.fx(s, self.dt)
 
         e = multivariate_normal(self.mean, self.Q, N)
-
         self.x = np.mean(self.sigmas + e, axis=0)
 
         P = 0

@@ -1,3 +1,9 @@
+Version 0.0.9
+=============
+
+* Added Ensemble Kalman filter
+* bug fixes in UKF
+
 Version 0.0.8
 =============
 
@@ -14,7 +20,7 @@ residual and unscented transform functions.
 Version 0.0.6
 =============
 
-The big change is 
+ 
 Version 0.0.5
 =============
 

@@ -80,6 +80,7 @@ also support for smoother functions.
    kalman/SquareRootFilter
    kalman/InformationFilter
    kalman/UnscentedKalmanFilter
+   kalman/EnsembleKalmanFilter
 
 
 filterpy.common Module
