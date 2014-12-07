@@ -16,6 +16,7 @@ import numpy as np
 from scipy.linalg import inv
 from numpy import dot, zeros, eye, outer
 from numpy.random import multivariate_normal
+from filterpy.common import dot3
 
 
 class EnsembleKalmanFilter(object):
@@ -120,13 +121,13 @@ class EnsembleKalmanFilter(object):
             s = sigma - z_k
             P_zz += outer(s, s)
 
-        P_zz = (P_zz / (N)) + R# - outer(z_k, z_k) + R
+        P_zz = (P_zz / (N-1)) + R
 
         P_xz = 0
         for i in range(N):
             P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_k)
 
-        P_xz /= (N)
+        P_xz /= (N-1)
 
         K = dot(P_xz, inv(P_zz))
 
@@ -137,33 +138,26 @@ class EnsembleKalmanFilter(object):
         for i in range(N):
             self.sigmas[i] += dot(K, z + e_r[i] - sigmas_h[i])
 
-        #self.sigmas += dot(K, z - z_k)
+        self.x = np.mean(self.sigmas, axis=0)
+        self.P = self.P - dot3(K, P_zz, K.T)
 
-        self.x = np.sum(self.sigmas, axis=0) / (N)
-        #self.P = self.P - dot3(K, P_zz, K.T)
+        print(self.P)
 
 
     def predict(self):
         """ Predict next position. """
 
-        x = 0
-
-        e = multivariate_normal(self.mean, self.Q, self.N)
+        N= self.N
         for i, s in enumerate(self.sigmas):
             self.sigmas[i] = self.fx(s, self.dt)
 
-        self.sigmas += e
+        e = multivariate_normal(self.mean, self.Q, N)
 
-        self.x = np.sum(self.sigmas, axis=0) / (self.N-1)
+        self.x = np.mean(self.sigmas + e, axis=0)
 
+        P = 0
+        for s in self.sigmas:
+            sx = s - self.x
+            P += outer(sx, sx)
 
-def f1():
-    su = 0
-    for i in range(len(sigmas)):
-        su += np.dot (sigmas[i], 3)
-
-def f2():
-    su = 0
-    for i,s in enumerate(sigmas):
-        su += np.dot (s, 3)
-
+        self.P = (P) / (N-1)
