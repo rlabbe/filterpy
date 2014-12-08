@@ -164,17 +164,17 @@ class EnsembleKalmanFilter(object):
         for i in range(N):
             sigmas_h[i] = self.hx(self.sigmas[i])
 
-        z_k = np.sum(sigmas_h, axis=0) / (N)
+        z_mean = np.mean(sigmas_h, axis=0)
 
         P_zz = 0
         for sigma in sigmas_h:
-            s = sigma - z_k
+            s = sigma - z_mean
             P_zz += outer(s, s)
         P_zz = P_zz / (N-1) + R
 
         P_xz = 0
         for i in range(N):
-            P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_k)
+            P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_mean)
         P_xz /= N-1
 
         K = dot(P_xz, inv(P_zz))
@@ -192,14 +192,15 @@ class EnsembleKalmanFilter(object):
 
         N = self.N
         for i, s in enumerate(self.sigmas):
-            self.sigmas[i] = self.fx(s, self.dt)
+           self.sigmas[i] = self.fx(s, self.dt)
 
         e = multivariate_normal(self.mean, self.Q, N)
-        self.x = np.mean(self.sigmas + e, axis=0)
+        self.sigmas += e
+        #self.x = np.mean(self.sigmas , axis=0)
 
         P = 0
         for s in self.sigmas:
             sx = s - self.x
             P += outer(sx, sx)
 
-        self.P = (P) / (N-1)
+        self.P = P / (N-1)

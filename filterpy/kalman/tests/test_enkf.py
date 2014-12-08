@@ -27,7 +27,7 @@ def test_1d_const_vel():
     P = np.eye(2)* 100.
     f = EnKF(x=x, P=P, dim_z=1, dt=1., N=8, hx=hx, fx=fx)
 
-    std_noise = 3.
+    std_noise = 10.
 
     f.R *= std_noise**2
     f.Q = Q_discrete_white_noise(2, 1., .001)
