@@ -20,6 +20,55 @@ from filterpy.common import setter, setter_scalar, dot3
 
 
 class KalmanFilter(object):
+    """ Implements a Kalman filter. You are responsible for setting the
+    various state variables to reasonable values; the defaults  will
+    not give you a functional filter.
+
+    You will have to set the following attributes after constructing this
+    object for the filter to perform properly. Please note that there are
+    various checks in place to ensure that you have made everything the
+    'correct' size. However, it is possible to provide incorrectly sized
+    arrays such that the linear algebra can not perform an operation.
+    It can also fail silently - you can end up with matrices of a size that
+    allows the linear algebra to work, but are the wrong shape for the problem
+    you are trying to solve.
+
+    **Attributes**
+
+    x : numpy.array(dim_x, 1)
+        state estimate vector
+
+    P : numpy.array(dim_x, dim_x)
+        covariance estimate matrix
+
+    R : numpy.array(dim_z, dim_z)
+        measurement noise matrix
+
+    Q : numpy.array(dim_x, dim_x)
+        process noise matrix
+
+    F : numpy.array()
+        State Transition matrix
+
+    H : numpy.array(dim_x, dim_x)
+
+
+    You may read the following attributes.
+
+    **Readable Attributes**
+
+    y : numpy.array
+        Residual of the update step.
+
+    K : numpy.array(dim_x, dim_x)
+        Kalman gain of the update step
+
+    S :  numpy.array
+        Systen uncertaintly projected to measurement space
+
+    """
+
+
 
     def __init__(self, dim_x, dim_z, dim_u=0):
         """ Create a Kalman filter. You are responsible for setting the
@@ -125,6 +174,30 @@ class KalmanFilter(object):
 
         self._S = S
         self._K = K
+
+
+    def test_matrix_dimensions(self):
+        """ Performs a series of asserts to check that the size of everything
+        is what it should be. This can help you debug problems in your design.
+
+        This is only a test; you do not need to use it while filtering.
+        However, to use you will want to perform at least one predict() and
+        one update() before calling; some bad designs will cause the shapes
+        of x and P to change in a silent and bad way. For example, if you
+        pass in a badly dimensioned z into update that can cause x to be
+        misshapen."""
+
+        assert self._x.shape == (self.dim_x, 1), \
+               "Shape of x must be ({},{}), but is {}".format(
+               self.dim_x, 1, self._x.shape)
+
+        assert self._P.shape == (self.dim_x, self.dim_x), \
+               "Shape of P must be ({},{}), but is {}".format(
+               self.dim_x, self.dim_x, self._P.shape)
+
+        assert self._Q.shape == (self.dim_x, self.dim_x), \
+               "Shape of P must be ({},{}), but is {}".format(
+               self.dim_x, self.dim_x, self._P.shape)
 
 
     def predict(self, u=0):
