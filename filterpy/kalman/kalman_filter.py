@@ -19,7 +19,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 import scipy.linalg as linalg
-from numpy import dot, zeros, eye
+from numpy import dot, zeros, eye, isscalar
 from filterpy.common import setter, setter_1d, setter_scalar, dot3
 
 
@@ -148,7 +148,7 @@ class KalmanFilter(object):
 
         if R is None:
             R = self._R
-        elif np.isscalar(R):
+        elif isscalar(R):
             R = eye(self.dim_z) * R
 
         # rename for readability and a tiny extra bit of speed
@@ -261,6 +261,19 @@ class KalmanFilter(object):
             array of the covariances for each time step after the prediction.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
+
+        try:
+            z = zs[0]
+        except:
+            assert not isscalar(zs), 'zs must be list-like'
+
+        if self.dim_z == 1:
+            assert isscalar(z) or (z.ndim==1 and len(z) == 1), \
+            'zs must be a list of scalars or 1D, 1 element arrays'
+
+        else:
+            assert len(z) == self.dim_z, 'each element in zs must be a'
+            '1D array of length {}'.format(self.dim_z)
 
         n = np.size(zs,0)
         if Rs is None:
