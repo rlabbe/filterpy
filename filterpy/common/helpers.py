@@ -2,15 +2,21 @@
 
 """Copyright 2014 Roger R Labbe Jr.
 
-FilterPy library.
+filterpy library.
 http://github.com/rlabbe/filterpy
+
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
 #
-from numpy import asarray, isscalar, eye, dot
+from numpy import array, asarray, isscalar, eye, dot
 from functools import reduce
 
 
@@ -33,10 +39,20 @@ def setter(value, dim_x, dim_y):
     exception if the array is not dimensioned correctly. Value may be any
     type which converts to numpy.array (list, np.array, np.matrix, etc)
     """
-    v = asarray(value, dtype=float)
-    if v is value:
-        v = value.copy()
+    v = array(value, dtype=float)
     if v.shape != (dim_x, dim_y):
+        raise Exception('must have shape ({},{})'.format(dim_x, dim_y))
+    return v
+
+def setter_1d(value, dim_x):
+    """ Returns a copy of 'value' as an numpy.array with dtype=float. Throws
+    exception if the array is not dimensioned correctly. Value may be any
+    type which converts to numpy.array (list, np.array, np.matrix, etc)
+    """
+
+    v = array(value, dtype=float)
+    shape = v.shape
+    if shape[0] != (dim_x) or v.ndim > 2 or (v.ndim==2 and shape[1] != 1):
         raise Exception('must have shape ({},{})'.format(dim_x, dim_y))
     return v
 

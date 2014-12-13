@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Nov 18 10:03:38 2014
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+filterpy library.
+http://github.com/rlabbe/filterpy
+
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
 
 from __future__ import (absolute_import, division, print_function,
@@ -41,8 +50,7 @@ def test_batch_equals_recursive():
 
     fls = FixedLagSmoother(dim_x=2, dim_z=1, N=N)
 
-    fls.x = np.array([[0.],
-                      [.5]])
+    fls.x = np.array([0., .5])
 
     fls.F = np.array([[1.,1.],
                       [0.,1.]])
@@ -77,33 +85,24 @@ def test_batch_equals_recursive():
 def one_run_test_fls():
     fls = FixedLagSmoother(dim_x=2, dim_z=1)
 
-    fls.x = np.array([[0.],
-                      [.5]])
-
+    fls.x = np.array([0., .5])
     fls.F = np.array([[1.,1.],
                       [0.,1.]])
 
     fls.H = np.array([[1.,0.]])
-
     fls.P *= 200
     fls.R *= 5.
     fls.Q *= 0.001
 
-
     kf = KalmanFilter(dim_x=2, dim_z=1)
 
-    kf.x = np.array([[0.],
-                     [.5]])
-
+    kf.x = np.array([0., .5])
     kf.F = np.array([[1.,1.],
                      [0.,1.]])
-
     kf.H = np.array([[1.,0.]])
-
     kf.P *= 2000
     kf.R *= 1.
     kf.Q *= 0.001
-
 
     N = 4 # size of lag
 

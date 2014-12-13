@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """Copyright 2014 Roger R Labbe Jr.
 
-Rauch-Tung-Striebal Kalman smoother from the FilterPy library.
-
 filterpy library.
 http://github.com/rlabbe/filterpy
+
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
@@ -62,7 +66,9 @@ def rts_smoother(Xs, Ps, F, Q):
     """
 
     assert len(Xs) == len(Ps)
-    n, dim_x, _ = Xs.shape
+    shape = Xs.shape
+    n = shape[0]
+    dim_x = shape[1]
 
     # smoother gain
     K = zeros((n,dim_x,dim_x))

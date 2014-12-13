@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """Copyright 2014 Roger R Labbe Jr.
 
-Rauch-Tung-Striebal Kalman smoother from the filterpy library.
-
 filterpy library.
 http://github.com/rlabbe/filterpy
+
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
@@ -247,9 +251,12 @@ class FixedLagSmoother(object):
         Q = self.Q
         B = self.B
 
-        xSmooth = zeros((len(zs), self.dim_x, 1))
-        xhat    = zeros((len(zs), self.dim_x, 1))
-
+        if x.ndim == 1:
+            xSmooth = zeros((len(zs), self.dim_x))
+            xhat    = zeros((len(zs), self.dim_x))
+        else:
+            xSmooth = zeros((len(zs), self.dim_x, 1))
+            xhat    = zeros((len(zs), self.dim_x, 1))
         for k, z in enumerate(zs):
 
             # predict step of normal Kalman filter

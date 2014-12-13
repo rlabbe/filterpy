@@ -1,3 +1,18 @@
+Version 0.0.10
+==============
+* Modified all filters to allow a 1D array for the state vector x.
+  That is, np.array([1,0]) is allowed, as well as np.array([[1],[0]])
+
+This is a potentially breaking change to your scripts. I tried to test
+all of the possibilities, but bug may remain.
+
+* Added some tests for dimensionality of input to functions. It is far
+from complete, as I don't want to go overboard running tests for every
+function call. On the other hand, failures are obsucre. This will be
+finalized in few releases.
+
+
+ 
 Version 0.0.9
 =============
 
@@ -20,7 +35,7 @@ residual and unscented transform functions.
 Version 0.0.6
 =============
 
- 
+
 Version 0.0.5
 =============
 

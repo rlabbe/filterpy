@@ -4,6 +4,12 @@
 filterpy library.
 http://github.com/rlabbe/filterpy
 
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
@@ -20,8 +26,7 @@ if __name__ == '__main__':
 
     fk = KalmanFilter(dim_x=2, dim_z=1)
 
-    fk.x = np.array([[-1.],
-                    [1.]])         # initial state (location and velocity)
+    fk.x = np.array([-1., 1.])    # initial state (location and velocity)
 
     fk.F = np.array([[1.,1.],
                      [0.,1.]])      # state transition matrix
@@ -35,7 +40,7 @@ if __name__ == '__main__':
     zs = [t + random.randn()*4 for t in range (40)]
 
     mu, cov, _, _ = fk.batch_filter (zs)
-    mus = [x[0,0] for x in mu]
+    mus = [x[0] for x in mu]
 
     M,P,C = rts_smoother(mu, cov, fk.F, fk.Q)
 

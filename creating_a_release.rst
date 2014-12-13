@@ -8,7 +8,11 @@ Steps to Create Release
 
 * In /docs, run 'make html'. Inspect docs/_build/html/index.html for correctness.
 
-* Once docs are good, commit to git, push to origin. That automatically triggers a build on readthedocs.org.
+* Once docs are good, commit to git.
+
+* tag with 'git tag -a v0.1.23 -m "version 0.1.23"
+
+* push to origin. That automatically triggers a build on readthedocs.org.
 
 * Update pypi.org with 'bash pypi-install.sh'
 

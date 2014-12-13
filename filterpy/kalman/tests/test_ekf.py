@@ -5,9 +5,16 @@
 filterpy library.
 http://github.com/rlabbe/filterpy
 
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -28,8 +35,8 @@ from filterpy.examples import RadarSim
 def H_of(x):
     """ compute Jacobian of H matrix for state x """
 
-    horiz_dist = x[0,0]
-    altitude   = x[2,0]
+    horiz_dist = x[0]
+    altitude   = x[2]
 
     denom = sqrt(horiz_dist**2 + altitude**2)
 
@@ -44,7 +51,7 @@ def hx(x):
     correspond to that state.
     """
 
-    return sqrt(x[0,0]**2 + x[2,0]**2)
+    return sqrt(x[0]**2 + x[2]**2)
 
 
 dt = 0.05
@@ -60,7 +67,7 @@ rk.F = eye(3) + array ([[0, 1, 0],
 
 
 
-rk._x = array([[-10., 90., 1100.]]).T
+rk.x = array([-10., 90., 1100.])
 rk.R *= 10
 rk.Q = array([[0, 0, 0],
               [0, 1, 0],
@@ -81,11 +88,11 @@ for i in range(int(20/dt)):
     z = radar.get_range(proccess_error)
     pos.append(radar.pos)
 
-    rk.update(array([[z]]), H_of, hx,R=hx(rk.x)*proccess_error)
+    rk.update(asarray([z]), H_of, hx, R=hx(rk.x)*proccess_error)
     ps.append(rk.P)
     rk.predict()
 
-    xs.append(rk.x.T[0])
+    xs.append(rk.x)
     rs.append(z)
 
 xs = asarray(xs)

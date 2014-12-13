@@ -1,8 +1,17 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 20 20:52:38 2014
+"""Copyright 2014 Roger R Labbe Jr.
 
-@author: rlabbe
+filterpy library.
+http://github.com/rlabbe/filterpy
+
+Documentation at:
+https://filterpy.readthedocs.org
+
+Supporting book at:
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+This is licensed under an MIT license. See the readme.MD file
+for more information.
 """
 
 from __future__ import (absolute_import, division, print_function,
