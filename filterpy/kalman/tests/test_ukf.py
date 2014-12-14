@@ -226,7 +226,7 @@ def test_rts():
     assert np.array_equal(M, xs), "Batch filter generated different output"
 
     Qs = [kf.Q]*len(t)
-    M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, fx=fx, Qs=Qs)
+    M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, Qs=Qs)
 
 
     if DO_PLOT:

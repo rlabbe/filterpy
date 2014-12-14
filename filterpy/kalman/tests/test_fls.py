@@ -19,7 +19,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from numpy import random
 import matplotlib.pyplot as plt
-from filterpy.kalman import KalmanFilter, FixedLagSmoother, rts_smoother
+from filterpy.kalman import KalmanFilter, FixedLagSmoother
 
 
 
@@ -112,7 +112,7 @@ def one_run_test_fls():
     xs, x = fls.smooth_batch(zs, N)
 
     M,P,_,_ = kf.batch_filter(zs)
-    rks_x,_,_ = rts_smoother(M, P, kf.F, kf.Q)
+    rks_x,_,_ = kf.rts_smoother(M, P)
 
     xfl = xs[:,0].T[0]
     xkf = M[:,0].T[0]

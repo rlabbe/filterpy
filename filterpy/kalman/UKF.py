@@ -311,8 +311,50 @@ class UnscentedKalmanFilter(object):
 
 
 
-    def rts_smoother(self, Xs, Ps, fx, Qs=None, dt=None):
+    def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
+        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        means and covariances computed by the UKF. The usual input
+        would come from the output of `batch_filter()`.
 
+        **Parameters**
+
+        Xs : numpy.array
+           array of the means (state variable x) of the output of a Kalman
+           filter.
+
+        Ps : numpy.array
+            array of the covariances of the output of a kalman filter.
+
+        Q : list-like collection of numpy.array, optional
+            Process noise of the Kalman filter at each time step. Optional,
+            if not provided the filter's self.Q will be used
+
+        dt : optional, float or array-like of float
+            If provided, specifies the time step of each step of the filter.
+            If float, then the same time step is used for all steps. If
+            an array, then each element k contains the time  at step k.
+            Units are seconds.
+
+        **Returns**
+
+        'x' : numpy.ndarray
+           smoothed means
+
+        'P' : numpy.ndarray
+           smoothed state covariances
+
+        'K' : numpy.ndarray
+            smoother gain at each step
+
+
+        **Example**::
+
+            zs = [t + random.randn()*4 for t in range (40)]
+
+            (mu, cov, _, _) = kalman.batch_filter(zs)
+            (x, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
+
+        """
         assert len(Xs) == len(Ps)
         n, dim_x = Xs.shape
 
@@ -336,7 +378,7 @@ class UnscentedKalmanFilter(object):
             # create sigma points from state estimate, pass through state func
             sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
             for i in range(num_sigmas):
-                sigmas_f[i] = fx(sigmas[i], self._dt)
+                sigmas_f[i] = self.fx(sigmas[i], self._dt)
 
             # compute backwards prior state and covariance
             xb = dot(self.W, sigmas)
