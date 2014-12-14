@@ -96,8 +96,6 @@ class KalmanFilter(object):
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
-
-
         """
 
         assert dim_x > 0
@@ -311,6 +309,69 @@ class KalmanFilter(object):
                 covariances[i,:,:] = self._P
 
         return (means, covariances, means_p, covariances_p)
+
+
+
+    def rts_smoother(self, Xs, Ps, Qs=None):
+        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        means and covariances computed by a Kalman filter. The usual input
+        would come from the output of `KalmanFilter.batch_filter()`.
+
+        **Parameters**
+
+        Xs : numpy.array
+           array of the means (state variable x) of the output of a Kalman
+           filter.
+
+        Ps : numpy.array
+            array of the covariances of the output of a kalman filter.
+
+        Q : list-like collection of numpy.array, optional
+            Process noise of the Kalman filter at each time step. Optional,
+            if not provided the filter's self.Q will be used
+
+
+        **Returns**
+
+        'x' : numpy.ndarray
+           smoothed means
+
+        'P' : numpy.ndarray
+           smoothed state covariances
+
+        'K' : numpy.ndarray
+            smoother gain at each step
+
+
+        **Example**::
+
+            zs = [t + random.randn()*4 for t in range (40)]
+
+            (mu, cov, _, _) = kalman.batch_filter(zs)
+            (x, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
+
+        """
+
+        assert len(Xs) == len(Ps)
+        n, dim_x = Xs.shape
+
+        F = self._F
+        if not Qs:
+            Qs = [self.Q] * n
+
+        # smoother gain
+        K = zeros((n,dim_x,dim_x))
+
+        x, P = Xs.copy(), Ps.copy()
+
+        for k in range(n-2,-1,-1):
+            P_pred = dot3(F, P[k], F.T) + Qs[k]
+
+            K[k]  = dot3(P[k], F.T, linalg.inv(P_pred))
+            x[k] += dot (K[k], x[k+1] - dot(F, x[k]))
+            P[k] += dot3 (K[k], P[k+1] - P_pred, K[k].T)
+
+        return (x, P, K)
 
 
     def get_prediction(self, u=0):

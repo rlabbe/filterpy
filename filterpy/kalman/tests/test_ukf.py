@@ -28,6 +28,8 @@ from filterpy.kalman import ScaledUnscentedKalmanFilter as SUKF
 from filterpy.kalman import unscented_transform
 from filterpy.common import stats
 
+
+
 DO_PLOT = False
 
 
@@ -177,12 +179,80 @@ def test_radar():
         plt.plot(t, xs[:,2])
 
 
+
+def test_rts():
+    def fx(x, dt):
+        A = np.eye(3) + dt * np.array ([[0, 1, 0],
+                                        [0, 0, 0],
+                                        [0, 0, 0]])
+        f = np.dot(A, x)
+        return f
+
+    def hx(x):
+        return np.sqrt (x[0]**2 + x[2]**2)
+
+    dt = 0.05
+
+    kf = UKF(3, 1, dt, fx=fx, hx=hx, kappa=0.)
+
+    kf.Q *= 0.01
+    kf.R = 10
+    kf.x = np.array([0., 90., 1100.])
+    kf.P *= 100.
+    radar = RadarSim(dt)
+
+    t = np.arange(0,20+dt, dt)
+
+    n = len(t)
+
+    xs = np.zeros((n,3))
+
+    random.seed(200)
+    rs = []
+    #xs = []
+    for i in range(len(t)):
+        r = radar.get_range()
+        #r = GetRadar(dt)
+        kf.predict()
+        kf.update(z=[r])
+
+        xs[i,:] = kf.x
+        rs.append(r)
+
+
+    kf.x = np.array([0., 90., 1100.])
+    kf.P = np.eye(3)*100
+    M, P = kf.batch_filter(rs)
+    assert np.array_equal(M, xs), "Batch filter generated different output"
+
+    Qs = [kf.Q]*len(t)
+    M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, fx=fx, Qs=Qs)
+
+
+    if DO_PLOT:
+        print(xs[:,0].shape)
+
+        plt.figure()
+        plt.subplot(311)
+        plt.plot(t, xs[:,0])
+        plt.plot(t, M2[:,0], c='g')
+        plt.subplot(312)
+        plt.plot(t, xs[:,1])
+        plt.plot(t, M2[:,1], c='g')
+        plt.subplot(313)
+
+        plt.plot(t, xs[:,2])
+        plt.plot(t, M2[:,2], c='g')
+
+
 if __name__ == "__main__":
 
-    test_sigma_points_1D()
+    #test_sigma_points_1D()
 
 
     DO_PLOT = True
+    test_rts()
+
 
     '''test_1D_sigma_points()
     #plot_sigma_test ()
@@ -194,10 +264,10 @@ if __name__ == "__main__":
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    test_radar()
-    test_sigma_plot()
-    test_julier_weights()
-    test_scaled_weights()
+    #test_radar()
+    #test_sigma_plot()
+    #test_julier_weights()
+    #test_scaled_weights()
 
     #print('xi=\n',Xi)
     """

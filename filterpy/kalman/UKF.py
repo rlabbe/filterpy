@@ -26,7 +26,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from numpy.linalg import inv, cholesky
 import numpy as np
-from numpy import asarray, eye, zeros, dot
+from numpy import asarray, eye, zeros, dot, isscalar, outer
 from filterpy.common import dot3
 
 
@@ -175,7 +175,10 @@ class UnscentedKalmanFilter(object):
             to define how to compute it.
         """
 
-        dim_z = len(z)
+        if isscalar(z):
+            dim_z = 1
+        else:
+            dim_z = len(z)
 
         if R is None:
             R = self.R
@@ -228,6 +231,137 @@ class UnscentedKalmanFilter(object):
 
         self.x, self.P = unscented_transform(
                            self.sigmas_f, self.W, self.W, self.Q)
+
+
+    def batch_filter(self, zs, Rs=None, residual=np.subtract, UT=None):
+        """ Performs the UKF filter over the list of measurement in `zs`.
+
+
+        **Parameters**
+
+        zs : list-like
+            list of measurements at each time step `self.dt` Missing
+            measurements must be represented by 'None'.
+
+        Rs : list-like, optional
+            optional list of values to use for the measurement error
+            covariance; a value of None in any position will cause the filter
+            to use `self.R` for that time step.
+
+        residual : function (z, z2), optional
+            Optional function that computes the residual (difference) between
+            the two measurement vectors. If you do not provide this, then the
+            built in minus operator will be used. You will normally want to use
+            the built in unless your residual computation is nonlinear (for
+            example, if they are angles)
+
+        UT : function(sigmas, Wm, Wc, noise_cov), optional
+            Optional function to compute the unscented transform for the sigma
+            points passed through hx. Typically the default function will
+            work, but if for example you are using angles the default method
+            of computing means and residuals will not work, and you will have
+            to define how to compute it.
+        **Returns**
+
+
+        means: np.array((n,dim_x,1))
+            array of the state for each time step after the update. Each entry
+            is an np.array. In other words `means[k,:]` is the state at step
+            `k`.
+
+        covariance: np.array((n,dim_x,dim_x))
+            array of the covariances for each time step after the update.
+            In other words `covariance[k,:,:]` is the covariance at step `k`.
+        """
+
+        try:
+            z = zs[0]
+        except:
+            assert not isscalar(zs), 'zs must be list-like'
+
+        if self._dim_z == 1:
+            assert isscalar(z) or (z.ndim==1 and len(z) == 1), \
+            'zs must be a list of scalars or 1D, 1 element arrays'
+
+        else:
+            assert len(z) == self.dim_z, 'each element in zs must be a'
+            '1D array of length {}'.format(self.dim_z)
+
+        n = np.size(zs,0)
+        if Rs is None:
+            Rs = [None]*n
+
+        # mean estimates from Kalman Filter
+        if self.x.ndim == 1:
+            means = zeros((n, self._dim_x))
+        else:
+            means = zeros((n, self._dim_x, 1))
+
+        # state covariances from Kalman Filter
+        covariances = zeros((n, self._dim_x, self._dim_x))
+
+
+        for i, (z, r) in enumerate(zip(zs, Rs)):
+            self.predict()
+            self.update(z, r)
+            means[i,:]         = self.x
+            covariances[i,:,:] = self.P
+
+        return (means, covariances)
+
+
+
+    def rts_smoother(self, Xs, Ps, fx, Qs=None, dt=None):
+
+        assert len(Xs) == len(Ps)
+        n, dim_x = Xs.shape
+
+        if dt is None:
+            dt = [self._dt] * n
+        elif isscalar(dt):
+            dt = [dt] * n
+
+        if Qs is None:
+            Qs = [self.Q] * n
+
+        # smoother gain
+        Ks = zeros((n,dim_x,dim_x))
+
+        num_sigmas = 2*dim_x + 1
+
+        xs, ps = Xs.copy(), Ps.copy()
+        sigmas_f = zeros((num_sigmas, dim_x))
+
+        for k in range(n-2,-1,-1):
+            # create sigma points from state estimate, pass through state func
+            sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
+            for i in range(num_sigmas):
+                sigmas_f[i] = fx(sigmas[i], self._dt)
+
+            # compute backwards prior state and covariance
+            xb = dot(self.W, sigmas)
+            Pb = 0
+            x = xs[k]
+            for i in range(num_sigmas):
+                y = sigmas_f[i] - x
+                Pb += self.W[i] * outer(y, y)
+            Pb += Qs[k]
+
+            # compute cross variance
+            Pxb = 0
+            for i in range(num_sigmas):
+                y = sigmas[i] - xb
+                Pxb += self.W[i] * outer(y, y)
+
+            # compute gain
+            K = dot(Pxb, inv(Pb))
+
+            # update the smoothed estimates
+            xs[k] += dot (K, xs[k+1] - xb)
+            ps[k] += dot3(K, ps[k+1] - Pb, K.T)
+            Ks[k] = K
+
+        return (xs, ps, Ks)
 
 
     @staticmethod

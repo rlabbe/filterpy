@@ -42,7 +42,7 @@ if __name__ == '__main__':
     mu, cov, _, _ = fk.batch_filter (zs)
     mus = [x[0] for x in mu]
 
-    M,P,C = rts_smoother(mu, cov, fk.F, fk.Q)
+    M,P,C = fk.rts_smoother(mu, cov)
 
 
 
