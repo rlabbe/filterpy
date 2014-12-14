@@ -76,7 +76,6 @@ also support for smoother functions.
    kalman/KalmanFilter
    kalman/ExtendedKalmanFilter
    kalman/FixedLagSmoother
-   kalman/RTS_smoother
    kalman/SquareRootFilter
    kalman/InformationFilter
    kalman/UnscentedKalmanFilter

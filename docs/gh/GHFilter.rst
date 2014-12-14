@@ -1,8 +1,7 @@
 GHFilter
 ========
 
-Introduction and Overview
--------------------------
+Implements the g-h filter.
 
 
 -------

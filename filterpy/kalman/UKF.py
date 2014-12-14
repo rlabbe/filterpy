@@ -261,8 +261,8 @@ class UnscentedKalmanFilter(object):
             work, but if for example you are using angles the default method
             of computing means and residuals will not work, and you will have
             to define how to compute it.
-        **Returns**
 
+        **Returns**
 
         means: np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry

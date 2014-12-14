@@ -108,31 +108,31 @@ class ScaledUnscentedKalmanFilter(object):
 
         alpha : float
             Determins the spread of the sigma points around the mean.
-            Usually a small positive value (1e-3) according to [1].
+            Usually a small positive value (1e-3) according to [3].
 
         beta : float
             Incorporates prior knowledge of the distribution of the mean. For
-            Gaussian x beta=2 is optimal, according to [1].
+            Gaussian x beta=2 is optimal, according to [3].
 
         kappa : float, default=0.0
-            Secondary scaling parameter usually set to 0 according to [2],
-            or to 3-n according to [3].
+            Secondary scaling parameter usually set to 0 according to [4],
+            or to 3-n according to [5].
 
 
         **References**
 
-        .. [1] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
+        .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
                the nonlinear transformation of means and covariances in filters
                and estimators," IEEE Transactions on Automatic Control, 45(3),
                pp. 477-482 (March 2000).
 
-        .. [2] E. A. Wan and R. Van der Merwe, “The Unscented Kalman filter for
+        .. [4] E. A. Wan and R. Van der Merwe, “The Unscented Kalman filter for
                Nonlinear Estimation,” in Proc. Symp. Adaptive Syst. Signal
                Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
 
                https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
 
-        .. [3] Wan, Merle "The Unscented Kalman Filter," chapter in *Kalman
+        .. [5] Wan, Merle "The Unscented Kalman Filter," chapter in *Kalman
                Filtering and Neural Networks*, John Wiley & Sons, Inc., 2001.
         """
 
