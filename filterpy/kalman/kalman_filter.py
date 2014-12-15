@@ -353,7 +353,9 @@ class KalmanFilter(object):
         """
 
         assert len(Xs) == len(Ps)
-        n, dim_x = Xs.shape
+        shape = Xs.shape
+        n = shape[0]
+        dim_x = shape[1]
 
         F = self._F
         if not Qs:
