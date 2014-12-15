@@ -1,3 +1,11 @@
+Version 0.0.12
+==============
+* Mostly a change in the pypi install so that the pip install will
+include the test directories, and include the changelog and license.
+
+* a few small bug fixes.
+
+
 Version 0.0.11
 ==============
 
