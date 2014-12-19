@@ -422,6 +422,11 @@ class KalmanFilter(object):
 
     @property
     def alpha(self):
+        """ Fading memory setting. 1.0 gives the normal Kalman filter, and
+        values slightly larger than 1.0 (such as 1.02) give a fading
+        memory effect - previous measurements have less influence on the
+        filter's estimates."""
+
         return self._alpha_sq**.5
 
     @alpha.setter
