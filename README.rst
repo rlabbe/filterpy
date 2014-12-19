@@ -49,11 +49,13 @@ Installation
 ------------
 
 ::
+
     pip install filterpy
 
 If you prefer to download the source yourself
 
 ::
+
     cd <directory you want to install to>
     git clone http://github.com/rlabbe/filterpy
     python setup.py install
@@ -75,6 +77,7 @@ Basic use
 First, import the filters and helper functions.
 
 ::
+
     import numpy as np
     from filterpy.kalman import KalmanFilter
     from filterpy.common import Q_discrete_white_noise
@@ -82,12 +85,14 @@ First, import the filters and helper functions.
 Now, create the filter
 
 ::
+
     my_filter = KalmanFilter(dim_x=2, dim_z=1)
 
 
 Initialize the filter's matrices.
 
 ::
+
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
@@ -103,6 +108,7 @@ Initialize the filter's matrices.
 Finally, run the filter.
 
 ::
+
     while True:
         my_filter.predict()
         my_filter.update(get_some_measurement())
