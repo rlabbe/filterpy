@@ -53,7 +53,7 @@ def setter_1d(value, dim_x):
     v = array(value, dtype=float)
     shape = v.shape
     if shape[0] != (dim_x) or v.ndim > 2 or (v.ndim==2 and shape[1] != 1):
-        raise Exception('must have shape ({},{})'.format(dim_x, dim_y))
+        raise Exception('must have shape ({},{})'.format(dim_x, 1))
     return v
 
 
