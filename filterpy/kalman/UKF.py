@@ -144,7 +144,6 @@ class UnscentedKalmanFilter(object):
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
         self.sigmas_f = zeros((2*self._dim_x+1, self._dim_x))
-        self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
 
     def update(self, z, R=None, residual=np.subtract, UT=None):
@@ -462,7 +461,7 @@ class UnscentedKalmanFilter(object):
             x = asarray([x])
         n = np.size(x)  # dimension of problem
 
-        if  np.isscalar(P):
+        if np.isscalar(P):
             P = eye(n)*P
 
         sigmas = zeros((2*n+1, n))
@@ -472,12 +471,9 @@ class UnscentedKalmanFilter(object):
         U = cholesky((n+kappa)*P).T
         #U = sqrtm((n+kappa)*P).T
 
-        for k in range(n):
-            sigmas[k+1]   = x + U[k]
-            sigmas[n+k+1] = x - U[k]
-
-        # handle value for the mean separately as special case
         sigmas[0] = x
+        sigmas[1:n+1]     = x + U
+        sigmas[n+1:2*n+2] = x - U
 
         return sigmas
 
