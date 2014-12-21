@@ -189,7 +189,6 @@ class UnscentedKalmanFilter(object):
         sigmas_f = self.sigmas_f
         sigmas_h = zeros((self._num_sigmas, dim_z))
 
-
         if UT is None:
             UT = unscented_transform
 
@@ -201,13 +200,18 @@ class UnscentedKalmanFilter(object):
         zp, Pz = UT(sigmas_h, self.W, self.W, R)
 
         # compute cross variance of the state and the measurements
-        Pxz = zeros((self._dim_x, dim_z))
+        '''Pxz = zeros((self._dim_x, dim_z))
         for i in range(self._num_sigmas):
             Pxz += self.W[i] * np.outer(sigmas_f[i] - self.x,
-                                        residual(sigmas_h[i], zp))
+                                        residual(sigmas_h[i], zp))'''
+
+        # this is the unreadable but fast implementation of the
+        # commented out loop above
+        yh = sigmas_f - self.x[np.newaxis, :]
+        yz = residual(sigmas_h, zp[np.newaxis, :])
+        Pxz = yh.T.dot(np.diag(self.W)).dot(yz)
 
         K = dot(Pxz, inv(Pz)) # Kalman gain
-
         y = residual(z, zp)
 
         self.x = self.x + dot(K, y)
@@ -490,9 +494,13 @@ def unscented_transform(Sigmas, Wm, Wc, noise_cov):
 
     # new covariance is the sum of the outer product of the residuals
     # times the weights
-    P = zeros((n, n))
+    '''P = zeros((n, n))
     for k in range(kmax):
         y = Sigmas[k] - x
-        P += Wc[k] * np.outer(y, y)
+        P += Wc[k] * np.outer(y, y)'''
+
+    # this is the fast way to do the commented out code above
+    y = Sigmas - x[np.newaxis,:]
+    P = y.T.dot(np.diag(Wc)).dot(y)
 
     return (x, P + noise_cov)
