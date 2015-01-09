@@ -59,7 +59,7 @@ class ExtendedKalmanFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def predict_update(self, z, HJabobian, Hx, u=0):
+    def predict_update(self, z, HJacobian, Hx, u=0):
         """ Performs the predict/update innovation of the extended Kalman
         filter.
 
@@ -94,7 +94,7 @@ class ExtendedKalmanFilter(object):
         R = self._R
         x = self._x
 
-        H = HJabobian(x)
+        H = HJacobian(x)
 
         # predict step
         x = dot(F, x) + dot(B, u)
@@ -110,7 +110,7 @@ class ExtendedKalmanFilter(object):
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
-    def update(self, z, HJabobian, Hx, R=None):
+    def update(self, z, HJacobian, Hx, R=None):
         """ Performs the update innovation of the extended Kalman filter.
 
         **Parameters**
@@ -143,7 +143,7 @@ class ExtendedKalmanFilter(object):
 
         x = self._x
 
-        H = HJabobian(x)
+        H = HJacobian(x)
 
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
