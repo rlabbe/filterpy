@@ -143,7 +143,7 @@ class UnscentedKalmanFilter(object):
 
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
-        self.sigmas_f = zeros((2*self._dim_x+1, self._dim_x))
+        self.sigmas_f = zeros((self._num_sigmas, self._dim_x))
 
 
     def update(self, z, R=None, residual=np.subtract, UT=None):
