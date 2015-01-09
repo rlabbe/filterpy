@@ -425,8 +425,7 @@ class UnscentedKalmanFilter(object):
     def sigma_points(x, P, kappa):
         """ Computes the sigma pointsfor an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
-        kappa is an arbitrary constant. Returns tuple of the sigma points
-        and weights.
+        kappa is an arbitrary constant. Returns sigma points.
 
         Works with both scalar and array inputs:
         sigma_points (5, 9, 2) # mean 5, covariance 9
