@@ -348,7 +348,7 @@ class KalmanFilter(object):
             zs = [t + random.randn()*4 for t in range (40)]
 
             (mu, cov, _, _) = kalman.batch_filter(zs)
-            (x, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
+            (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
 
         """
 

@@ -112,7 +112,7 @@ def one_run_test_fls():
     xs, x = fls.smooth_batch(zs, N)
 
     M,P,_,_ = kf.batch_filter(zs)
-    rks_x,_,_ = kf.rts_smoother(M, P)
+    rts_x,_,_ = kf.rts_smoother(M, P)
 
     xfl = xs[:,0].T[0]
     xkf = M[:,0].T[0]
@@ -126,7 +126,7 @@ def one_run_test_fls():
         plt.plot(x[:,0], label='FLS')
         plt.plot(xfl, label='FLS S')
         plt.plot(xkf, label='KF')
-        plt.plot(rks_x[:,0], label='RKS')
+        plt.plot(rts_x[:,0], label='RTS')
         plt.legend(loc=4)
         plt.show()
 

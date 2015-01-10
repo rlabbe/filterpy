@@ -502,7 +502,7 @@ if __name__ == "__main__":
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    #test_radar()
+    test_radar()
     #test_sigma_plot()
     #test_julier_weights()
     #test_scaled_weights()

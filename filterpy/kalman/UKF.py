@@ -355,7 +355,7 @@ class UnscentedKalmanFilter(object):
             zs = [t + random.randn()*4 for t in range (40)]
 
             (mu, cov, _, _) = kalman.batch_filter(zs)
-            (x, P, K) = rks_smoother(mu, cov, fk.F, fk.Q)
+            (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
 
         """
         assert len(Xs) == len(Ps)
@@ -423,7 +423,7 @@ class UnscentedKalmanFilter(object):
 
     @staticmethod
     def sigma_points(x, P, kappa):
-        """ Computes the sigma pointsfor an unscented Kalman filter
+        """ Computes the sigma points for an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
         kappa is an arbitrary constant. Returns sigma points.
 
