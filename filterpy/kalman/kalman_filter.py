@@ -430,7 +430,7 @@ class KalmanFilter(object):
 
         ** References **
 
-        [1] Dan Simon. "Optimal State Esitmation." John Wiley & Sons. 
+        [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons. 
             p. 208-212. (2006)
         """
 
