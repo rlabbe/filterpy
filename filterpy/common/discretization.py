@@ -126,7 +126,7 @@ def van_loan_discretization(F, G, dt):
         IEEE Trans. Automomatic Control, AC-23 (3): 395-404 (June 1978)
 
     [2] Robert Grover Brown. "Introduction to Random Signals and Applied
-        Kalman Fitlering." Forth edition. John Wiley & Sons. p. 126-7. (2012)
+        Kalman Filtering." Forth edition. John Wiley & Sons. p. 126-7. (2012)
     """
 
 
