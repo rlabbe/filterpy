@@ -132,7 +132,7 @@ class UnscentedKalmanFilter(object):
         self.P = eye(dim_x)
         self._dim_x = dim_x
         self._dim_z = dim_z
-        self._dt = dt
+        self.dt = dt
         self._num_sigmas = 2*dim_x + 1
         self.kappa = kappa
         self.hx = hx
@@ -230,7 +230,7 @@ class UnscentedKalmanFilter(object):
         sigmas = self.sigma_points(self.x, self.P, self.kappa)
 
         for i in range(self._num_sigmas):
-            self.sigmas_f[i] = self.fx(sigmas[i], self._dt)
+            self.sigmas_f[i] = self.fx(sigmas[i], self.dt)
 
         self.x, self.P = unscented_transform(
                            self.sigmas_f, self.W, self.W, self.Q)
@@ -362,7 +362,7 @@ class UnscentedKalmanFilter(object):
         n, dim_x = Xs.shape
 
         if dt is None:
-            dt = [self._dt] * n
+            dt = [self.dt] * n
         elif isscalar(dt):
             dt = [dt] * n
 
@@ -381,7 +381,7 @@ class UnscentedKalmanFilter(object):
             # create sigma points from state estimate, pass through state func
             sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
             for i in range(num_sigmas):
-                sigmas_f[i] = self.fx(sigmas[i], self._dt)
+                sigmas_f[i] = self.fx(sigmas[i], self.dt)
 
             # compute backwards prior state and covariance
             xb = dot(self.W, sigmas)
@@ -497,5 +497,7 @@ def unscented_transform(Sigmas, Wm, Wc, noise_cov):
     # this is the fast way to do the commented out code above
     y = Sigmas - x[np.newaxis,:]
     P = y.T.dot(np.diag(Wc)).dot(y)
+    if noise_cov is not None:
+        P += noise_cov
 
-    return (x, P + noise_cov)
+    return (x, P)
