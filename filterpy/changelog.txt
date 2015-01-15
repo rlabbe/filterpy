@@ -1,3 +1,12 @@
+Version 0.0.13
+==============
+
+* BREAKING CHANGE: _dt in UKF is now named dt to allow users to
+rename. You will get an exception if you try to use _dt for now.
+
+* fixed bug in EKF.
+
+
 Version 0.0.12
 ==============
 * Mostly a change in the pypi install so that the pip install will
