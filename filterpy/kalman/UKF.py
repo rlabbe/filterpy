@@ -132,7 +132,7 @@ class UnscentedKalmanFilter(object):
         self.P = eye(dim_x)
         self._dim_x = dim_x
         self._dim_z = dim_z
-        self.dt = dt
+        self._dt = dt
         self._num_sigmas = 2*dim_x + 1
         self.kappa = kappa
         self.hx = hx
@@ -217,20 +217,28 @@ class UnscentedKalmanFilter(object):
         self.P = self.P - dot3(K, Pz, K.T)
 
 
-    def predict(self):
+    def predict(self, dt=None):
         """ Performs the predict step of the UKF. On return, self.xp and
         self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
         stands for prediction.
+        
+        **Parameters**
+        dt : double, optional
+            If specified, the time step to be used for this prediction.
+            self._dt is used if this is not provided.
 
-        Important: this MUST be called before update() is called for the first
-        time.
+        Important: this MUST be called before update() is called for the 
+        first time.
         """
+        
+        if dt is None:
+			dt = self._dt
 
         # calculate sigma points for given mean and covariance
         sigmas = self.sigma_points(self.x, self.P, self.kappa)
 
         for i in range(self._num_sigmas):
-            self.sigmas_f[i] = self.fx(sigmas[i], self.dt)
+            self.sigmas_f[i] = self.fx(sigmas[i], dt)
 
         self.x, self.P = unscented_transform(
                            self.sigmas_f, self.W, self.W, self.Q)
@@ -243,7 +251,7 @@ class UnscentedKalmanFilter(object):
         **Parameters**
 
         zs : list-like
-            list of measurements at each time step `self.dt` Missing
+            list of measurements at each time step `self._dt` Missing
             measurements must be represented by 'None'.
 
         Rs : list-like, optional
@@ -362,7 +370,7 @@ class UnscentedKalmanFilter(object):
         n, dim_x = Xs.shape
 
         if dt is None:
-            dt = [self.dt] * n
+            dt = [self._dt] * n
         elif isscalar(dt):
             dt = [dt] * n
 
@@ -381,7 +389,7 @@ class UnscentedKalmanFilter(object):
             # create sigma points from state estimate, pass through state func
             sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
             for i in range(num_sigmas):
-                sigmas_f[i] = self.fx(sigmas[i], self.dt)
+                sigmas_f[i] = self.fx(sigmas[i], self._dt)
 
             # compute backwards prior state and covariance
             xb = dot(self.W, sigmas)
@@ -407,10 +415,6 @@ class UnscentedKalmanFilter(object):
             Ks[k] = K
 
         return (xs, ps, Ks)
-
-	@property
-	def _dt(self):
-		raise Exception('_dt has been renamed dt. Use dt instead.')
 
 
     @staticmethod

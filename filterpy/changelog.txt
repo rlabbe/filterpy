@@ -1,3 +1,10 @@
+Version 0.0.14
+==============
+
+The change to _dt was stupid in 0.0.13 . I put it back to _dt, and 
+then added an optional dt parameter to the predict() function. 
+
+
 Version 0.0.13
 ==============
 
