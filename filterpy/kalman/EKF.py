@@ -84,9 +84,6 @@ class ExtendedKalmanFilter(object):
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
-        assert z.shape[0] == self.dim_z and z.ndim == 1, \
-               'z must be a 1-d np.array of length {}'.format(self.dim_z)
-
         F = self._F
         B = self._B
         P = self._P
@@ -137,9 +134,6 @@ class ExtendedKalmanFilter(object):
 
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
-
-        assert z.shape[0] == self.dim_z and z.ndim == 1, \
-               'z must be a 1-d np.array of length {}'.format(self.dim_z)
 
         x = self._x
 
