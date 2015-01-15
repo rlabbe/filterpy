@@ -408,6 +408,10 @@ class UnscentedKalmanFilter(object):
 
         return (xs, ps, Ks)
 
+	@property
+	def _dt(self):
+		raise Exception('_dt has been renamed dt. Use dt instead.')
+
 
     @staticmethod
     def weights(n, kappa):
