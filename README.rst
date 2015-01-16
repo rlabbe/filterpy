@@ -157,7 +157,7 @@ dependency needs to be removed. This only affects the tests.
 Testing
 -------
 
-All tests are written to work with py.test. Just type *py.text* at the
+All tests are written to work with py.test. Just type ``py.test`` at the
 command line.
 
 As explained above, the tests are not robust. I'm still at the stage
