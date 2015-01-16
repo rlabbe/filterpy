@@ -76,7 +76,7 @@ Basic use
 
 First, import the filters and helper functions.
 
-::
+.. code-block:: python
 
     import numpy as np
     from filterpy.kalman import KalmanFilter
@@ -84,14 +84,14 @@ First, import the filters and helper functions.
 
 Now, create the filter
 
-::
+.. code-block:: python
 
     my_filter = KalmanFilter(dim_x=2, dim_z=1)
 
 
 Initialize the filter's matrices.
 
-::
+.. code-block:: python
 
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
@@ -107,7 +107,7 @@ Initialize the filter's matrices.
 
 Finally, run the filter.
 
-::
+.. code-block:: python
 
     while True:
         my_filter.predict()
