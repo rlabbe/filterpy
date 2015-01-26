@@ -182,7 +182,7 @@ class UnscentedKalmanFilter(object):
         if R is None:
             R = self.R
         elif np.isscalar(R):
-            R = eye(self.dim_z) * R
+            R = eye(self._dim_z) * R
 
         # rename for readability
         sigmas_f = self.sigmas_f
@@ -295,8 +295,8 @@ class UnscentedKalmanFilter(object):
             'zs must be a list of scalars or 1D, 1 element arrays'
 
         else:
-            assert len(z) == self.dim_z, 'each element in zs must be a'
-            '1D array of length {}'.format(self.dim_z)
+            assert len(z) == self._dim_z, 'each element in zs must be a'
+            '1D array of length {}'.format(self._dim_z)
 
         n = np.size(zs,0)
         if Rs is None:
