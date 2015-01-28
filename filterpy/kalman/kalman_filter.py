@@ -111,8 +111,8 @@ class KalmanFilter(object):
         self._Q = eye(dim_x)       # process uncertainty
         self._B = 0                # control transition matrix
         self._F = 0                # state transition matrix
-        self._H = 0                # Measurement function
-        self._R = eye(dim_z)       # state uncertainty
+        self.H = 0                 # Measurement function
+        self.R = eye(dim_z)        # state uncertainty
         self._alpha_sq = 1.        # fading memory control
 
         # gain and residual are computed during the innovation step. We
@@ -145,13 +145,13 @@ class KalmanFilter(object):
             return
 
         if R is None:
-            R = self._R
+            R = self.R
         elif isscalar(R):
             R = eye(self.dim_z) * R
 
         # rename for readability and a tiny extra bit of speed
         if H is None:
-            H = self._H
+            H = self.H
         P = self._P
         x = self._x
 
@@ -400,7 +400,7 @@ class KalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._x)
+        return z - dot(self.H, self._x)
 
 
     def measurement_of_state(self, x):
@@ -417,7 +417,7 @@ class KalmanFilter(object):
             measurement corresponding to the given state
         """
 
-        return dot(self._H, x)
+        return dot(self.H, x)
 
 
     @property
@@ -463,27 +463,6 @@ class KalmanFilter(object):
     @P.setter
     def P(self, value):
         self._P = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def R(self):
-        """ measurement uncertainty"""
-        return self._R
-
-
-    @R.setter
-    def R(self, value):
-        self._R = setter_scalar(value, self.dim_z)
-
-    @property
-    def H(self):
-        """ Measurement function"""
-        return self._H
-
-
-    @H.setter
-    def H(self, value):
-        self._H = setter(value, self.dim_z, self.dim_x)
 
 
     @property
