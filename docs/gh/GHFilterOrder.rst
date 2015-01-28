@@ -1,11 +1,6 @@
 GHFilterOrder
 =============
 
-Introduction and Overview
--------------------------
-
-
--------
 
 .. automodule:: filterpy.gh
 

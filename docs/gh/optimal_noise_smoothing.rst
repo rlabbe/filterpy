@@ -1,11 +1,6 @@
 optimal_noise_smoothing
 =======================
 
-Introduction and Overview
--------------------------
-
-
-------
 
 .. automodule:: filterpy.gh
 

@@ -1,3 +1,9 @@
+Version 0.0.15
+==============
+
+A bunch of small changes and bug fixes. Documentation improvements.
+
+
 Version 0.0.14
 ==============
 

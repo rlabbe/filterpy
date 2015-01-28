@@ -3,7 +3,6 @@ GHFilter
 
 Implements the g-h filter.
 
-
 -------
 
 .. automodule:: filterpy.gh

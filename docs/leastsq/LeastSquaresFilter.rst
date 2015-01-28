@@ -1,10 +1,6 @@
 LeastSquaresFilter
 ==================
 
-
------
-
-
 .. automodule:: filterpy.leastsq
 
 .. autoclass:: LeastSquaresFilter
