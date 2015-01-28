@@ -29,6 +29,10 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     Model. dim may be either 2 or 3, dt is the time step, and sigma is the
     variance in the noise.
 
+    Q is computed as the G * G^T * variance, where G is the process noise per
+    time step. In other words, G = [[.5dt^2][dt]]^T for the constant velocity 
+    model.
+
     **Paramaeters**
 
     dim : int (2 or 3)
