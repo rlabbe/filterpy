@@ -168,7 +168,7 @@ class ExtendedKalmanFilter(object):
             to create the control input into the system.
         """
 
-        self.predict_x()
+        self.predict_x(u)
         self._P = dot3(self._F, self._P, self._F.T) + self._Q
 
 
