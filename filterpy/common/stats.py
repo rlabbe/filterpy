@@ -28,7 +28,7 @@ import scipy.sparse.linalg as spln
 import scipy.stats
 from scipy.stats import norm
 from matplotlib.patches import Ellipse
-
+import random
 
 
 def gaussian(x, mean, var):
@@ -411,3 +411,12 @@ if __name__ == '__main__':
     plt.show()
 
     print("all tests passed")
+
+
+def rand_student_t(df, mu=0, std=1):
+    """return random number distributed by student's t distribution with
+    `df` degrees of freedom with the specified mean and standard deviation.
+    """
+    x = random.gauss(0, std)
+    y = 2.0*random.gammavariate(0.5*df, 2.0)
+    return x / (math.sqrt(y/df)) + mu  
