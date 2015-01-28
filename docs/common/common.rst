@@ -23,6 +23,49 @@ will find useful when you build your filters.
 
 .. autofunction:: linear_ode_discretation
 
+
+-----
+
+.. autofunction:: runge_kutta4
+
+
+-----
+
+.. autofunction:: gaussian
+
+-----
+
+.. autofunction:: mul
+
+-----
+
+.. autofunction:: add
+
+-----
+
+.. autofunction:: multivariate_gaussian
+
+-----
+
+.. autofunction:: plot_gaussian
+
+
+-----
+
+.. autofunction:: covariance_ellipse
+
+-----
+
+.. autofunction:: plot_covariance_ellipse
+
+-----
+
+.. autofunction:: norm_cdf
+
+-----
+
+.. autofunction:: rand_student_t
+
 -----
 
 .. autofunction:: dot3
