@@ -47,6 +47,10 @@ will find useful when you build your filters.
 
 -----
 
+.. autofunction:: multivariate_multiply
+
+-----
+
 .. autofunction:: plot_gaussian
 
 
