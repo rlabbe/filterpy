@@ -1,3 +1,8 @@
+Version 0.0.16
+==============
+
+* Added multivariate_multiply to stats module.
+
 Version 0.0.15
 ==============
 
