@@ -2,6 +2,8 @@ Version 0.0.16
 ==============
 
 * Added multivariate_multiply to stats module.
+* IMPORTANT: bug fix in the UKF RTS smoother routine. 
+* various typo fixes.
 
 Version 0.0.15
 ==============
