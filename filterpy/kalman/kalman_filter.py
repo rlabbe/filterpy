@@ -65,7 +65,7 @@ class KalmanFilter(object):
     y : numpy.array
         Residual of the update step.
 
-    K : numpy.array(dim_x, dim_x)
+    K : numpy.array(dim_x, dim_z)
         Kalman gain of the update step
 
     S :  numpy.array
