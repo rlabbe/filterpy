@@ -66,11 +66,8 @@ class UnscentedKalmanFilter(object):
 
     **Readable Attributes**
 
-    xp : numpy.array(dim_x)
-        predicted state (result of predict())
-
-    Pp : numpy.array(dim_x, dim_x)
-        predicted covariance matrix (result of predict())
+    Pxz : numpy.aray(dim_x, dim_z)
+        Cross variance of x and z computed during update() call.
 
 
     **References**
@@ -199,38 +196,39 @@ class UnscentedKalmanFilter(object):
         zp, Pz = UT(sigmas_h, self.W, self.W, R)
 
         # compute cross variance of the state and the measurements
-        '''Pxz = zeros((self._dim_x, dim_z))
+        '''self.Pxz = zeros((self._dim_x, dim_z))
         for i in range(self._num_sigmas):
-            Pxz += self.W[i] * np.outer(sigmas_f[i] - self.x,
+            self.Pxz += self.W[i] * np.outer(sigmas_f[i] - self.x,
                                         residual(sigmas_h[i], zp))'''
 
         # this is the unreadable but fast implementation of the
         # commented out loop above
         yh = sigmas_f - self.x[np.newaxis, :]
         yz = residual(sigmas_h, zp[np.newaxis, :])
-        Pxz = yh.T.dot(np.diag(self.W)).dot(yz)
+        self.Pxz = yh.T.dot(np.diag(self.W)).dot(yz)
 
-        K = dot(Pxz, inv(Pz)) # Kalman gain
+        K = dot(self.Pxz, inv(Pz)) # Kalman gain
         y = residual(z, zp)
 
         self.x = self.x + dot(K, y)
         self.P = self.P - dot3(K, Pz, K.T)
 
 
+
     def predict(self, dt=None):
         """ Performs the predict step of the UKF. On return, self.xp and
         self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
         stands for prediction.
-        
+
         **Parameters**
         dt : double, optional
             If specified, the time step to be used for this prediction.
             self._dt is used if this is not provided.
 
-        Important: this MUST be called before update() is called for the 
+        Important: this MUST be called before update() is called for the
         first time.
         """
-        
+
         if dt is None:
             dt = self._dt
 
@@ -283,6 +281,7 @@ class UnscentedKalmanFilter(object):
         covariance: np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
+            
         """
 
         try:
@@ -310,17 +309,16 @@ class UnscentedKalmanFilter(object):
 
         # state covariances from Kalman Filter
         covariances = zeros((n, self._dim_x, self._dim_x))
-
-
+        
         for i, (z, r) in enumerate(zip(zs, Rs)):
             self.predict()
             self.update(z, r)
             means[i,:]         = self.x
             covariances[i,:,:] = self.P
-
+            
         return (means, covariances)
 
-
+               
 
     def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
         """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
@@ -385,16 +383,17 @@ class UnscentedKalmanFilter(object):
         xs, ps = Xs.copy(), Ps.copy()
         sigmas_f = zeros((num_sigmas, dim_x))
 
+
         for k in range(n-2,-1,-1):
             # create sigma points from state estimate, pass through state func
             sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
             for i in range(num_sigmas):
-                sigmas_f[i] = self.fx(sigmas[i], self._dt)
+                sigmas_f[i] = self.fx(sigmas[i], dt[k])
 
             # compute backwards prior state and covariance
-            xb = dot(self.W, sigmas)
+            xb = dot(self.W, sigmas_f)
             Pb = 0
-            x = xs[k]
+            x = Xs[k]
             for i in range(num_sigmas):
                 y = sigmas_f[i] - x
                 Pb += self.W[i] * outer(y, y)
@@ -403,8 +402,9 @@ class UnscentedKalmanFilter(object):
             # compute cross variance
             Pxb = 0
             for i in range(num_sigmas):
-                y = sigmas[i] - xb
-                Pxb += self.W[i] * outer(y, y)
+                z = sigmas[i] - Xs[k]
+                y = sigmas_f[i] - xb
+                Pxb += self.W[i] * outer(z, y)
 
             # compute gain
             K = dot(Pxb, inv(Pb))
@@ -422,7 +422,7 @@ class UnscentedKalmanFilter(object):
         """ Computes the weights for an unscented Kalman filter.  See
         __init__() for meaning of parameters.
         """
-        
+
         assert kappa >= 0.0, \
                "kappa cannot be negative, it's value is {}".format(kappa)
         assert n > 0, "n must be greater than 0, it's value is {}".format(n)
@@ -509,7 +509,11 @@ def unscented_transform(Sigmas, Wm, Wc, noise_cov):
     # this is the fast way to do the commented out code above
     y = Sigmas - x[np.newaxis,:]
     P = y.T.dot(np.diag(Wc)).dot(y)
+
     if noise_cov is not None:
         P += noise_cov
 
     return (x, P)
+
+
+    

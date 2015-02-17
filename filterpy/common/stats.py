@@ -191,7 +191,7 @@ def multivariate_multiply(m1, c1, m2, c2):
     C3 = np.dot(C1, sum_inv).dot(C2)
 
     M3 = (np.dot(C2, sum_inv).dot(M1) +
-          np.dot(C1, sum_inv).dot(M2))
+          vdot(C1, sum_inv).dot(M2))
 
     return M3, C3
 
