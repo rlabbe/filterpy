@@ -422,6 +422,10 @@ class UnscentedKalmanFilter(object):
         """ Computes the weights for an unscented Kalman filter.  See
         __init__() for meaning of parameters.
         """
+        
+        assert kappa >= 0.0, \
+               "kappa cannot be negative, it's value is {}".format(kappa)
+        assert n > 0, "n must be greater than 0, it's value is {}".format(n)
 
         k = .5 / (n+kappa)
         W = np.full(2*n+1, k)
