@@ -179,6 +179,49 @@ def test_radar():
         plt.plot(t, xs[:,2])
 
 
+def test_linear_2d():
+    """ should work like a linear KF if problem is linear """
+    
+    
+    def fx(x, dt):
+        F = np.array([[1., dt, 0, 0],
+                      [0.,  1, 0, 0],
+                      [0,0, 1, dt],
+                      [0,0,0,1]])
+                    
+        return np.dot(F, x)
+        
+    def hx(x):
+        return x.copy()
+        
+        
+    dt = 0.1
+    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, kappa=2)
+    
+    
+    kf.x = np.array([1., 1., 1., 1])
+    kf.R = 0
+    kf.Q = 0
+    
+    zs = []
+    for i in range(50):
+        zs.append(np.array([i, i], dtype=float))
+        
+    zs
+        
+    
+    Ms, Ps = kf.batch_filter(zs)
+    
+    if DO_PLOT:
+        zs = np.asarray(zs)
+        
+        plt.plot(zs[:,0])
+        plt.plot(Ms[:,0])
+        
+        
+        
+        
+    
 
 def test_rts():
     def fx(x, dt):
@@ -397,7 +440,7 @@ def test_circle():
         # save data
         results.append (hx(f.x))
         kfxs.append(kf.x)
-        print(f.x)
+        #print(f.x)
 
     results = np.asarray(results)
     zs = np.asarray(zs)
@@ -438,7 +481,7 @@ def kf_circle():
 
 
     kf = KalmanFilter(dim_x=3, dim_z=2)
-    kf.x = np.array([50., 0., 0, 0, .0, 0.])
+    kf.x = np.array([50., 0., 0.])
 
     F = np.array([[1., 0, 0.],
                   [0., 1., 1.,],
@@ -476,20 +519,190 @@ def kf_circle():
 
     if DO_PLOT:
         plt.plot(zs[:,0], zs[:,1], c='r', label='z')
-        plt.plot(kfxs[:,0], kfxs[:,3], c='g', label='KF')
+        plt.plot(kfxs[:,0], kfxs[:,1], c='g', label='KF')
         plt.legend(loc='best')
         plt.axis('equal')
 
 
 
-if __name__ == "__main__":
 
+def two_radar():
+    
+    # code is not complete - I was using to test RTS smoother. very similar
+    # to two_radary.py in book.
+    
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    from numpy import array
+    from numpy.linalg import norm
+    from numpy.random import randn
+    from math import atan2, radians
+        
+    from filterpy.common import Q_discrete_white_noise
+    
+    class RadarStation(object):
+    
+        def __init__(self, pos, range_std, bearing_std):
+            self.pos = asarray(pos)
+    
+            self.range_std = range_std
+            self.bearing_std = bearing_std
+    
+    
+        def reading_of(self, ac_pos):
+            """ Returns range and bearing to aircraft as tuple. bearing is in
+            radians.
+            """
+    
+            diff = np.subtract(self.pos, ac_pos)
+            rng = norm(diff)
+            brg = atan2(diff[1], diff[0])
+            return rng, brg
+    
+    
+        def noisy_reading(self, ac_pos):
+            rng, brg = self.reading_of(ac_pos)
+            rng += randn() * self.range_std
+            brg += randn() * self.bearing_std
+            return rng, brg
+    
+    
+    
+    
+    class ACSim(object):
+    
+        def __init__(self, pos, vel, vel_std):
+            self.pos = asarray(pos, dtype=float)
+            self.vel = asarray(vel, dtype=float)
+            self.vel_std = vel_std
+    
+    
+        def update(self):
+            vel = self.vel + (randn() * self.vel_std)
+            self.pos += vel
+    
+            return self.pos
+    
+    dt = 1.
+    
+    
+    def hx(x):
+        r1, b1 = hx.R1.reading_of((x[0], x[2]))
+        r2, b2 = hx.R2.reading_of((x[0], x[2]))
+    
+        return array([r1, b1, r2, b2])
+        pass
+    
+    
+    
+    def fx(x, dt):
+        x_est = x.copy()
+        x_est[0] += x[1]*dt
+        x_est[2] += x[3]*dt
+        return x_est
+    
+    
+    
+    vx, vy = 0.1, 0.1
+    
+    f = UnscentedKalmanFilter(dim_x=4, dim_z=4, dt=dt, hx=hx, fx=fx, kappa=0)
+    aircraft = ACSim ((100,100), (vx*dt,vy*dt), 0.00000002)
+    
+    
+    range_std = 0.001  # 1 meter
+    bearing_std = 1/1000 # 1mrad
+    
+    R1 = RadarStation ((0,0), range_std, bearing_std)
+    R2 = RadarStation ((200,0), range_std, bearing_std)
+    
+    hx.R1 = R1
+    hx.R2 = R2
+    
+    f.x = array([100, vx, 100, vy])
+    
+    f.R = np.diag([range_std**2, bearing_std**2, range_std**2, bearing_std**2])
+    q = Q_discrete_white_noise(2, var=0.0002, dt=dt)
+    #q = np.array([[0,0],[0,0.0002]])
+    f.Q[0:2, 0:2] = q
+    f.Q[2:4, 2:4] = q
+    f.P = np.diag([.1, 0.01, .1, 0.01])
+    
+    
+    track = []
+    zs = []
+    
+    
+    for i in range(int(300/dt)):
+    
+        pos = aircraft.update()
+    
+        r1, b1 = R1.noisy_reading(pos)
+        r2, b2 = R2.noisy_reading(pos)
+    
+        z = np.array([r1, b1, r2, b2])
+        zs.append(z)
+        track.append(pos.copy())
+    
+    zs = asarray(zs)
+    
+    
+    xs, Ps, Pxz, pM, pP = f.batch_filter(zs)
+    ms, _, _ = f.rts_smoother(xs, Ps)
+    
+    track = asarray(track)
+    time = np.arange(0,len(xs)*dt, dt)
+    
+    plt.figure()
+    plt.subplot(411)
+    plt.plot(time, track[:,0])
+    plt.plot(time, xs[:,0])
+    plt.legend(loc=4)
+    plt.xlabel('time (sec)')
+    plt.ylabel('x position (m)')
+    plt.tight_layout()
+    
+    
+    
+    plt.subplot(412)
+    plt.plot(time, track[:,1])
+    plt.plot(time, xs[:,2])
+    plt.legend(loc=4)
+    plt.xlabel('time (sec)')
+    plt.ylabel('y position (m)')
+    plt.tight_layout()
+    
+    
+    plt.subplot(413)
+    plt.plot(time, xs[:,1])
+    plt.plot(time, ms[:,1])
+    plt.legend(loc=4)
+    plt.ylim([0, 0.2])
+    plt.xlabel('time (sec)')
+    plt.ylabel('x velocity (m/s)')
+    plt.tight_layout()
+    
+    plt.subplot(414)
+    plt.plot(time, xs[:,3])
+    plt.plot(time, ms[:,3])
+    plt.ylabel('y velocity (m/s)')
+    plt.legend(loc=4)
+    plt.xlabel('time (sec)')
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == "__main__":
+    
+    DO_PLOT = True
+
+    #test_linear_2d()
     #test_sigma_points_1D()
     #test_fixed_lag()
     #DO_PLOT = True
-    test_rts()
+    #test_rts()
     #kf_circle()
-    #test_circle()
+    test_circle()
 
 
     '''test_1D_sigma_points()
@@ -497,12 +710,14 @@ if __name__ == "__main__":
 
     x = np.array([[1,2]])
     P = np.array([[2, 1.2],
-                  [1.2, 2]])
+                  [1.2, 2]])\
+                  
+                  
     kappa = .1
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    test_radar()
+    #test_radar()
     #test_sigma_plot()
     #test_julier_weights()
     #test_scaled_weights()

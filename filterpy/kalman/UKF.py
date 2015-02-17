@@ -514,6 +514,3 @@ def unscented_transform(Sigmas, Wm, Wc, noise_cov):
         P += noise_cov
 
     return (x, P)
-
-
-    
