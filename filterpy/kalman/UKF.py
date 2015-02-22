@@ -294,7 +294,7 @@ class UnscentedKalmanFilter(object):
             'zs must be a list of scalars or 1D, 1 element arrays'
 
         else:
-            assert len(z) == self._dim_z, 'each element in zs must be a'
+            assert len(z) == self._dim_z, 'each element in zs must be a' \
             '1D array of length {}'.format(self._dim_z)
 
         n = np.size(zs,0)
@@ -423,8 +423,6 @@ class UnscentedKalmanFilter(object):
         __init__() for meaning of parameters.
         """
 
-        assert kappa >= 0.0, \
-               "kappa cannot be negative, it's value is {}".format(kappa)
         assert n > 0, "n must be greater than 0, it's value is {}".format(n)
 
         k = .5 / (n+kappa)

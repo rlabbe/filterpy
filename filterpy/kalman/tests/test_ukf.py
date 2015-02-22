@@ -184,39 +184,44 @@ def test_linear_2d():
     
     
     def fx(x, dt):
-        F = np.array([[1., dt, 0, 0],
-                      [0.,  1, 0, 0],
-                      [0,0, 1, dt],
-                      [0,0,0,1]])
+        F = np.array([[1, dt, 0, 0],
+                      [0,  1, 0, 0],
+                      [0, 0,  1, dt],
+                      [0, 0, 0,  1]], dtype=float)
                     
         return np.dot(F, x)
         
     def hx(x):
-        return x.copy()
+        return np.array([x[0], x[2]])
         
         
     dt = 0.1
-    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, kappa=2)
+    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, kappa=0)
     
     
-    kf.x = np.array([1., 1., 1., 1])
-    kf.R = 0
-    kf.Q = 0
+    kf.x = np.array([-1., 1., -1., 1])
+    kf.P*=0.0001
+    #kf.R *=0
+    #kf.Q 
     
     zs = []
-    for i in range(50):
-        zs.append(np.array([i, i], dtype=float))
-        
-    zs
+    for i in range(20):
+        z = np.array([i+randn()*0.1, i+randn()*0.1])
+        zs.append(z)
+
         
     
     Ms, Ps = kf.batch_filter(zs)
+    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
     
     if DO_PLOT:
         zs = np.asarray(zs)
         
-        plt.plot(zs[:,0])
+        #plt.plot(zs[:,0])
         plt.plot(Ms[:,0])
+        plt.plot(smooth_x[:,0], smooth_x[:,2])
+        
+        print(smooth_x)
         
         
         
@@ -696,13 +701,13 @@ if __name__ == "__main__":
     
     DO_PLOT = True
 
-    #test_linear_2d()
+    test_linear_2d()
     #test_sigma_points_1D()
     #test_fixed_lag()
     #DO_PLOT = True
     #test_rts()
     #kf_circle()
-    test_circle()
+    #test_circle()
 
 
     '''test_1D_sigma_points()
