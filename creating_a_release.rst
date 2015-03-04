@@ -14,6 +14,8 @@ Steps to Create Release
 
 * push to origin. That automatically triggers a build on readthedocs.org.
 
+* push tags to origin with git push origin --tags
+
 * Update pypi.org with 'bash pypi-install.sh'
 
 

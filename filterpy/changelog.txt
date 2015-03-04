@@ -1,3 +1,8 @@
+Version 0.0.17
+==============
+* Fixed assert in UKF module that incorrectly required kappa
+to be >= 0.
+
 Version 0.0.16
 ==============
 
