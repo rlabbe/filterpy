@@ -40,7 +40,7 @@ def gaussian(x, mean, var):
 
     **Parameters**
 
-    x : scalar
+    x : scalar or array-like
         The value for which we compute the probability
 
     mean : scalar
@@ -54,9 +54,15 @@ def gaussian(x, mean, var):
     probability : float
         probability of x for the Gaussian (mean, var). E.g. 0.101 denotes
         10.1%.
+        
+    **Examples**
+    
+    gaussian(8, 1, 2)
+    gaussian([8, 7, 9], 1, 2)
     """
 
-    return math.exp((-0.5*(x-mean)**2)/var) / math.sqrt(2*math.pi*var)
+    return (np.exp((-0.5*(np.asarray(x)-mean)**2)/var) / 
+            math.sqrt(2*math.pi*var))
 
 
 def mul (mean1, var1, mean2, var2):
