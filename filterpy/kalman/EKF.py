@@ -104,7 +104,7 @@ class ExtendedKalmanFilter(object):
         self._x = x + dot(K, (z - Hx(x)))
 
         I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot(I_KH, P)
 
 
     def update(self, z, HJacobian, Hx, R=None):
@@ -146,7 +146,7 @@ class ExtendedKalmanFilter(object):
         self._x = x + dot(K, y)
 
         I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot(I_KH, P)
 
 
     def predict_x(self, u=0):
