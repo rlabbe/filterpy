@@ -55,7 +55,7 @@ def runge_kutta4(y, x, dx, f):
     k2 = dx * f(y + 0.5*k1, x + 0.5*dx)
     k3 = dx * f(y + 0.5*k2, x + 0.5*dx)
     k4 = dx * f(y + k3, x + dx)
-    
+
     return y + (k1 + 2*k2 + 2*k3 + k4) / 6.
 
 
@@ -78,7 +78,7 @@ def setter_1d(value, dim_x):
     v = array(value, dtype=float)
     shape = v.shape
     if shape[0] != (dim_x) or v.ndim > 2 or (v.ndim==2 and shape[1] != 1):
-        raise Exception('must have shape ({},{})'.format(dim_x, 1))
+        raise Exception('has shape {}, must have shape ({},{})'.format(shape, dim_x, 1))
     return v
 
 
