@@ -59,7 +59,7 @@ class ExtendedKalmanFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def predict_update(self, z, HJacobian, Hx, u=0):
+    def predict_update(self, z, HJacobian, Hx, args=(), hx_args=(), u=0):
         """ Performs the predict/update innovation of the extended Kalman
         filter.
 
@@ -71,16 +71,32 @@ class ExtendedKalmanFilter(object):
 
         HJacobian : function
            function which computes the Jacobian of the H matrix (measurement
-           function). Takes state variable (self.x) as input, returns H.
-
+           function). Takes state variable (self.x) as input, along with the
+           optional arguments in args, and returns H.
 
         Hx : function
-            function which takes a state variable and returns the measurement
+            function which takes as input the state variable (self.x) along
+            with the optional arguments in hx_args, and returns the measurement
             that would correspond to that state.
+
+        args : tuple, optional, default (,)
+            arguments to be passed into HJacobian after the required state
+            variable.
+
+        hx_args : tuple, optional, default (,)
+            arguments to be passed into HJacobian after the required state
+            variable.
 
         u : np.array or scalar
             optional control vector input to the filter.
         """
+
+        if not isinstance(args, tuple):
+            args = (args,)
+
+        if not isinstance(hx_args, tuple):
+            hx_args = (hx_args,)
+
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
@@ -91,7 +107,7 @@ class ExtendedKalmanFilter(object):
         R = self._R
         x = self._x
 
-        H = HJacobian(x)
+        H = HJacobian(x, *args)
 
         # predict step
         x = dot(F, x) + dot(B, u)
@@ -101,13 +117,14 @@ class ExtendedKalmanFilter(object):
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        self._x = x + dot(K, (z - Hx(x)))
+        self._x = x + dot(K, (z - Hx(x, *hx_args)))
 
         I_KH = self._I - dot(K, H)
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
-    def update(self, z, HJacobian, Hx, R=None):
+    def update(self, z, HJacobian, Hx, args=(), hx_args=(),
+               residual=np.subtract, R=None):
         """ Performs the update innovation of the extended Kalman filter.
 
         **Parameters**
@@ -120,11 +137,39 @@ class ExtendedKalmanFilter(object):
            function which computes the Jacobian of the H matrix (measurement
            function). Takes state variable (self.x) as input, returns H.
 
-
         Hx : function
-            function which takes a state variable and returns the measurement
+            function which takes as input the state variable (self.x) along
+            with the optional arguments in hx_args, and returns the measurement
             that would correspond to that state.
+
+        args : tuple, optional, default (,)
+            arguments to be passed into HJacobian after the required state
+            variable. for robot localization you might need to pass in
+            information about the map and time of day, so you might have
+            `args=(map_data, time)`, where the signature of HCacobian will
+            be `def HJacobian(x, map, t)`
+
+        hx_args : tuple, optional, default (,)
+            arguments to be passed into Hx function after the required state
+            variable.
+
+        residual : function (z, z2), optional
+            Optional function that computes the residual (difference) between
+            the two measurement vectors. If you do not provide this, then the
+            built in minus operator will be used. You will normally want to use
+            the built in unless your residual computation is nonlinear (for
+            example, if they are angles)
+
+        R : np.array, scalar, or None
+            Optionally provide R to override the measurement noise for this
+            one call, otherwise  self.R will be used.
         """
+
+        if not isinstance(args, tuple):
+            args = (args,)
+
+        if not isinstance(hx_args, tuple):
+            hx_args = (hx_args,)
 
         P = self._P
         if R is None:
@@ -137,12 +182,13 @@ class ExtendedKalmanFilter(object):
 
         x = self._x
 
-        H = HJacobian(x)
+        H = HJacobian(x, *args)
 
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
 
-        y = z - Hx(x)
+        hx =  Hx(x, *hx_args)
+        y = residual(z, hx)
         self._x = x + dot(K, y)
 
         I_KH = self._I - dot(K, H)
