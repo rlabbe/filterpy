@@ -1,3 +1,13 @@
+Version 0.0.18
+==============
+
+* Added args parameters to Hx and HJacobian of the ExtendedKalmanFilter
+class so you can pass additional data to them. 
+
+* Made an exception more human readable by including the size of the
+matrix that caused the shape error.
+
+
 Version 0.0.17
 ==============
 * Fixed assert in UKF module that incorrectly required kappa
