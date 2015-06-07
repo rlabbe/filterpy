@@ -123,8 +123,8 @@ class ExtendedKalmanFilter(object):
         self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
 
-    def update(self, z, HJacobian, Hx, args=(), hx_args=(),
-               residual=np.subtract, R=None):
+    def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
+               residual=np.subtract):
         """ Performs the update innovation of the extended Kalman filter.
 
         **Parameters**
@@ -141,6 +141,10 @@ class ExtendedKalmanFilter(object):
             function which takes as input the state variable (self.x) along
             with the optional arguments in hx_args, and returns the measurement
             that would correspond to that state.
+
+        R : np.array, scalar, or None
+            Optionally provide R to override the measurement noise for this
+            one call, otherwise  self.R will be used.
 
         args : tuple, optional, default (,)
             arguments to be passed into HJacobian after the required state
@@ -159,10 +163,6 @@ class ExtendedKalmanFilter(object):
             built in minus operator will be used. You will normally want to use
             the built in unless your residual computation is nonlinear (for
             example, if they are angles)
-
-        R : np.array, scalar, or None
-            Optionally provide R to override the measurement noise for this
-            one call, otherwise  self.R will be used.
         """
 
         if not isinstance(args, tuple):

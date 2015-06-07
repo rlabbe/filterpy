@@ -14,34 +14,22 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-# pylint bug - warns about numpy functions which do in fact exist.
-# pylint: disable=E1101
-
-
-#I like aligning equal signs for readability of math
-# pylint: disable=C0326
-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from numpy.linalg import inv, cholesky
-import numpy as np
-from numpy import asarray, eye, zeros, dot, isscalar, outer
 from filterpy.common import dot3
+from filterpy.kalman import unscented_transform
+import numpy as np
+from numpy import asarray, eye, zeros, dot
+from scipy.linalg import inv, cholesky, sqrtm
 
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=C0103
-    """ Implements the Unscented Kalman filter (UKF) as defined by Simon J.
-    Julier and Jeffery K. Uhlmann [1]. Succintly, the UKF selects a set of
-    sigma points and weights inside the covariance matrix of the filter's
-    state. These points are transformed through the nonlinear process being
-    filtered, and are rebuilt into a mean and covariance by computed the
-    weighted mean and expected value of the transformed points. Read the paper;
-    it is excellent. My book "Kalman and Bayesian Filters in Python" [2]
-    explains the algorithm, develops this code, and provides examples of the
-    filter in use.
+    """ Implements the Scaled Unscented Kalman filter (UKF) as defined by
+    Simon Julier in [1], using the formulation provided by Wan and Merle
+    in [2]. This filter scales the sigma points to avoid strong nonlinearities.
 
 
     You will have to set the following attributes after constructing this
@@ -66,22 +54,32 @@ class UnscentedKalmanFilter(object):
 
     **Readable Attributes**
 
-    Pxz : numpy.aray(dim_x, dim_z)
-        Cross variance of x and z computed during update() call.
+    xp : numpy.array(dim_x)
+        predicted state (result of predict())
+
+    Pp : numpy.array(dim_x, dim_x)
+        predicted covariance matrix (result of predict())
 
 
     **References**
 
-    .. [1] Julier, Simon J.; Uhlmann, Jeffrey "A New Extension of the Kalman
-        Filter to Nonlinear Systems". Proc. SPIE 3068, Signal Processing,
-        Sensor Fusion, and Target Recognition VI, 182 (July 28, 1997)
+    .. [1] Julier, Simon J. "The scaled unscented transformation,"
+        American Control Converence, 2002, pp 4555-4559, vol 6.
 
-    .. [2] Labbe, Roger R. "Kalman and Bayesian Filters in Python"
+        Online copy:
+        https://www.cs.unc.edu/~welch/kalman/media/pdf/ACC02-IEEE1357.PDF
 
-        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+    .. [2] E. A. Wan and R. Van der Merwe, “The unscented Kalman filter for
+        nonlinear estimation,” in Proc. Symp. Adaptive Syst. Signal
+        Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
+
+        Online Copy:
+        https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
     """
 
-    def __init__(self, dim_x, dim_z, dt, hx, fx, kappa=0.):
+    def __init__(self, dim_x, dim_z, dt, alpha, hx, fx, beta, kappa=0.,
+                 sqrt_method=cholesky):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -109,41 +107,135 @@ class UnscentedKalmanFilter(object):
             function that returns the state x transformed by the
             state transistion function. dt is the time step in seconds.
 
-        kappa : float, default=0.
-            Scaling factor that can reduce high order errors. kappa=0 gives
-            the standard unscented filter. According to [1], if you set
-            kappa to 3-dim_x for a Gaussian x you will minimize the fourth
-            order errors in x and P.
+        alpha : float
+            Determins the spread of the sigma points around the mean.
+            Usually a small positive value (1e-3) according to [3].
+
+        beta : float
+            Incorporates prior knowledge of the distribution of the mean. For
+            Gaussian x beta=2 is optimal, according to [3].
+
+        kappa : float, default=0.0
+            Secondary scaling parameter usually set to 0 according to [4],
+            or to 3-n according to [5].
+
+        sqrt_method : function(ndarray), default = scipy.linalg.cholesky
+            Defines how we compute the square root of a matrix, which has
+            no unique answer. Cholesky is the default choice due to its
+            speed. Typically your alternative choice will be
+            scipy.linalg.sqrtm. Different choices affect how the sigma points
+            are arranged relative to the eigenvectors of the covariance matrix.
+            Usually this will not matter to you; if so the default cholesky()
+            yields maximal performance. As of van der Merwe's dissertation of
+            2004 [6] this was not a well reseached area so I have no advice
+            to give you.
+
+            If your method returns a triangular matrix it must be upper
+            triangular. Do not use numpy.linalg.cholesky - for historical
+            reasons it returns a lower triangular matrix. The SciPy version
+            does the right thing.
+
 
         **References**
 
-        [1] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
-            the nonlinear transformation of means and covariances in filters
-            and estimators," IEEE Transactions on Automatic Control, 45(3),
-            pp. 477-482 (March 2000).
+        .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
+               the nonlinear transformation of means and covariances in filters
+               and estimators," IEEE Transactions on Automatic Control, 45(3),
+               pp. 477-482 (March 2000).
+
+        .. [4] E. A. Wan and R. Van der Merwe, “The Unscented Kalman filter for
+               Nonlinear Estimation,” in Proc. Symp. Adaptive Syst. Signal
+               Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
+
+               https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
+
+        .. [5] Wan, Merle "The Unscented Kalman Filter," chapter in *Kalman
+               Filtering and Neural Networks*, John Wiley & Sons, Inc., 2001.
+
+        .. [6] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
+               Inference in Dynamic State-Space Models" (Doctoral dissertation)
         """
 
         self.Q = eye(dim_x)
         self.R = eye(dim_z)
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
+        self.xp = None
+        self.Pp = None
         self._dim_x = dim_x
         self._dim_z = dim_z
         self._dt = dt
         self._num_sigmas = 2*dim_x + 1
+        self.alpha = alpha
+        self.beta = beta
         self.kappa = kappa
         self.hx = hx
         self.fx = fx
+        self.msqrt = sqrt_method
 
-        # weights for the sigma points
-        self.W = self.weights(dim_x, kappa)
+        # weights for the means and covariances. In this formation
+        # both are the same.
+        self.Wm, self.Wc = self.weights(dim_x, alpha, beta, kappa)
+
 
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
-        self.sigmas_f = zeros((self._num_sigmas, self._dim_x))
+        self.sigmas_f = zeros((2*self._dim_x+1, self._dim_x))
+        self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
 
-    def update(self, z, R=None, residual=np.subtract, UT=None):
+
+    def predict(self, dt=None,  UT=None, fx_args=()):
+        """ Performs the predict step of the UKF. On return, self.xp and
+        self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
+        stands for prediction.
+
+        Important: this MUST be called before update() is called for the first
+        time.
+
+        Parameters
+        ----------
+
+        dt : double, optional
+            If specified, the time step to be used for this prediction.
+            self._dt is used if this is not provided.
+
+        UT : function(sigmas, Wm, Wc, noise_cov), optional
+            Optional function to compute the unscented transform for the sigma
+            points passed through hx. Typically the default function will
+            work, but if for example you are using angles the default method
+            of computing means and residuals will not work, and you will have
+            to define how to compute it.
+
+        fx_args : tuple, optional, default (,)
+            optional arguments to be passed into fx() after the required state
+            variable.
+
+        """
+        if dt is None:
+            dt = self._dt
+
+        if not isinstance(fx_args, tuple):
+            fx_args = (fx_args,)
+
+        if UT is None:
+            UT = unscented_transform
+
+        # rename for readability
+        Wm = self.Wm
+        Wc = self.Wc
+
+        # calculate sigma points for given mean and covariance
+        sigmas = UnscentedKalmanFilter.sigma_points(
+            self.x, self.P, self.alpha, self.kappa)
+        for i in range(self._num_sigmas):
+            self.sigmas_f[i] = self.fx(sigmas[i], dt, *fx_args)
+
+        self.xp, self.Pp = UT(self.sigmas_f, Wm, Wc, self.Q)
+
+
+    def update(self, z, R=None, UT=unscented_transform, hx_args=(),
+               residual_x=np.subtract, residual_h=np.subtract):
         """ Update the UKF with the given measurements. On return,
         self.x and self.P contain the new mean and covariance of the filter.
 
@@ -156,25 +248,35 @@ class UnscentedKalmanFilter(object):
             Measurement noise. If provided, overrides self.R for
             this function call.
 
-        residual : function (z, z2), optional
-            Optional function that computes the residual (difference) between
-            the two measurement vectors. If you do not provide this, then the
-            built in minus operator will be used. You will normally want to use
-            the built in unless your residual computation is nonlinear (for
-            example, if they are angles)
-
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
             points passed through hx. Typically the default function will
             work, but if for example you are using angles the default method
             of computing means and residuals will not work, and you will have
             to define how to compute it.
+
+        hx_args : tuple, optional, default (,)
+            arguments to be passed into Hx function after the required state
+            variable.
+
+        residual_x : function (x, x2), optional
+            Optional function that computes the residual (difference) between
+            the two state vectors. If you do not provide this, then the
+            built in minus operator will be used. You will normally want to use
+            the built in unless your residual computation is nonlinear (for
+            example, if they are angles)
+
+        residual_h : function (z, z2), optional
+            Optional function that computes the residual (difference) between
+            the two measurement vectors. If you do not provide this, then the
+            built in minus operator will be used.
         """
 
-        if isscalar(z):
-            dim_z = 1
-        else:
-            dim_z = len(z)
+        if z is None:
+            return
+
+        if not isinstance(hx_args, tuple):
+            hx_args = (hx_args,)
 
         if R is None:
             R = self.R
@@ -183,63 +285,28 @@ class UnscentedKalmanFilter(object):
 
         # rename for readability
         sigmas_f = self.sigmas_f
-        sigmas_h = zeros((self._num_sigmas, dim_z))
+        sigmas_h = self.sigmas_h
+        Wm = self.Wm
+        Wc = self.Wc
 
-        if UT is None:
-            UT = unscented_transform
-
-        # transform sigma points into measurement space
         for i in range(self._num_sigmas):
-            sigmas_h[i] = self.hx(sigmas_f[i])
+            sigmas_h[i] = self.hx(sigmas_f[i], *hx_args)
 
-        # mean and covariance of prediction passed through inscented transform
-        zp, Pz = UT(sigmas_h, self.W, self.W, R)
+
+        # mean and covariance of prediction passed through UT
+        zp, Pz = UT(sigmas_h, Wm, Wc, R)
 
         # compute cross variance of the state and the measurements
-        '''self.Pxz = zeros((self._dim_x, dim_z))
+        Pxz = zeros((self._dim_x, self._dim_z))
         for i in range(self._num_sigmas):
-            self.Pxz += self.W[i] * np.outer(sigmas_f[i] - self.x,
-                                        residual(sigmas_h[i], zp))'''
+            Pxz += Wc[i] * np.outer(residual_x(sigmas_f[i], self.xp),
+                                    residual_h(sigmas_h[i], zp))
 
-        # this is the unreadable but fast implementation of the
-        # commented out loop above
-        yh = sigmas_f - self.x[np.newaxis, :]
-        yz = residual(sigmas_h, zp[np.newaxis, :])
-        self.Pxz = yh.T.dot(np.diag(self.W)).dot(yz)
+        K = dot(Pxz, inv(Pz)) # Kalman gain
+        y = residual_h(z, zp)   #residual
 
-        K = dot(self.Pxz, inv(Pz)) # Kalman gain
-        y = residual(z, zp)
-
-        self.x = self.x + dot(K, y)
-        self.P = self.P - dot3(K, Pz, K.T)
-
-
-
-    def predict(self, dt=None):
-        """ Performs the predict step of the UKF. On return, self.xp and
-        self.Pp contain the predicted state (xp) and covariance (Pp). 'p'
-        stands for prediction.
-
-        **Parameters**
-        dt : double, optional
-            If specified, the time step to be used for this prediction.
-            self._dt is used if this is not provided.
-
-        Important: this MUST be called before update() is called for the
-        first time.
-        """
-
-        if dt is None:
-            dt = self._dt
-
-        # calculate sigma points for given mean and covariance
-        sigmas = self.sigma_points(self.x, self.P, self.kappa)
-
-        for i in range(self._num_sigmas):
-            self.sigmas_f[i] = self.fx(sigmas[i], dt)
-
-        self.x, self.P = unscented_transform(
-                           self.sigmas_f, self.W, self.W, self.Q)
+        self.x = self.xp + dot(K, y)
+        self.P = self.Pp - dot3(K, Pz, K.T)
 
 
     def batch_filter(self, zs, Rs=None, residual=np.subtract, UT=None):
@@ -281,7 +348,7 @@ class UnscentedKalmanFilter(object):
         covariance: np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
-            
+
         """
 
         try:
@@ -309,133 +376,64 @@ class UnscentedKalmanFilter(object):
 
         # state covariances from Kalman Filter
         covariances = zeros((n, self._dim_x, self._dim_x))
-        
+
         for i, (z, r) in enumerate(zip(zs, Rs)):
             self.predict()
             self.update(z, r)
             means[i,:]         = self.x
             covariances[i,:,:] = self.P
-            
+
         return (means, covariances)
 
-               
-
-    def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
-        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
-        means and covariances computed by the UKF. The usual input
-        would come from the output of `batch_filter()`.
-
-        **Parameters**
-
-        Xs : numpy.array
-           array of the means (state variable x) of the output of a Kalman
-           filter.
-
-        Ps : numpy.array
-            array of the covariances of the output of a kalman filter.
-
-        Q : list-like collection of numpy.array, optional
-            Process noise of the Kalman filter at each time step. Optional,
-            if not provided the filter's self.Q will be used
-
-        dt : optional, float or array-like of float
-            If provided, specifies the time step of each step of the filter.
-            If float, then the same time step is used for all steps. If
-            an array, then each element k contains the time  at step k.
-            Units are seconds.
-
-        **Returns**
-
-        'x' : numpy.ndarray
-           smoothed means
-
-        'P' : numpy.ndarray
-           smoothed state covariances
-
-        'K' : numpy.ndarray
-            smoother gain at each step
-
-
-        **Example**::
-
-            zs = [t + random.randn()*4 for t in range (40)]
-
-            (mu, cov, _, _) = kalman.batch_filter(zs)
-            (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
-
-        """
-        assert len(Xs) == len(Ps)
-        n, dim_x = Xs.shape
-
-        if dt is None:
-            dt = [self._dt] * n
-        elif isscalar(dt):
-            dt = [dt] * n
-
-        if Qs is None:
-            Qs = [self.Q] * n
-
-        # smoother gain
-        Ks = zeros((n,dim_x,dim_x))
-
-        num_sigmas = 2*dim_x + 1
-
-        xs, ps = Xs.copy(), Ps.copy()
-        sigmas_f = zeros((num_sigmas, dim_x))
-
-
-        for k in range(n-2,-1,-1):
-            # create sigma points from state estimate, pass through state func
-            sigmas = self.sigma_points(xs[k], ps[k], self.kappa)
-            for i in range(num_sigmas):
-                sigmas_f[i] = self.fx(sigmas[i], dt[k])
-
-            # compute backwards prior state and covariance
-            xb = dot(self.W, sigmas_f)
-            Pb = 0
-            x = Xs[k]
-            for i in range(num_sigmas):
-                y = sigmas_f[i] - x
-                Pb += self.W[i] * outer(y, y)
-            Pb += Qs[k]
-
-            # compute cross variance
-            Pxb = 0
-            for i in range(num_sigmas):
-                z = sigmas[i] - Xs[k]
-                y = sigmas_f[i] - xb
-                Pxb += self.W[i] * outer(z, y)
-
-            # compute gain
-            K = dot(Pxb, inv(Pb))
-
-            # update the smoothed estimates
-            xs[k] += dot (K, xs[k+1] - xb)
-            ps[k] += dot3(K, ps[k+1] - Pb, K.T)
-            Ks[k] = K
-
-        return (xs, ps, Ks)
 
 
     @staticmethod
-    def weights(n, kappa):
-        """ Computes the weights for an unscented Kalman filter.  See
-        __init__() for meaning of parameters.
+    def weights(n, alpha, beta, kappa):
+        """ Computes the weights for the scaled unscented Kalman filter.
+
+        Parameters
+        ----------
+
+        n : int
+            Dimensionality of the state. 2n+1 weights will be generated.
+
+        alpha : float
+            Determins the spread of the sigma points around the mean.
+            Usually a small positive value (1e-3) according to [3].
+
+        beta : float
+            Incorporates prior knowledge of the distribution of the mean. For
+            Gaussian x beta=2 is optimal, according to [3].
+
+        kappa : float, default=0.0
+            Secondary scaling parameter usually set to 0 according to [4],
+            or to 3-n according to [5].
+
+        Returns
+        -------
+        Wm : ndarray[2n+1]
+            weights for mean
+
+        Wc : ndarray[2n+1]
+            weights for the covariances
         """
 
-        assert n > 0, "n must be greater than 0, it's value is {}".format(n)
+        lambda_ = alpha**2 * (n + kappa) - n
 
-        k = .5 / (n+kappa)
-        W = np.full(2*n+1, k)
-        W[0] = kappa / (n+kappa)
-        return W
+        c = .5 / (n+lambda_)
+        Wc = np.full(2*n + 1, c)
+        Wm = np.full(2*n + 1, c)
+        Wc[0] = lambda_ / (n + lambda_) + (1 - alpha**2 + beta)
+        Wm[0] = lambda_ / (n + lambda_)
 
+        return Wm, Wc
 
     @staticmethod
-    def sigma_points(x, P, kappa):
+    def sigma_points(x, P, alpha, kappa, sqrt_method=cholesky):
         """ Computes the sigma points for an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
-        kappa is an arbitrary constant. Returns sigma points.
+        kappa is an arbitrary constant
+        constant. Returns tuple of the sigma points and weights.
 
         Works with both scalar and array inputs:
         sigma_points (5, 9, 2) # mean 5, covariance 9
@@ -450,65 +448,56 @@ class UnscentedKalmanFilter(object):
         P : scalar, or np.array
            Covariance of the filter. If scalar, is treated as eye(n)*P.
 
+        alpha : float
+            Determines the spread of the sigma points around the mean.
+
         kappa : float
             Scaling factor.
+
+
+        sqrt_method : function(ndarray), default = scipy.linalg.cholesky
+            Defines how we compute the square root of a matrix, which has
+            no unique answer. Cholesky is the default choice due to its
+            speed. Typically your alternative choice will be
+            scipy.linalg.sqrtm. Different choices affect how the sigma points
+            are arranged relative to the eigenvectors of the covariance matrix.
+            Usually this will not matter to you; if so the default cholesky()
+            yields maximal performance. As of van der Merwe's dissertation of
+            2004 [6] this was not a well reseached area so I have no advice
+            to give you.
+
+            If your method returns a triangular matrix it must be upper
+            triangular. Do not use numpy.linalg.cholesky - for historical
+            reasons it returns a lower triangular matrix. The SciPy version
+            does the right thing.
 
         **Returns**
 
         sigmas : np.array, of size (n, 2n+1)
-            2D array of sigma points. Each column contains all of
-            the sigmas for one dimension in the problem space. They
-            are ordered as:
+            Two dimensional array of sigma points. Each column contains all of
+            the sigmas for one dimension in the problem space.
 
-            .. math::
-                sigmas[0]    = x \n
-                sigmas[1..n] = x + [\sqrt{(n+\kappa)P}]_k \n
-                sigmas[n+1..2n] = x - [\sqrt{(n+\kappa)P}]_k
+            Ordered by Xi_0, Xi_{1..n}, Xi_{n+1..2n}
         """
 
         if np.isscalar(x):
             x = asarray([x])
         n = np.size(x)  # dimension of problem
 
-        if np.isscalar(P):
+        if  np.isscalar(P):
             P = eye(n)*P
 
+        lambda_ = alpha**2 * (n+kappa) - n
         sigmas = zeros((2*n+1, n))
+        U = sqrt_method((lambda_+n)*P)
 
-        # implements U'*U = (n+kappa)*P. Returns lower triangular matrix.
-        # Take transpose so we can access with U[i]
-        U = cholesky((n+kappa)*P).T
-        #U = sqrtm((n+kappa)*P).T
+        for k in range(n):
+            sigmas[k+1]   = x + U[k]
+            sigmas[n+k+1] = x - U[k]
 
+        # handle value for the mean separately as special case
         sigmas[0] = x
-        sigmas[1:n+1]     = x + U
-        sigmas[n+1:2*n+2] = x - U
 
         return sigmas
 
 
-def unscented_transform(Sigmas, Wm, Wc, noise_cov):
-    """ Computes unscented transform of a set of sigma points and weights.
-    returns the mean and covariance in a tuple.
-    """
-
-    kmax, n = Sigmas.shape
-
-    # new mean is just the sum of the sigmas * weight
-    x = dot(Wm, Sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
-
-    # new covariance is the sum of the outer product of the residuals
-    # times the weights
-    '''P = zeros((n, n))
-    for k in range(kmax):
-        y = Sigmas[k] - x
-        P += Wc[k] * np.outer(y, y)'''
-
-    # this is the fast way to do the commented out code above
-    y = Sigmas - x[np.newaxis,:]
-    P = y.T.dot(np.diag(Wc)).dot(y)
-
-    if noise_cov is not None:
-        P += noise_cov
-
-    return (x, P)

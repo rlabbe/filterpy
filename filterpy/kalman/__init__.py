@@ -21,8 +21,9 @@ from .kalman_filter import *
 from .ensemble_kalman_filter import *
 from .square_root import *
 from .information_filter import *
+from .unscented_transform import unscented_transform
 from .EKF import *
 from .UKF import *
-from .SUKF import *
+from .JUKF import *
 from .fading_memory import *
 from .fixed_lag_smoother import FixedLagSmoother
