@@ -20,8 +20,8 @@ from __future__ import (absolute_import, division, print_function,
 from filterpy.common import dot3
 from filterpy.kalman import unscented_transform
 import numpy as np
-from numpy import asarray, eye, zeros, dot
-from scipy.linalg import inv, cholesky, sqrtm
+from numpy import eye, zeros, dot, isscalar, outer
+from scipy.linalg import inv, cholesky
 
 
 class UnscentedKalmanFilter(object):
@@ -35,7 +35,8 @@ class UnscentedKalmanFilter(object):
     You will have to set the following attributes after constructing this
     object for the filter to perform properly.
 
-    **Attributes**
+    Attributes
+    ----------
 
     x : numpy.array(dim_x)
         state estimate vector
@@ -52,7 +53,8 @@ class UnscentedKalmanFilter(object):
 
     You may read the following attributes.
 
-    **Readable Attributes**
+    Readable Attributes
+    -------------------
 
     xp : numpy.array(dim_x)
         predicted state (result of predict())
@@ -61,7 +63,8 @@ class UnscentedKalmanFilter(object):
         predicted covariance matrix (result of predict())
 
 
-    **References**
+    References
+    ----------
 
     .. [1] Julier, Simon J. "The scaled unscented transformation,"
         American Control Converence, 2002, pp 4555-4559, vol 6.
@@ -78,13 +81,14 @@ class UnscentedKalmanFilter(object):
         https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
     """
 
-    def __init__(self, dim_x, dim_z, dt, alpha, hx, fx, beta, kappa=0.,
+    def __init__(self, dim_x, dim_z, dt, hx, fx, points,
                  sqrt_method=cholesky):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         dim_x : int
             Number of state variables for the filter. For example, if
@@ -136,7 +140,8 @@ class UnscentedKalmanFilter(object):
             does the right thing.
 
 
-        **References**
+        References
+        ----------
 
         .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
                the nonlinear transformation of means and covariances in filters
@@ -166,16 +171,17 @@ class UnscentedKalmanFilter(object):
         self._dim_z = dim_z
         self._dt = dt
         self._num_sigmas = 2*dim_x + 1
-        self.alpha = alpha
-        self.beta = beta
-        self.kappa = kappa
+        #self.alpha = alpha
+        #self.beta = beta
+        #self.kappa = kappa
         self.hx = hx
         self.fx = fx
+        self.sigma_points = points
         self.msqrt = sqrt_method
 
         # weights for the means and covariances. In this formation
         # both are the same.
-        self.Wm, self.Wc = self.weights(dim_x, alpha, beta, kappa)
+        self.Wm, self.Wc = self.sigma_points.weights()
 
 
         # sigma points transformed through f(x) and h(x)
@@ -226,8 +232,8 @@ class UnscentedKalmanFilter(object):
         Wc = self.Wc
 
         # calculate sigma points for given mean and covariance
-        sigmas = UnscentedKalmanFilter.sigma_points(
-            self.x, self.P, self.alpha, self.kappa)
+        sigmas = self.sigma_points.sigma_points(self.x, self.P)
+
         for i in range(self._num_sigmas):
             self.sigmas_f[i] = self.fx(sigmas[i], dt, *fx_args)
 
@@ -280,29 +286,23 @@ class UnscentedKalmanFilter(object):
 
         if R is None:
             R = self.R
-        elif np.isscalar(R):
+        elif isscalar(R):
             R = eye(self._dim_z) * R
 
-        # rename for readability
-        sigmas_f = self.sigmas_f
-        sigmas_h = self.sigmas_h
-        Wm = self.Wm
-        Wc = self.Wc
-
         for i in range(self._num_sigmas):
-            sigmas_h[i] = self.hx(sigmas_f[i], *hx_args)
+            self.sigmas_h[i] = self.hx(self.sigmas_f[i], *hx_args)
 
 
-        # mean and covariance of prediction passed through UT
-        zp, Pz = UT(sigmas_h, Wm, Wc, R)
+        # mean and covariance of prediction passed through unscented transform
+        zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R)
 
         # compute cross variance of the state and the measurements
         Pxz = zeros((self._dim_x, self._dim_z))
         for i in range(self._num_sigmas):
-            Pxz += Wc[i] * np.outer(residual_x(sigmas_f[i], self.xp),
-                                    residual_h(sigmas_h[i], zp))
+            Pxz += self.Wc[i] * outer(residual_x(self.sigmas_f[i], self.xp),
+                                      residual_h(self.sigmas_h[i], zp))
 
-        K = dot(Pxz, inv(Pz)) # Kalman gain
+        K = dot(Pxz, inv(Pz))   # Kalman gain
         y = residual_h(z, zp)   #residual
 
         self.x = self.xp + dot(K, y)
@@ -340,12 +340,12 @@ class UnscentedKalmanFilter(object):
 
         **Returns**
 
-        means: np.array((n,dim_x,1))
+        means: ndarray((n,dim_x,1))
             array of the state for each time step after the update. Each entry
             is an np.array. In other words `means[k,:]` is the state at step
             `k`.
 
-        covariance: np.array((n,dim_x,dim_x))
+        covariance: ndarray((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
 
@@ -364,18 +364,18 @@ class UnscentedKalmanFilter(object):
             assert len(z) == self._dim_z, 'each element in zs must be a' \
             '1D array of length {}'.format(self._dim_z)
 
-        n = np.size(zs,0)
+        z_n = np.size(zs, 0)
         if Rs is None:
-            Rs = [None]*n
+            Rs = [None] * z_n
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
-            means = zeros((n, self._dim_x))
+            means = zeros((z_n, self._dim_x))
         else:
-            means = zeros((n, self._dim_x, 1))
+            means = zeros((z_n, self._dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n, self._dim_x, self._dim_x))
+        covariances = zeros((z_n, self._dim_x, self._dim_x))
 
         for i, (z, r) in enumerate(zip(zs, Rs)):
             self.predict()
@@ -386,118 +386,98 @@ class UnscentedKalmanFilter(object):
         return (means, covariances)
 
 
-
-    @staticmethod
-    def weights(n, alpha, beta, kappa):
-        """ Computes the weights for the scaled unscented Kalman filter.
-
-        Parameters
-        ----------
-
-        n : int
-            Dimensionality of the state. 2n+1 weights will be generated.
-
-        alpha : float
-            Determins the spread of the sigma points around the mean.
-            Usually a small positive value (1e-3) according to [3].
-
-        beta : float
-            Incorporates prior knowledge of the distribution of the mean. For
-            Gaussian x beta=2 is optimal, according to [3].
-
-        kappa : float, default=0.0
-            Secondary scaling parameter usually set to 0 according to [4],
-            or to 3-n according to [5].
-
-        Returns
-        -------
-        Wm : ndarray[2n+1]
-            weights for mean
-
-        Wc : ndarray[2n+1]
-            weights for the covariances
-        """
-
-        lambda_ = alpha**2 * (n + kappa) - n
-
-        c = .5 / (n+lambda_)
-        Wc = np.full(2*n + 1, c)
-        Wm = np.full(2*n + 1, c)
-        Wc[0] = lambda_ / (n + lambda_) + (1 - alpha**2 + beta)
-        Wm[0] = lambda_ / (n + lambda_)
-
-        return Wm, Wc
-
-    @staticmethod
-    def sigma_points(x, P, alpha, kappa, sqrt_method=cholesky):
-        """ Computes the sigma points for an unscented Kalman filter
-        given the mean (x) and covariance(P) of the filter.
-        kappa is an arbitrary constant
-        constant. Returns tuple of the sigma points and weights.
-
-        Works with both scalar and array inputs:
-        sigma_points (5, 9, 2) # mean 5, covariance 9
-        sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
+    def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
+        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        means and covariances computed by the UKF. The usual input
+        would come from the output of `batch_filter()`.
 
         **Parameters**
 
-        X An array-like object of the means of length n
-            Can be a scalar if 1D.
-            examples: 1, [1,2], np.array([1,2])
+        Xs : numpy.array
+           array of the means (state variable x) of the output of a Kalman
+           filter.
 
-        P : scalar, or np.array
-           Covariance of the filter. If scalar, is treated as eye(n)*P.
+        Ps : numpy.array
+            array of the covariances of the output of a kalman filter.
 
-        alpha : float
-            Determines the spread of the sigma points around the mean.
+        Q : list-like collection of numpy.array, optional
+            Process noise of the Kalman filter at each time step. Optional,
+            if not provided the filter's self.Q will be used
 
-        kappa : float
-            Scaling factor.
-
-
-        sqrt_method : function(ndarray), default = scipy.linalg.cholesky
-            Defines how we compute the square root of a matrix, which has
-            no unique answer. Cholesky is the default choice due to its
-            speed. Typically your alternative choice will be
-            scipy.linalg.sqrtm. Different choices affect how the sigma points
-            are arranged relative to the eigenvectors of the covariance matrix.
-            Usually this will not matter to you; if so the default cholesky()
-            yields maximal performance. As of van der Merwe's dissertation of
-            2004 [6] this was not a well reseached area so I have no advice
-            to give you.
-
-            If your method returns a triangular matrix it must be upper
-            triangular. Do not use numpy.linalg.cholesky - for historical
-            reasons it returns a lower triangular matrix. The SciPy version
-            does the right thing.
+        dt : optional, float or array-like of float
+            If provided, specifies the time step of each step of the filter.
+            If float, then the same time step is used for all steps. If
+            an array, then each element k contains the time  at step k.
+            Units are seconds.
 
         **Returns**
 
-        sigmas : np.array, of size (n, 2n+1)
-            Two dimensional array of sigma points. Each column contains all of
-            the sigmas for one dimension in the problem space.
+        'x' : numpy.ndarray
+           smoothed means
 
-            Ordered by Xi_0, Xi_{1..n}, Xi_{n+1..2n}
+        'P' : numpy.ndarray
+           smoothed state covariances
+
+        'K' : numpy.ndarray
+            smoother gain at each step
+
+
+        **Example**::
+
+            zs = [t + random.randn()*4 for t in range (40)]
+
+            (mu, cov, _, _) = kalman.batch_filter(zs)
+            (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
+
         """
+        assert len(Xs) == len(Ps)
+        n, dim_x = Xs.shape
 
-        if np.isscalar(x):
-            x = asarray([x])
-        n = np.size(x)  # dimension of problem
+        if dt is None:
+            dt = [self._dt] * n
+        elif isscalar(dt):
+            dt = [dt] * n
 
-        if  np.isscalar(P):
-            P = eye(n)*P
+        if Qs is None:
+            Qs = [self.Q] * n
 
-        lambda_ = alpha**2 * (n+kappa) - n
-        sigmas = zeros((2*n+1, n))
-        U = sqrt_method((lambda_+n)*P)
+        # smoother gain
+        Ks = zeros((n,dim_x,dim_x))
 
-        for k in range(n):
-            sigmas[k+1]   = x + U[k]
-            sigmas[n+k+1] = x - U[k]
+        num_sigmas = 2*dim_x + 1
 
-        # handle value for the mean separately as special case
-        sigmas[0] = x
-
-        return sigmas
+        xs, ps = Xs.copy(), Ps.copy()
+        sigmas_f = zeros((num_sigmas, dim_x))
 
 
+        for k in range(n-2,-1,-1):
+            # create sigma points from state estimate, pass through state func
+            sigmas = self.sigma_points.sigma_points(xs[k], ps[k])
+            for i in range(num_sigmas):
+                sigmas_f[i] = self.fx(sigmas[i], dt[k])
+
+            # compute backwards prior state and covariance
+            xb = dot(self.Wm, sigmas_f)
+            Pb = 0
+            x = Xs[k]
+            for i in range(num_sigmas):
+                y = sigmas_f[i] - x
+                Pb += self.Wm[i] * outer(y, y)
+            Pb += Qs[k]
+
+            # compute cross variance
+            Pxb = 0
+            for i in range(num_sigmas):
+                z = sigmas[i] - Xs[k]
+                y = sigmas_f[i] - xb
+                Pxb += self.Wm[i] * outer(z, y)
+
+            # compute gain
+            K = dot(Pxb, inv(Pb))
+
+            # update the smoothed estimates
+            xs[k] += dot (K, xs[k+1] - xb)
+            ps[k] += dot3(K, ps[k+1] - Pb, K.T)
+            Ks[k] = K
+
+        return (xs, ps, Ks)

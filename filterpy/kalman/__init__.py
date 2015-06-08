@@ -21,7 +21,7 @@ from .kalman_filter import *
 from .ensemble_kalman_filter import *
 from .square_root import *
 from .information_filter import *
-from .unscented_transform import unscented_transform
+from .unscented_transform import *
 from .EKF import *
 from .UKF import *
 from .JUKF import *

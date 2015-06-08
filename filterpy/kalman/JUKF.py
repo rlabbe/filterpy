@@ -30,6 +30,7 @@ import numpy as np
 from numpy import asarray, eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky, sqrtm
 
+import scipy.optimize
 
 class JulierUnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -452,92 +453,5 @@ class JulierUnscentedKalmanFilter(object):
 
         return (xs, ps, Ks)
 
-
-    @staticmethod
-    def weights(n, kappa):
-        """ Computes the weights for the unscented Kalman filter.
-
-        Parameters
-        ----------
-
-        n : int
-            Dimensionality of the state. 2n+1 weights will be generated.
-
-        kappa : float, default=0.
-            Scaling factor that can reduce high order errors. kappa=0 gives
-            the standard unscented filter. According to [Julier], if you set
-            kappa to 3-dim_x for a Gaussian x you will minimize the fourth
-            order errors in x and P.
-
-        Returns
-        -------
-        Wm : ndarray[2n+1]
-            weights for mean
-
-        Wc : ndarray[2n+1]
-            weights for the covariances
-        """
-
-        assert n > 0, "n must be greater than 0, it's value is {}".format(n)
-
-        k = .5 / (n+kappa)
-        W = np.full(2*n+1, k)
-        W[0] = kappa / (n+kappa)
-        return W
-
-
-    @staticmethod
-    def sigma_points(x, P, kappa):
-        """ Computes the sigma points for an unscented Kalman filter
-        given the mean (x) and covariance(P) of the filter.
-        kappa is an arbitrary constant. Returns sigma points.
-
-        Works with both scalar and array inputs:
-        sigma_points (5, 9, 2) # mean 5, covariance 9
-        sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
-
-        **Parameters**
-
-        X An array-like object of the means of length n
-            Can be a scalar if 1D.
-            examples: 1, [1,2], np.array([1,2])
-
-        P : scalar, or np.array
-           Covariance of the filter. If scalar, is treated as eye(n)*P.
-
-        kappa : float
-            Scaling factor.
-
-        **Returns**
-
-        sigmas : np.array, of size (n, 2n+1)
-            2D array of sigma points. Each column contains all of
-            the sigmas for one dimension in the problem space. They
-            are ordered as:
-
-            .. math::
-                sigmas[0]    = x \n
-                sigmas[1..n] = x + [\sqrt{(n+\kappa)P}]_k \n
-                sigmas[n+1..2n] = x - [\sqrt{(n+\kappa)P}]_k
-        """
-
-        if np.isscalar(x):
-            x = asarray([x])
-        n = np.size(x)  # dimension of problem
-
-        if np.isscalar(P):
-            P = eye(n)*P
-
-        sigmas = zeros((2*n+1, n))
-
-        # implements U'*U = (n+kappa)*P. Returns lower triangular matrix.
-        # Take transpose so we can access with U[i]
-        U = cholesky((n+kappa)*P).T
-        #U = sqrtm((n+kappa)*P).T
-
-        sigmas[0] = x
-        sigmas[1:n+1]     = x + U
-        sigmas[n+1:2*n+2] = x - U
-        return sigmas
 
 
