@@ -1,3 +1,31 @@
+Version 0.0.19
+===========
+
+BREAKING CHANGES!!
+
+The unscented kalman filter code has been significantly altered. Your
+existing code will no longer run. Sorry, but it had to be done. 
+
+As of version 0.0.18 there were separate classes for the UKF (Julier's)
+original formulation, and for the scaled UKF. But they are all the same thing,
+basically, and there were differing levels of support - the scaled version didn't
+have an RTS smoother, for example.
+
+Now the sigma point and weight generation is done with a separate class,
+and the UKF class just performs the algorithm. This is much more configurable
+at perhaps the cost of being a bit harder to read and learn. But I didn't want to
+keep writing batch_filter, rts_smoother, etc, for every possible sigma point
+filter.
+
+The best documentation on this is the chapter on the UKF in my Kalman filter
+book:
+
+https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/09_Unscented_Kalman_Filter.ipynb
+
+
+
+
+
 Version 0.0.18
 ==============
 

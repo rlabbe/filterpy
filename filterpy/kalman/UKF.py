@@ -82,7 +82,9 @@ class UnscentedKalmanFilter(object):
     """
 
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
-                 sqrt_method=cholesky):
+                 sqrt_fn=None, x_mean_fn=None, z_mean_fn=None,
+                 residual_x=np.subtract,
+                 residual_z=np.subtract):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -111,19 +113,16 @@ class UnscentedKalmanFilter(object):
             function that returns the state x transformed by the
             state transistion function. dt is the time step in seconds.
 
-        alpha : float
-            Determins the spread of the sigma points around the mean.
-            Usually a small positive value (1e-3) according to [3].
+        points : class
+            Class which computes the sigma points and weights for a UKF
+            algorithm. You can vary the UKF implementation by changing this
+            class. For example, MerweScaledSigmaPoints implements the alpha,
+            beta, kappa parameterization of Van der Merwe, and
+            JulierSigmaPoints implements Julier's original kappa
+            parameterization. See either of those for the required
+            signature of this class if you want to implement your own.
 
-        beta : float
-            Incorporates prior knowledge of the distribution of the mean. For
-            Gaussian x beta=2 is optimal, according to [3].
-
-        kappa : float, default=0.0
-            Secondary scaling parameter usually set to 0 according to [4],
-            or to 3-n according to [5].
-
-        sqrt_method : function(ndarray), default = scipy.linalg.cholesky
+        sqrt_fn : callable(ndarray), default = scipy.linalg.cholesky
             Defines how we compute the square root of a matrix, which has
             no unique answer. Cholesky is the default choice due to its
             speed. Typically your alternative choice will be
@@ -139,6 +138,47 @@ class UnscentedKalmanFilter(object):
             reasons it returns a lower triangular matrix. The SciPy version
             does the right thing.
 
+        x_mean_fn : callable  (sigma_points, weights), optional
+            Function that computes the mean of the provided sigma points
+            and weights. Use this if your state variable contains nonlinear
+            values such as angles which cannot be summed.
+
+            .. code-block:: Python
+
+                def state_mean(sigmas, Wm):
+                    x = np.zeros(3)
+                    sum_sin, sum_cos = 0., 0.
+
+                    for i in range(len(sigmas)):
+                        s = sigmas[i]
+                        x[0] += s[0] * Wm[i]
+                        x[1] += s[1] * Wm[i]
+                        sum_sin += sin(s[2])*Wm[i]
+                        sum_cos += cos(s[2])*Wm[i]
+                    x[2] = atan2(sum_sin, sum_cos)
+                    return x
+
+        z_mean_fn : callable  (sigma_points, weights), optional
+            Same as x_mean_fn, except it is called for sigma points which
+            form the measurements after being passed through hx().
+
+        residual_x : callable (x, y), optional
+        residual_z : callable (x, y), optional
+            Function that computes the residual (difference) between x and y.
+            You will have to supply this if your state variable cannot support
+            subtraction, such as angles (359-1 degreees is 2, not 358). x and y
+            are state vectors, not scalars. One is for the state variable,
+            the other is for the measurement state.
+
+            .. code-block:: Python
+
+                def residual(a, b):
+                    y = a[0] - b[0]
+                    if y > np.pi:
+                        y -= 2*np.pi
+                    if y < -np.pi:
+                        y = 2*np.pi
+                    return y
 
         References
         ----------
@@ -176,12 +216,20 @@ class UnscentedKalmanFilter(object):
         #self.kappa = kappa
         self.hx = hx
         self.fx = fx
-        self.sigma_points = points
-        self.msqrt = sqrt_method
+        self.points_fn = points
+        self.x_mean = x_mean_fn
+        self.z_mean = z_mean_fn
+
+        if sqrt_fn is None:
+            self.msqrt = cholesky
+        else:
+            self.msqrt = sqrt_fn
 
         # weights for the means and covariances. In this formation
         # both are the same.
-        self.Wm, self.Wc = self.sigma_points.weights()
+        self.Wm, self.Wc = self.points_fn.weights()
+        self.residual_x = residual_x
+        self.residual_z = residual_z
 
 
         # sigma points transformed through f(x) and h(x)
@@ -209,9 +257,8 @@ class UnscentedKalmanFilter(object):
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
             points passed through hx. Typically the default function will
-            work, but if for example you are using angles the default method
-            of computing means and residuals will not work, and you will have
-            to define how to compute it.
+            work - you can use x_mean_fn and z_mean_fn to alter the behavior
+            of the unscented transform.
 
         fx_args : tuple, optional, default (,)
             optional arguments to be passed into fx() after the required state
@@ -232,12 +279,12 @@ class UnscentedKalmanFilter(object):
         Wc = self.Wc
 
         # calculate sigma points for given mean and covariance
-        sigmas = self.sigma_points.sigma_points(self.x, self.P)
+        sigmas = self.points_fn.sigma_points(self.x, self.P)
 
         for i in range(self._num_sigmas):
             self.sigmas_f[i] = self.fx(sigmas[i], dt, *fx_args)
 
-        self.xp, self.Pp = UT(self.sigmas_f, Wm, Wc, self.Q)
+        self.xp, self.Pp = UT(self.sigmas_f, Wm, Wc, self.Q, self.x_mean, self.residual_x)
 
 
     def update(self, z, R=None, UT=unscented_transform, hx_args=(),
@@ -257,9 +304,8 @@ class UnscentedKalmanFilter(object):
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
             points passed through hx. Typically the default function will
-            work, but if for example you are using angles the default method
-            of computing means and residuals will not work, and you will have
-            to define how to compute it.
+            work - you can use x_mean_fn and z_mean_fn to alter the behavior
+            of the unscented transform.
 
         hx_args : tuple, optional, default (,)
             arguments to be passed into Hx function after the required state
@@ -294,7 +340,7 @@ class UnscentedKalmanFilter(object):
 
 
         # mean and covariance of prediction passed through unscented transform
-        zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R)
+        zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R, self.z_mean, self.residual_z)
 
         # compute cross variance of the state and the measurements
         Pxz = zeros((self._dim_x, self._dim_z))
@@ -334,9 +380,8 @@ class UnscentedKalmanFilter(object):
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
             points passed through hx. Typically the default function will
-            work, but if for example you are using angles the default method
-            of computing means and residuals will not work, and you will have
-            to define how to compute it.
+            work - you can use x_mean_fn and z_mean_fn to alter the behavior
+            of the unscented transform.
 
         **Returns**
 
@@ -391,7 +436,8 @@ class UnscentedKalmanFilter(object):
         means and covariances computed by the UKF. The usual input
         would come from the output of `batch_filter()`.
 
-        **Parameters**
+        Parameters
+        ----------
 
         Xs : numpy.array
            array of the means (state variable x) of the output of a Kalman
@@ -400,7 +446,7 @@ class UnscentedKalmanFilter(object):
         Ps : numpy.array
             array of the covariances of the output of a kalman filter.
 
-        Q : list-like collection of numpy.array, optional
+        Qs: list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
 
@@ -410,19 +456,22 @@ class UnscentedKalmanFilter(object):
             an array, then each element k contains the time  at step k.
             Units are seconds.
 
-        **Returns**
+        Returns
+        -------
 
-        'x' : numpy.ndarray
+        x : numpy.ndarray
            smoothed means
 
-        'P' : numpy.ndarray
+        P : numpy.ndarray
            smoothed state covariances
 
-        'K' : numpy.ndarray
+        K : numpy.ndarray
             smoother gain at each step
 
 
-        **Example**::
+        Example
+        -------
+        .. code-block:: Python
 
             zs = [t + random.randn()*4 for t in range (40)]
 
@@ -452,7 +501,7 @@ class UnscentedKalmanFilter(object):
 
         for k in range(n-2,-1,-1):
             # create sigma points from state estimate, pass through state func
-            sigmas = self.sigma_points.sigma_points(xs[k], ps[k])
+            sigmas = self.points_fn.sigma_points(xs[k], ps[k])
             for i in range(num_sigmas):
                 sigmas_f[i] = self.fx(sigmas[i], dt[k])
 

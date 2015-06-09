@@ -1,4 +1,9 @@
 *.pyc
+*.tex
+*.toc
+*.aux
+*.out
+book_files/
 dist/
 *egg-info*
 _build/
