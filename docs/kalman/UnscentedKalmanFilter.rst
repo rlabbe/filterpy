@@ -4,7 +4,7 @@ UnscentedKalmanFilter
 Introduction and Overview
 -------------------------
 
-This implements the unscented Kalman filter. Still a work in development.
+This implements the unscented Kalman filter. 
 
 .. automodule:: filterpy.kalman
 
@@ -21,7 +21,7 @@ This implements the unscented Kalman filter. Still a work in development.
 --------
 
 
-.. autoclass:: ScaledUnscentedKalmanFilter
+.. autoclass:: MerweScaledSigmaPoints
     :members:
 
     .. automethod:: __init__
@@ -31,4 +31,9 @@ This implements the unscented Kalman filter. Still a work in development.
 --------
 
 
-.. autofunction:: unscented_transform
+.. autoclass:: JulierSigmaPoints
+    :members:
+
+    .. automethod:: __init__
+
+

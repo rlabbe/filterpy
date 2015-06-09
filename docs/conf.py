@@ -68,7 +68,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'FilterPy'
-copyright = '2014, Roger R. Labbe'
+copyright = '2015, Roger R. Labbe'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -288,7 +288,7 @@ texinfo_documents = [
 epub_title = 'FilterPy'
 epub_author = 'Roger R. Labbe'
 epub_publisher = 'Roger R. Labbe'
-epub_copyright = '2014, Roger R. Labbe'
+epub_copyright = '2015, Roger R. Labbe'
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = 'FilterPy'

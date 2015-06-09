@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Copyright 2014 Roger R Labbe Jr.
+"""Copyright 2015 Roger R Labbe Jr.
 
 filterpy library.
 http://github.com/rlabbe/filterpy

@@ -75,11 +75,15 @@ also support for smoother functions.
 
    kalman/KalmanFilter
    kalman/ExtendedKalmanFilter
+   kalman/UnscentedKalmanFilter
+   kalman/unscented_transform
+   kalman/MerweScaledSigmaPoints
+   kalman/JulierSigmaPoints
    kalman/FixedLagSmoother
    kalman/SquareRootFilter
    kalman/InformationFilter
-   kalman/UnscentedKalmanFilter
    kalman/EnsembleKalmanFilter
+   kalman/FadingKalmanFilter
 
 
 filterpy.common Module

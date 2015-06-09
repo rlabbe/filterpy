@@ -83,8 +83,8 @@ class UnscentedKalmanFilter(object):
 
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
                  sqrt_fn=None, x_mean_fn=None, z_mean_fn=None,
-                 residual_x=np.subtract,
-                 residual_z=np.subtract):
+                 residual_x=None,
+                 residual_z=None):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -228,8 +228,17 @@ class UnscentedKalmanFilter(object):
         # weights for the means and covariances. In this formation
         # both are the same.
         self.Wm, self.Wc = self.points_fn.weights()
-        self.residual_x = residual_x
-        self.residual_z = residual_z
+
+        if residual_x is None:
+            self.residual_x = np.subtract
+        else:
+            self.residual_x = residual_x
+
+        if residual_z is None:
+            self.residual_z = np.subtract
+        else:
+            self.residual_z = residual_z
+
 
 
         # sigma points transformed through f(x) and h(x)
@@ -287,12 +296,13 @@ class UnscentedKalmanFilter(object):
         self.xp, self.Pp = UT(self.sigmas_f, Wm, Wc, self.Q, self.x_mean, self.residual_x)
 
 
-    def update(self, z, R=None, UT=unscented_transform, hx_args=(),
-               residual_x=np.subtract, residual_h=np.subtract):
+    def update(self, z, R=None, UT=None, hx_args=(),
+               residual_x=None, residual_h=None):
         """ Update the UKF with the given measurements. On return,
         self.x and self.P contain the new mean and covariance of the filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : numpy.array of shape (dim_z)
             measurement vector
@@ -330,6 +340,16 @@ class UnscentedKalmanFilter(object):
         if not isinstance(hx_args, tuple):
             hx_args = (hx_args,)
 
+        if UT is None:
+            UT = unscented_transform
+
+        if residual_x is None:
+            residual_x = np.subtract
+
+
+        if residual_h is None:
+            residual_h = np.subtract
+
         if R is None:
             R = self.R
         elif isscalar(R):
@@ -355,11 +375,12 @@ class UnscentedKalmanFilter(object):
         self.P = self.Pp - dot3(K, Pz, K.T)
 
 
-    def batch_filter(self, zs, Rs=None, residual=np.subtract, UT=None):
+    def batch_filter(self, zs, Rs=None, residual=None, UT=None):
         """ Performs the UKF filter over the list of measurement in `zs`.
 
 
-        **Parameters**
+        Parameters
+        ----------
 
         zs : list-like
             list of measurements at each time step `self._dt` Missing
@@ -383,7 +404,8 @@ class UnscentedKalmanFilter(object):
             work - you can use x_mean_fn and z_mean_fn to alter the behavior
             of the unscented transform.
 
-        **Returns**
+        Returns
+        -------
 
         means: ndarray((n,dim_x,1))
             array of the state for each time step after the update. Each entry
@@ -408,6 +430,10 @@ class UnscentedKalmanFilter(object):
         else:
             assert len(z) == self._dim_z, 'each element in zs must be a' \
             '1D array of length {}'.format(self._dim_z)
+
+
+        if residual is None:
+            residual = np.subtract
 
         z_n = np.size(zs, 0)
         if Rs is None:

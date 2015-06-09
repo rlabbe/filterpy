@@ -19,7 +19,7 @@ from scipy.linalg import cholesky
 
 class MerweScaledSigmaPoints(object):
 
-    def __init__(self, n, alpha, beta, kappa, sqrt_method=cholesky):
+    def __init__(self, n, alpha, beta, kappa, sqrt_method=None):
         """
         Generates sigma points and weights according to Van der Merwe's
         2004 dissertation [1]. It parametizes the sigma points using
@@ -72,7 +72,10 @@ class MerweScaledSigmaPoints(object):
         self.alpha = alpha
         self.beta = beta
         self.kappa = kappa
-        self.sqrt = sqrt_method
+        if sqrt_method is None:
+            self.sqrt = cholesky
+        else:
+            self.sqrt = sqrt_method
 
 
     def sigma_points(self, x, P):
@@ -156,7 +159,7 @@ class MerweScaledSigmaPoints(object):
 
 class JulierSigmaPoints(object):
 
-    def __init__(self,n,  kappa, sqrt_method=cholesky):
+    def __init__(self,n,  kappa, sqrt_method=None):
         """
         Generates sigma points and weights according to Simon J. Julier
         and Jeffery K. Uhlmann's original paper [1]. It parametizes the sigma
@@ -200,8 +203,10 @@ class JulierSigmaPoints(object):
 
         self.n = n
         self.kappa = kappa
-        self.sqrt = sqrt_method
-
+        if sqrt_method is None:
+            self.sqrt = cholesky
+        else:
+            self.sqrt = sqrt_method
 
     def sigma_points(self, x, P):
         r""" Computes the sigma points for an unscented Kalman filter

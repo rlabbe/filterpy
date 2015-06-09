@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Copyright 2014 Roger R Labbe Jr.
+"""Copyright 2015 Roger R Labbe Jr.
 
 filterpy library.
 http://github.com/rlabbe/filterpy
@@ -17,6 +17,8 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+__all__=["kalman"]
+ 
 from .kalman_filter import *
 from .ensemble_kalman_filter import *
 from .square_root import *
