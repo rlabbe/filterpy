@@ -35,8 +35,7 @@ class UnscentedKalmanFilter(object):
     You will have to set the following attributes after constructing this
     object for the filter to perform properly.
 
-    Attributes
-    ----------
+    **Attributes**
 
     x : numpy.array(dim_x)
         state estimate vector
@@ -53,8 +52,7 @@ class UnscentedKalmanFilter(object):
 
     You may read the following attributes.
 
-    Readable Attributes
-    -------------------
+    **Readable Attributes**
 
     xp : numpy.array(dim_x)
         predicted state (result of predict())
@@ -63,8 +61,7 @@ class UnscentedKalmanFilter(object):
         predicted covariance matrix (result of predict())
 
 
-    References
-    ----------
+    **References**
 
     .. [1] Julier, Simon J. "The scaled unscented transformation,"
         American Control Converence, 2002, pp 4555-4559, vol 6.
@@ -89,8 +86,7 @@ class UnscentedKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        Parameters
-        ----------
+        **Parameters**
 
         dim_x : int
             Number of state variables for the filter. For example, if
@@ -180,8 +176,7 @@ class UnscentedKalmanFilter(object):
                         y = 2*np.pi
                     return y
 
-        References
-        ----------
+        **References**
 
         .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
                the nonlinear transformation of means and covariances in filters
@@ -247,8 +242,7 @@ class UnscentedKalmanFilter(object):
         Important: this MUST be called before update() is called for the first
         time.
 
-        Parameters
-        ----------
+        **Parameters**
 
         dt : double, optional
             If specified, the time step to be used for this prediction.
@@ -288,8 +282,7 @@ class UnscentedKalmanFilter(object):
         """ Update the UKF with the given measurements. On return,
         self.x and self.P contain the new mean and covariance of the filter.
 
-        Parameters
-        ----------
+        **Parameters**
 
         z : numpy.array of shape (dim_z)
             measurement vector
@@ -358,8 +351,7 @@ class UnscentedKalmanFilter(object):
         """ Performs the UKF filter over the list of measurement in `zs`.
 
 
-        Parameters
-        ----------
+        **Parameters**
 
         zs : list-like
             list of measurements at each time step `self._dt` Missing
@@ -383,8 +375,7 @@ class UnscentedKalmanFilter(object):
             work - you can use x_mean_fn and z_mean_fn to alter the behavior
             of the unscented transform.
 
-        Returns
-        -------
+        **Returns**
 
         means: ndarray((n,dim_x,1))
             array of the state for each time step after the update. Each entry
@@ -441,8 +432,7 @@ class UnscentedKalmanFilter(object):
         means and covariances computed by the UKF. The usual input
         would come from the output of `batch_filter()`.
 
-        Parameters
-        ----------
+        **Parameters**
 
         Xs : numpy.array
            array of the means (state variable x) of the output of a Kalman
@@ -461,8 +451,7 @@ class UnscentedKalmanFilter(object):
             an array, then each element k contains the time  at step k.
             Units are seconds.
 
-        Returns
-        -------
+        **Returns**
 
         x : numpy.ndarray
            smoothed means
@@ -474,8 +463,8 @@ class UnscentedKalmanFilter(object):
             smoother gain at each step
 
 
-        Example
-        -------
+        **Example**
+
         .. code-block:: Python
 
             zs = [t + random.randn()*4 for t in range (40)]
