@@ -17,9 +17,10 @@ for more information.
 import numpy as np
 from scipy.linalg import cholesky
 
+
 class MerweScaledSigmaPoints(object):
 
-    def __init__(self, n, alpha, beta, kappa, sqrt_method=None):
+    def __init__(self, n, alpha, beta, kappa, sqrt_method=None, subtract=None):
         """
         Generates sigma points and weights according to Van der Merwe's
         2004 dissertation [1]. It parametizes the sigma points using
@@ -61,6 +62,12 @@ class MerweScaledSigmaPoints(object):
             reasons it returns a lower triangular matrix. The SciPy version
             does the right thing.
 
+        subtract : callable (x, y), optional
+            Function that computes the difference between x and y.
+            You will have to supply this if your state variable cannot support
+            subtraction, such as angles (359-1 degreees is 2, not 358). x and y
+            are state vectors, not scalars.
+
         References
         ----------
 .
@@ -76,6 +83,11 @@ class MerweScaledSigmaPoints(object):
             self.sqrt = cholesky
         else:
             self.sqrt = sqrt_method
+
+        if subtract is None:
+            self.subtract= np.subtract
+        else:
+            self.subtract = subtract
 
 
     def sigma_points(self, x, P):
@@ -119,18 +131,15 @@ class MerweScaledSigmaPoints(object):
             P = np.eye(n)*P
 
         lambda_ = self.alpha**2 * (n + self.kappa) - n
-        sigmas = np.zeros((2*n+1, n))
         U = self.sqrt((lambda_ + n)*P)
 
-        for k in range(n):
-            sigmas[k+1]   = x + U[k]
-            sigmas[n+k+1] = x - U[k]
-
-        # handle value for the mean separately as special case
+        sigmas = np.zeros((2*n+1, n))
         sigmas[0] = x
+        for k in range(n):
+            sigmas[k+1]   = self.subtract(x, -U[k])
+            sigmas[n+k+1] = self.subtract(x, U[k])
 
         return sigmas
-
 
 
     def weights(self):
@@ -159,7 +168,7 @@ class MerweScaledSigmaPoints(object):
 
 class JulierSigmaPoints(object):
 
-    def __init__(self,n,  kappa, sqrt_method=None):
+    def __init__(self,n,  kappa, sqrt_method=None, subtract=None):
         """
         Generates sigma points and weights according to Simon J. Julier
         and Jeffery K. Uhlmann's original paper [1]. It parametizes the sigma
@@ -193,6 +202,12 @@ class JulierSigmaPoints(object):
             reasons it returns a lower triangular matrix. The SciPy version
             does the right thing.
 
+
+        subtract : callable (x, y), optional
+            Function that computes the difference between x and y.
+            You will have to supply this if your state variable cannot support
+            subtraction, such as angles (359-1 degreees is 2, not 358). x and y
+
     References
     ----------
 
@@ -208,6 +223,12 @@ class JulierSigmaPoints(object):
         else:
             self.sqrt = sqrt_method
 
+        if subtract is None:
+            self.subtract= np.subtract
+        else:
+            self.subtract = subtract
+
+
     def sigma_points(self, x, P):
         r""" Computes the sigma points for an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
@@ -220,7 +241,7 @@ class JulierSigmaPoints(object):
         Parameters
         ----------
 
-        X An array-like object of the means of length n
+        X : array-like object of the means of length n
             Can be a scalar if 1D.
             examples: 1, [1,2], np.array([1,2])
 
@@ -266,13 +287,15 @@ class JulierSigmaPoints(object):
         U = self.sqrt((n + self.kappa) * P)
 
         sigmas[0] = x
-        sigmas[1:n+1]     = x + U
-        sigmas[n+1:2*n+2] = x - U
+        for k in range(n):
+            sigmas[k+1]   = self.subtract(x, -U[k])
+            sigmas[n+k+1] = self.subtract(x, U[k])
         return sigmas
 
 
     def weights(self):
-        """ Computes the weights for the unscented Kalman filter.
+        """ Computes the weights for the unscented Kalman filter. In this
+        formulatyion the weights for the mean and covariance are the same.
 
         Returns
         -------
@@ -285,7 +308,6 @@ class JulierSigmaPoints(object):
         n = self.n
         k = self.kappa
 
-        k = .5 / (n + k)
-        W = np.full(2*n+1, k)
+        W = np.full(2*n+1, .5 / (n + k))
         W[0] = k / (n+k)
         return W, W
