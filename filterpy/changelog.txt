@@ -1,3 +1,18 @@
+Version 0.0.20
+==============
+
+Several important bug fixes and additions for the UKF filter. It is very
+important to update your code to this release if you are using the UKF.
+
+* You couldn't call update() more than once in a row or the covariance
+matrix would be computed incorrectly,.
+
+* Added way to specify subtract routine in the sigma point classes.
+
+* Fixed bug in computation of weights for the Julier sigma points.
+
+
+
 Version 0.0.19
 ===========
 
