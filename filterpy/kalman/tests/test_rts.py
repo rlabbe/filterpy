@@ -19,7 +19,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from numpy import random
 import matplotlib.pyplot as plt
-from filterpy.kalman import KalmanFilter, rts_smoother
+from filterpy.kalman import KalmanFilter
 
 
 if __name__ == '__main__':
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     fk.F = np.array([[1.,1.],
                      [0.,1.]])      # state transition matrix
 
-    fk.H = [[1.,0.]]               # Measurement function
+    fk.H = np.array([[1.,0.]])      # Measurement function
     fk.P = .01                     # covariance matrix
     fk.R = 5                       # state uncertainty
     fk.Q = 0.001                   # process uncertainty
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     p3, = plt.plot (mus,c='r')
     p4, = plt.plot ([0,len(zs)],[0,len(zs)], 'g') # perfect result
     plt.legend([p1,p2, p3, p4],
-               ["measurement", "RKS", "KF output", "ideal"], 4)
+               ["measurement", "RKS", "KF output", "ideal"], loc=4)
 
 
     plt.show()

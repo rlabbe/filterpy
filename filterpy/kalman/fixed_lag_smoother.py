@@ -21,7 +21,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from scipy.linalg import inv
 from numpy import dot, zeros, eye
-from filterpy.common import dot3
+from filterpy.common import dot3, dot4, dotn
 
 
 class FixedLagSmoother(object):
@@ -103,6 +103,7 @@ class FixedLagSmoother(object):
         self.N     = N
 
         self.x = zeros((dim_x,1)) # state
+        self.x_s = zeros((dim_x,1)) # smoothed state
         self.P = eye(dim_x)       # uncertainty covariance
         self.Q = eye(dim_x)       # process uncertainty
         self.F = 0                # state transition matrix
@@ -120,6 +121,7 @@ class FixedLagSmoother(object):
 
         if N is not None:
             self.xSmooth = []
+
 
 
     def smooth(self, z, u=None):
