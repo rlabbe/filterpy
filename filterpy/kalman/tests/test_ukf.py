@@ -234,6 +234,41 @@ def test_linear_2d():
         print(smooth_x)
 
 
+def test_batch_missing_data():
+    """ batch filter should accept missing data with None in the measurements """
+
+
+    def fx(x, dt):
+        F = np.array([[1, dt, 0, 0],
+                      [0,  1, 0, 0],
+                      [0, 0,  1, dt],
+                      [0, 0, 0,  1]], dtype=float)
+
+        return np.dot(F, x)
+
+    def hx(x):
+        return np.array([x[0], x[2]])
+
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(4, .1, 2., -1)
+    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+
+
+    kf.x = np.array([-1., 1., -1., 1])
+    kf.P*=0.0001
+
+    zs = []
+    for i in range(20):
+        z = np.array([i+randn()*0.1, i+randn()*0.1])
+        zs.append(z)
+
+    zs[2] = None
+    Rs = [1]*len(zs)
+    Rs[2] = None
+    Ms, Ps = kf.batch_filter(zs)
+
+
 def test_rts():
     def fx(x, dt):
         A = np.eye(3) + dt * np.array ([[0, 1, 0],
@@ -709,6 +744,9 @@ def two_radar():
 if __name__ == "__main__":
 
     DO_PLOT = True
+
+
+    test_batch_missing_data()
 
     #test_linear_2d()
     #test_sigma_points_1D()
