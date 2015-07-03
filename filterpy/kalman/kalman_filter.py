@@ -430,7 +430,7 @@ class KalmanFilter(object):
 
         ** References **
 
-        [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons. 
+        [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
             p. 208-212. (2006)
         """
 
@@ -513,4 +513,3 @@ class KalmanFilter(object):
     def S(self):
         """ system uncertainty in measurement space """
         return self._S
-
