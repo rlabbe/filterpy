@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Copyright 2015 Roger R Labbe Jr.
 
-FilterPy library.
+filterpy library.
 http://github.com/rlabbe/filterpy
 
 Documentation at:
@@ -17,7 +17,6 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-#__all__=["fading_memory"]
-
-from .fading_memory import *
-
+__all__=["monte_carlo"]
+ 
+from .resampling import *
