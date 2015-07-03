@@ -54,14 +54,14 @@ def gaussian(x, mean, var):
     probability : float
         probability of x for the Gaussian (mean, var). E.g. 0.101 denotes
         10.1%.
-        
+
     **Examples**
-    
+
     gaussian(8, 1, 2)
     gaussian([8, 7, 9], 1, 2)
     """
 
-    return (np.exp((-0.5*(np.asarray(x)-mean)**2)/var) / 
+    return (np.exp((-0.5*(np.asarray(x)-mean)**2)/var) /
             math.sqrt(2*math.pi*var))
 
 
@@ -131,7 +131,6 @@ def multivariate_gaussian(x, mu, cov):
         probability for x for the Gaussian (mu,cov)
     """
 
-    scipy.stats.multivariate_normal
     # force all to numpy.array type
     x   = np.array(x, copy=False, ndmin=1)
     mu  = np.array(mu,copy=False, ndmin=1)
