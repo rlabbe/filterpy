@@ -98,6 +98,17 @@ filtering classes and functions.
    common/common
 
 
+filterpy.monte_carlo Module
++++++++++++++++++++++++++++
+
+Routines for Markov Chain Monte Carlo (MCMC) computation, mainly for
+particle filtering.
+
+.. toctree::
+   :maxdepth: 1
+   
+   monte_carlo/resampling
+
 
 filterpy.gh Module
 ++++++++++++++++++
@@ -115,8 +126,8 @@ settings for the *g* and *h* parameters for various common filters.
    gh/least_squares_parameters
    gh/critical_damping_parameters
    gh/benedict_bornder_constants
-   
-   
+
+
 
 filterpy.memory Module
 ++++++++++++++++++++++
