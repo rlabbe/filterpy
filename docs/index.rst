@@ -11,7 +11,9 @@ FilterPy
 FilterPy is a Python library that implements a number of Bayesian filters,
 most notably Kalman filters. I am writing it in conjunction with my book
 *Kalman and Bayesian Filters in Python* [1]_, a free book written using
-Ipython Notebook, hosted on github, and readable via nbviewer.
+Ipython Notebook, hosted on github, and readable via nbviewer. However, 
+it implements a wide variety of functionality that is not described in 
+the book.
 
 As such this library has a strong pedalogical flavor. It is rare that I
 choose the most efficient way to calculate something unless it does not
@@ -97,6 +99,16 @@ filtering classes and functions.
    
    common/common
 
+filterpy.stats Module
+++++++++++++++++++++++
+
+Contains various statistical functions and plotting of things like
+Gaussians and covariance ellipses.
+
+.. toctree::
+   :maxdepth: 1
+   
+   stats/stats
 
 filterpy.monte_carlo Module
 +++++++++++++++++++++++++++

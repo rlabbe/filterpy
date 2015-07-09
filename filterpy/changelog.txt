@@ -1,3 +1,21 @@
+Version 0.0.22
+==============
+
+BREAKING CHANGE
+
+Split statistical functions in filterpy.common into filterpy.stats
+module. I did not add or change anything, just move functions.
+If you get an import error, this is probably why! Switch import
+from filterpy.common to filterpy.stats and everything should work.
+
+
+Version 0.0.21
+==============
+
+Added monte_carlo module which contains routines for MCMC - mostly 
+for particle filtering. 
+
+
 Version 0.0.20
 ==============
 

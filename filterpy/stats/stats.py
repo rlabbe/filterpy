@@ -205,6 +205,7 @@ def multivariate_multiply(m1, c1, m2, c2):
 def plot_gaussian(mean, variance,
                   mean_line=False,
                   xlim=None,
+                  ylim=None,
                   xlabel=None,
                   ylabel=None):
     """ plots the normal distribution with the given mean and variance. x-axis
@@ -215,8 +216,8 @@ def plot_gaussian(mean, variance,
     mean_line : boolean
         draws a line at x=mean
 
-    xlim: (float,float), optional
-        specify the limits for the x axis as tuple (low,high).
+    xlim, ylim: (float,float), optional
+        specify the limits for the x or y axis as tuple (low,high).
         If not specified, limits will be automatically chosen to be 'nice'
 
     xlabel : str,optional
@@ -238,6 +239,9 @@ def plot_gaussian(mean, variance,
     xs = np.arange(min_x, max_x, (max_x - min_x) / 1000)
     plt.plot(xs,n.pdf(xs))
     plt.xlim((min_x, max_x))
+
+    if ylim is not None:
+        plt.ylim(ylim)
 
     if mean_line:
         plt.axvline(mean)
@@ -271,8 +275,7 @@ def covariance_ellipse(P, deviations=1):
     return (orientation, width, height)
 
 
-def plot_covariance_ellipse(mean, cov=None,
-            variance = 1.0, std=None,
+def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
              ellipse=None, title=None, axis_equal=True,
              facecolor='none', edgecolor='#004080',
              alpha=1.0, xlim=None, ylim=None):
@@ -282,9 +285,10 @@ def plot_covariance_ellipse(mean, cov=None,
 
     cov is a 2x2 covariance matrix.
 
-    variance is the normal sigma^2 that we want to plot. If list-like,
+    `variance` is the normal sigma^2 that we want to plot. If list-like,
     ellipses for all ellipses will be ploted. E.g. [1,2] will plot the
-    sigma^2 = 1 and sigma^2 = 2 ellipses.
+    sigma^2 = 1 and sigma^2 = 2 ellipses. Alternatively, use std for the
+    standard deviation, in which case `variance` will be ignored.
 
     ellipse is a (angle,width,height) tuple containing the angle in radians,
     and width and height radii.
