@@ -3,7 +3,8 @@ from codecs import open  # To use a consistent encoding
 from os import path
 import filterpy
 
-here = path.abspath('..')
+here = path.abspath(path.dirname(__file__))
+
 
 
 # Get the long description from the relevant file

@@ -1,3 +1,15 @@
+Version 0.0.24
+==============
+
+I messed up the installation on 0.0.23 on pypi, it had no
+source files in it. Pypi no longer allows you to refresh
+distribution files, so I had to make a new version number.
+
+Only changes are to make the install work - I had to move
+some of the install files around. This should affect no one
+but me.
+
+
 Version 0.0.23
 ==============
 
