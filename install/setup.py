@@ -3,7 +3,8 @@ from codecs import open  # To use a consistent encoding
 from os import path
 import filterpy
 
-here = path.abspath(path.dirname(__file__))
+here = path.abspath('..')
+
 
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:

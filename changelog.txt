@@ -1,3 +1,18 @@
+Version 0.0.23
+==============
+
+* Restructured directories so source code is under filterpy/,
+not filterpy/filterpy. If you have PYTHONPATH set to point
+to some_dir/filterpy you will need to change it to some_dir.
+Shouldn't affect you if you do a normal pip install. Let me
+know.
+
+* Allow KalmanFilter.B to be set to a scalar.
+
+* let plot_covariance_ellipse use fc and ec for facecolor
+and edgecolor. Just to make code shorter in book!
+
+
 Version 0.0.22
 ==============
 
