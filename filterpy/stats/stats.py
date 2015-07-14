@@ -277,8 +277,10 @@ def covariance_ellipse(P, deviations=1):
 
 def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
              ellipse=None, title=None, axis_equal=True,
-             facecolor='none', edgecolor='#004080',
-             alpha=1.0, xlim=None, ylim=None):
+             facecolor=None, edgecolor=None,
+             fc='none', ec='#004080',
+             alpha=1.0, xlim=None, ylim=None,
+             ls='solid'):
     """ plots the covariance ellipse where
 
     mean is a (x,y) tuple for the mean of the covariance (center of ellipse)
@@ -302,15 +304,21 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
     assert cov is None or ellipse is None
     assert not (cov is None and ellipse is None)
 
+    if facecolor is None:
+        facecolor = fc
+
+    if edgecolor is None:
+        edgecolor = ec
+
     if cov is not None:
         ellipse = covariance_ellipse(cov)
 
     if axis_equal:
+        #plt.gca().set_aspect('equal')
         plt.axis('equal')
 
     if title is not None:
         plt.title (title)
-
 
     compute_std = False
     if std is None:
@@ -335,7 +343,7 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
                     facecolor=facecolor,
                     edgecolor=edgecolor,
                     alpha=alpha,
-                    lw=2)
+                    lw=2, ls=ls)
         ax.add_patch(e)
     plt.scatter(mean[0], mean[1], marker='+') # mark the center
     if xlim is not None:
@@ -478,7 +486,8 @@ if __name__ == '__main__':
 
     plt.figure()
     P = np.array([[2,0],[0,2]])
-    plot_covariance_ellipse((2,7), cov=cov, variance=[1,2], facecolor='g', title='my title', alpha=.2)
+    plot_covariance_ellipse((2,7), cov=cov, variance=[1,2], facecolor='g',
+                            title='my title', alpha=.2, ls='dashed')
     plt.show()
 
     print("all tests passed")
