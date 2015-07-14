@@ -484,7 +484,10 @@ class KalmanFilter(object):
     @B.setter
     def B(self, value):
         """ control transition matrix"""
-        self._B = setter (value, self.dim_x, self.dim_u)
+        if np.isscalar(value):
+            self._B = value
+        else:
+            self._B = setter (value, self.dim_x, self.dim_u)
 
 
     @property
