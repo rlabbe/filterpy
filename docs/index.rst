@@ -168,21 +168,47 @@ also support for smoother functions. The smoothers are methods of the classes.
 For example, the KalmanFilter class contains rts_smoother. to perform 
 Rauch-Tung-Striebal smoothing. 
    
-   
+  
+Linear Kalman Filters
++++++++++++++++++++++
+
+Implements various Kalman filters using the linear equations form of the filter.
+
 .. toctree::
    :maxdepth: 1
 
    kalman/KalmanFilter
+   kalman/FixedLagSmoother
+   kalman/SquareRootFilter
+   kalman/InformationFilter
+   kalman/FadingKalmanFilter
+
+   
+Extended Kalman Filter
+++++++++++++++++++++++
+.. toctree::
+   :maxdepth: 1
+
    kalman/ExtendedKalmanFilter
+   
+Unscented Kalman Filter
++++++++++++++++++++++++
+These modules are used to implement the Unscented Kalman filter.
+
+.. toctree::
+   :maxdepth: 1
+   
    kalman/UnscentedKalmanFilter
    kalman/unscented_transform
    kalman/MerweScaledSigmaPoints
    kalman/JulierSigmaPoints
-   kalman/FixedLagSmoother
-   kalman/SquareRootFilter
-   kalman/InformationFilter
+
+Ensemble Kalman Filter
++++++++++++++++++++++++
+.. toctree::
+   :maxdepth: 1
+
    kalman/EnsembleKalmanFilter
-   kalman/FadingKalmanFilter
 
 
 filterpy.common

@@ -90,6 +90,7 @@ First construct the object with the required dimensionality.
 
 .. code::
 
+    from filterpy.kalman import KalmanFilter
     f = KalmanFilter (dim_x=2, dim_z=1)
 
 

@@ -44,6 +44,7 @@ class FixedLagSmoother(object):
 
     **Example**::
 
+        from filterpy.kalman import FixedLagSmoother
         fls = FixedLagSmoother(dim_x=2, dim_z=1)
 
         fls.x = np.array([[0.],
