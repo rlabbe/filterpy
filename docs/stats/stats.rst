@@ -48,4 +48,7 @@ to Bayesian filters.
 
 .. autofunction:: rand_student_t
 
+-----
+
+.. autofunction:: NESS
 

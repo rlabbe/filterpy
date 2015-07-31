@@ -17,11 +17,12 @@ for more information.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import numpy as np
-import scipy.linalg as linalg
-from numpy import dot, zeros, eye, isscalar
 from filterpy.common import setter, setter_1d, setter_scalar, dot3
-
+from filterpy.stats import multivariate_gaussian
+import numpy as np
+from numpy import dot, zeros, eye, isscalar
+import scipy.linalg as linalg
+from scipy.stats import multivariate_normal
 
 
 class KalmanFilter(object):
@@ -70,6 +71,13 @@ class KalmanFilter(object):
 
     S :  numpy.array
         Systen uncertaintly projected to measurement space
+
+    likelihood : scalar
+        Likelihood of last measurment update.
+
+    log_likelihood : scalar
+        Log likelihood of last measurment update.
+
 
     """
 
@@ -120,7 +128,7 @@ class KalmanFilter(object):
         # purposes
         self._K = 0 # kalman gain
         self._y = zeros((dim_z, 1))
-        self._S = 0 # system uncertainty in measurement space
+        self._S = np.zeros((dim_z, dim_z)) # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -163,6 +171,12 @@ class KalmanFilter(object):
         # project system uncertainty into measurement space
         S = dot3(H, P, H.T) + R
 
+        mean = np.array(dot(H, x)).flatten()
+        flatz = np.array(z).flatten()
+
+        self.likelihood = multivariate_normal.pdf(flatz, mean, cov=S)
+        self.log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S)
+
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
         K = dot3(P, H.T, linalg.inv(S))
@@ -177,6 +191,7 @@ class KalmanFilter(object):
 
         self._S = S
         self._K = K
+
 
 
     def test_matrix_dimensions(self):

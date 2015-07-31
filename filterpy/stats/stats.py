@@ -131,9 +131,9 @@ def multivariate_gaussian(x, mu, cov):
         probability for x for the Gaussian (mu,cov)
     """
 
-    # force all to numpy.array type
-    x   = np.array(x, copy=False, ndmin=1)
-    mu  = np.array(mu,copy=False, ndmin=1)
+    # force all to numpy.array type, and flatten in case they are vectors
+    x   = np.array(x, copy=False, ndmin=1).flatten()
+    mu  = np.array(mu,copy=False, ndmin=1).flatten()
 
     nx = len(mu)
     cov = _to_cov(cov, nx)
@@ -458,6 +458,44 @@ def rand_student_t(df, mu=0, std=1):
     x = random.gauss(0, std)
     y = 2.0*random.gammavariate(0.5*df, 2.0)
     return x / (math.sqrt(y/df)) + mu
+
+
+def NESS(xs, est_xs, ps):
+    """ Computes the normalized estimated error squared test on a sequence
+    of estimates. The estimates are optimal if the mean error is zero and
+    the covariance matches the Kalman filter's covariance. If this holds,
+    then the mean of the NESS should be equal to or less than the dimension
+    of x.
+
+    **Example**
+
+    xs = ground_truth()
+    est_xs, ps, _, _ = kf.batch_filter(zs)
+    NESS(xs, est_xs, ps)
+
+    **Parameters**
+
+    xs : list-like
+        sequence of true values for the state x
+
+    est_xs : list-like
+        sequence of estimates from an estimator (such as Kalman filter)
+
+    ps : list-like
+        sequence of covariance matrices from the estimator
+
+    **Returns**
+
+    ness : list of floats
+       list of NESS computed for each estimate
+
+    """
+
+    est_err = xs - est_xs
+    ness = []
+    for x, p in zip(est_err, ps):
+        ness.append(np.dot(x.T, inv(p)).dot(x))
+    return ness
 
 
 if __name__ == '__main__':
