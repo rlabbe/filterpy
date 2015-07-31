@@ -78,6 +78,11 @@ S : ndarray
     System uncertainty projected into measurement space. I.e., HPH' + R.
     Probably not very useful, but it is here if you want it.
 
+likelihood : float
+    Likelihood of last measurment update.
+
+log_likelihood : float
+    Log likelihood of last measurment update.
 
 
 **Example**
