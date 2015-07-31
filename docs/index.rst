@@ -182,6 +182,7 @@ Implements various Kalman filters using the linear equations form of the filter.
    kalman/SquareRootFilter
    kalman/InformationFilter
    kalman/FadingKalmanFilter
+   kalman/MMAEFilterBank
 
    
 Extended Kalman Filter

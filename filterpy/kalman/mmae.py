@@ -44,10 +44,15 @@ class MMAEFilterBank(object):
         return self._P
 
     def predict(self, u=0):
+        """
+        """
+
         for f in self.filters:
             f.predict(u)
 
     def update(self, z, R=None, H=None):
+        """
+        """
 
         for i, f in enumerate(self.filters):
             f.update(z, R, H)
