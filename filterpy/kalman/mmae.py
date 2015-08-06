@@ -44,7 +44,14 @@ class MMAEFilterBank(object):
         return self._P
 
     def predict(self, u=0):
-        """
+        """ Predict next position using the Kalman filter state propagation
+        equations for each filter in the bank.
+
+        **Parameters**
+
+        u : np.array
+            Optional control vector. If non-zero, it is multiplied by B
+            to create the control input into the system.
         """
 
         for f in self.filters:
@@ -52,6 +59,22 @@ class MMAEFilterBank(object):
 
     def update(self, z, R=None, H=None):
         """
+        Add a new measurement (z) to the Kalman filter. If z is None, nothing
+        is changed.
+
+        **Parameters**
+
+        z : np.array
+            measurement for this update.
+
+        R : np.array, scalar, or None
+            Optionally provide R to override the measurement noise for this
+            one call, otherwise  self.R will be used.
+
+        H : np.array,  or None
+            Optionally provide H to override the measurement function for this
+            one call, otherwise  self.H will be used.
+
         """
 
         for i, f in enumerate(self.filters):
