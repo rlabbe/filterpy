@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import math
+from math import cos, sin
 import numpy as np
 import numpy.linalg as linalg
 import matplotlib.pyplot as plt
@@ -276,7 +277,7 @@ def covariance_ellipse(P, deviations=1):
 
 
 def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
-             ellipse=None, title=None, axis_equal=True,
+             ellipse=None, title=None, axis_equal=True, show_semiaxis=False,
              facecolor=None, edgecolor=None,
              fc='none', ec='#004080',
              alpha=1.0, xlim=None, ylim=None,
@@ -345,12 +346,19 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
                     alpha=alpha,
                     lw=2, ls=ls)
         ax.add_patch(e)
-    plt.scatter(mean[0], mean[1], marker='+') # mark the center
+    x, y = mean
+    plt.scatter(x, y, marker='+') # mark the center
     if xlim is not None:
         ax.set_xlim(xlim)
 
     if ylim is not None:
         ax.set_ylim(ylim)
+
+    if show_semiaxis:
+        a = ellipse[0]
+        h, w = height/4, width/4
+        plt.plot([x, x+ h*cos(a+np.pi/2)], [y, y + h*sin(a+np.pi/2)])
+        plt.plot([x, x+ w*cos(a)], [y, y + w*sin(a)])
 
 
 def norm_cdf (x_range, mu, var=1, std=None):
@@ -499,7 +507,10 @@ def NESS(xs, est_xs, ps):
 
 
 if __name__ == '__main__':
-    plot_std_vs_var()
+    P1 = [[2, 1.9], [1.9, 2]]
+    plot_covariance_ellipse((10, 10), P1, facecolor='y', alpha=0.6)
+
+    """plot_std_vs_var()
     plt.figure()
 
     _do_plot_test()
@@ -529,3 +540,4 @@ if __name__ == '__main__':
     plt.show()
 
     print("all tests passed")
+    """
