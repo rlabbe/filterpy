@@ -11,3 +11,4 @@ _static
 _templates
 imm.py
 quadrature.py
+.settings/
