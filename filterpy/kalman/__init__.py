@@ -17,14 +17,15 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from .kalman_filter import *
-from .mmae import *
-from .ensemble_kalman_filter import *
-from .square_root import *
-from .information_filter import *
-from .unscented_transform import *
-from .sigma_points import *
 from .EKF import *
-from .UKF import *
+from .ensemble_kalman_filter import *
 from .fading_memory import *
 from .fixed_lag_smoother import FixedLagSmoother
+from .kalman_filter import *
+from .imm import *
+from .information_filter import *
+from .mmae import *
+from .sigma_points import *
+from .square_root import *
+from .UKF import *
+from .unscented_transform import *
