@@ -18,7 +18,6 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from filterpy.common import setter, setter_1d, setter_scalar, dot3
-from filterpy.stats import multivariate_gaussian
 import numpy as np
 from numpy import dot, zeros, eye, isscalar
 import scipy.linalg as linalg
@@ -136,7 +135,7 @@ class KalmanFilter(object):
 
     def update(self, z, R=None, H=None):
         """
-        Add a new measurement (z) to the kalman filter. If z is None, nothing
+        Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
 
         **Parameters**
@@ -147,6 +146,11 @@ class KalmanFilter(object):
         R : np.array, scalar, or None
             Optionally provide R to override the measurement noise for this
             one call, otherwise  self.R will be used.
+
+        H : np.array,  or None
+            Optionally provide H to override the measurement function for this
+            one call, otherwise  self.H will be used.
+
         """
 
         if z is None:
@@ -219,7 +223,8 @@ class KalmanFilter(object):
 
 
     def predict(self, u=0):
-        """ Predict next position.
+        """ Predict next position using the Kalman filter state propagation
+        equations.
 
         **Parameters**
 
