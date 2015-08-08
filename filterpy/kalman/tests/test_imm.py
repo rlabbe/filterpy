@@ -156,181 +156,128 @@ def test_imm():
     """
 
 
-    dt = 0.1
-    pos, zs = generate_data(120, noise_factor=0.6)
-    z_xs = zs[:, 0]
-    t = np.arange(0, len(z_xs) * dt, dt)
 
-    dt = 0.1
-    ca = make_ca_filter(dt, noise_factor=0.6)
-    cv = make_ca_filter(dt, noise_factor=0.6)
-    cv.F[:,2] = 0 # remove acceleration term
-    cv.P[2,2] = 0
-    cv.Q[2,2] = 0
+    r = 100.
+    dt = 1.
+    phi_sim = np.array(
+        [[1, dt, 0, 0],
+         [0, 1, 0, 0],
+         [0, 0, 1, dt],
+         [0, 0, 0, 1]])
 
-    filters = [cv, ca]
+    gam = np.array([[dt**2/2, 0],
+                    [dt, 0],
+                    [0, dt**2/2],
+                    [0, dt]])
 
-    trans = np.array([[0.97, 0.03],
-                      [0.03, 0.97]])
+    x = np.array([[2000, 0, 10000, -15.]]).T
+    #x = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')
+
+    simxs = []
+    N = 600
+    for i in range(N):
+
+        x = np.dot(phi_sim, x)
+        if i >= 400:
+            x += np.dot(gam, np.array([[.075, .075]]).T)
+        simxs.append(x)
+    simxs = np.array(simxs)
+
+    zs = np.zeros((N, 2))
+    for i in range(len(zs)):
+        zs[i, 0] = simxs[i, 0] + randn()*r
+        zs[i, 1] = simxs[i, 2] + randn()*r
+
+    try:
+        #data to test against crassidis' IMM matlab code
+        zs_tmp = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')[:-1]
+        zs = zs_tmp
+    except:
+        pass
+    ca = KalmanFilter(6, 2)
+    cano = KalmanFilter(6, 2)
+    ca.F = np.array(
+        [[1, dt, dt**2/2, 0, 0, 0],
+         [0, 1, dt, 0, 0, 0],
+         [0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 1, dt, dt**2/2],
+         [0, 0, 0, 0, 1, dt],
+         [0, 0, 0, 0, 0, 1]])
+    cano.F = ca.F.copy()
+
+    ca.x = np.array([[2000., 0, 0, 10000, -15, 0]]).T
+    cano.x = ca.x.copy()
+
+    ca.P *= 1.e-12
+    cano.P *= 1.e-12
+    ca.R *= r**2
+    cano.R *= r**2
+    cano.Q *= 0
+    q = np.array([[.05, .125, .16666666666666666666666666667],
+         [.125, .333333333333333333333333333333333333, .5],
+         [.166666666666666666666666667, .5, 1]])*1.e-3
+
+    ca.Q[0:3, 0:3] = q
+    ca.Q[3:6, 3:6] = q
+
+    ca.H = np.array([[1, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 1, 0, 0]])
+    cano.H = ca.H.copy()
+
+    filters = [ca, cano]
 
     trans = np.array([[0.8, 0.2],
                       [0.05, 0.95]])
 
-    bank = IMMEstimator(filters, (0.5, 0.5), trans, dim_x=3)
+    trans = np.array([[0.97, 0.03],
+                      [0.03, 0.97]])
+
+
+    bank = IMMEstimator((6, 1), filters, (0.5, 0.5), trans)
 
     xs, probs = [], []
     cvxs, caxs = [], []
-    for i, z in enumerate(z_xs):
+    for i, z in enumerate(zs):
+        z = np.array([z]).T
         bank.update(z)
-        xs.append(bank.x[0])
-        cvxs.append(cv.x[0])
-        caxs.append(ca.x[0])
-        #print(i, cv.likelihood, ca.likelihood, bank.w)
+        #print(ca.likelihood, cano.likelihood)
+        #print(ca.x.T)
+        xs.append(bank.x.copy())
+        cvxs.append(ca.x.copy())
+        caxs.append(cano.x.copy())
+        #print(i, ca.likelihood, cano.likelihood, bank.w)
 
         #print('p', bank.p)
-        probs.append(bank.w[0] / bank.w[1])
+        probs.append(bank.w.copy())
 
     if DO_PLOT:
+        xs = np.array(xs)
+        cvxs = np.array(cvxs)
+        caxs = np.array(caxs)
+        probs = np.array(probs)
         plt.subplot(121)
-        plt.plot(xs)
-        plt.plot(pos[:, 0])
+        plt.plot(xs[:, 0], xs[:, 3], 'k')
+        #plt.plot(cvxs[:, 0], caxs[:, 3])
+        #plt.plot(simxs[:, 0], simxs[:, 2], 'g')
+        plt.scatter(zs[:, 0], zs[:, 1], marker='+', alpha=0.2)
+
         plt.subplot(122)
-        plt.plot(probs)
+        plt.plot(probs[:, 0])
+        plt.plot(probs[:, 1])
+        plt.ylim(-1.5, 1.5)
         plt.title('probability ratio p(cv)/p(ca)')
 
-        plt.figure()
+
+        '''plt.figure()
         plt.plot(cvxs, label='CV')
         plt.plot(caxs, label='CA')
-        plt.plot(pos[:, 0], label='GT')
+        plt.plot(xs[:, 0], label='GT')
         plt.legend()
 
         plt.figure()
         plt.plot(xs)
-        plt.plot(pos[:, 0])
-
-r = 100.
-dt = 1.
-phi_sim = np.array(
-    [[1, dt, 0, 0],
-     [0, 1, 0, 0],
-     [0, 0, 1, dt],
-     [0, 0, 0, 1]])
-
-gam = np.array([[dt**2/2, 0],
-                [dt, 0],
-                [0, dt**2/2],
-                [0, dt]])
-
-x = np.array([[2000, 0, 10000, -15.]]).T
-#x = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')
-
-simxs = []
-N = 600
-for i in range(N):
-
-    x = np.dot(phi_sim, x)
-    if i >= 400:
-        x += np.dot(gam, np.array([[.075, .075]]).T)
-    simxs.append(x)
-simxs = np.array(simxs)
-
-zs = np.zeros((N, 2))
-for i in range(len(zs)):
-    zs[i, 0] = simxs[i, 0] + randn()*r
-    zs[i, 1] = simxs[i, 2] + randn()*r
-
-zs = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')[:-1]
-#zs = np.genfromtxt('c:/users/roger/dropbox/Crassidis/x.csv', delimiter=',')[:-1]
-
-ca = KalmanFilter(6, 2)
-cano = KalmanFilter(6, 2)
-ca.F = np.array(
-    [[1, dt, dt**2/2, 0, 0, 0],
-     [0, 1, dt, 0, 0, 0],
-     [0, 0, 1, 0, 0, 0],
-     [0, 0, 0, 1, dt, dt**2/2],
-     [0, 0, 0, 0, 1, dt],
-     [0, 0, 0, 0, 0, 1]])
-cano.F = ca.F.copy()
-
-ca.x = np.array([[2000., 0, 0, 10000, -15, 0]]).T
-cano.x = ca.x.copy()
-
-ca.P *= 1.e-12
-cano.P *= 1.e-12
-ca.R *= r**2
-cano.R *= r**2
-cano.Q *= 0
-q = np.array([[.05, .125, .16666666666666666666666666667],
-     [.125, .333333333333333333333333333333333333, .5],
-     [.166666666666666666666666667, .5, 1]])*1.e-3
-
-ca.Q[0:3, 0:3] = q
-ca.Q[3:6, 3:6] = q
-
-ca.H = np.array([[1, 0, 0, 0, 0, 0],
-                 [0, 0, 0, 1, 0, 0]])
-cano.H = ca.H.copy()
-
-filters = [ca, cano]
-
-trans = np.array([[0.8, 0.2],
-                  [0.05, 0.95]])
-
-trans = np.array([[0.97, 0.03],
-                  [0.03, 0.97]])
-
-
-bank = IMMEstimator((6, 1), filters, (0.5, 0.5), trans)
-
-xs, probs = [], []
-cvxs, caxs = [], []
-for i, z in enumerate(zs):
-    print("\ni=", i+1)
-    if i == 10000:
-        break
-
-    #print(z)
-    z = np.array([z]).T
-    bank.update(z)
-    #print(ca.likelihood, cano.likelihood)
-    #print(ca.x.T)
-    xs.append(bank.x.copy())
-    cvxs.append(ca.x.copy())
-    caxs.append(cano.x.copy())
-    #print(i, ca.likelihood, cano.likelihood, bank.w)
-
-    #print('p', bank.p)
-    probs.append(bank.w.copy())
-
-DO_PLOT = True
-if DO_PLOT:
-    xs = np.array(xs)
-    cvxs = np.array(cvxs)
-    caxs = np.array(caxs)
-    probs = np.array(probs)
-    plt.subplot(121)
-    plt.plot(xs[:, 0], xs[:, 3], 'k')
-    #plt.plot(cvxs[:, 0], caxs[:, 3])
-    #plt.plot(simxs[:, 0], simxs[:, 2], 'g')
-    plt.scatter(zs[:, 0], zs[:, 1], marker='+', alpha=0.2)
-
-    plt.subplot(122)
-    plt.plot(probs[:, 0])
-    plt.plot(probs[:, 1])
-    plt.ylim(-1.5, 1.5)
-    plt.title('probability ratio p(cv)/p(ca)')
-
-
-    '''plt.figure()
-    plt.plot(cvxs, label='CV')
-    plt.plot(caxs, label='CA')
-    plt.plot(xs[:, 0], label='GT')
-    plt.legend()
-
-    plt.figure()
-    plt.plot(xs)
-    plt.plot(xs[:, 0])'''
+        plt.plot(xs[:, 0])'''
 
 if __name__ == '__main__':
     DO_PLOT = True
+    test_imm()
