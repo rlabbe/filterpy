@@ -22,7 +22,7 @@ from __future__ import (absolute_import, division, print_function,
 import math
 from math import cos, sin
 import numpy as np
-import numpy.linalg as linalg
+import scipy.linalg as linalg
 import matplotlib.pyplot as plt
 import scipy.sparse as sp
 import scipy.sparse.linalg as spln
@@ -203,7 +203,8 @@ def multivariate_multiply(m1, c1, m2, c2):
 
 
 
-def plot_gaussian(mean, variance,
+def plot_gaussian(mean=0., variance=1.,
+                  ax=None,
                   mean_line=False,
                   xlim=None,
                   ylim=None,
@@ -227,6 +228,8 @@ def plot_gaussian(mean, variance,
     ylabel : str, optional
         label for the y-axis
     """
+    if ax is None:
+        ax = plt.gca()
 
     sigma = math.sqrt(variance)
     n = scipy.stats.norm(mean, sigma)
@@ -347,7 +350,7 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
                     lw=2, ls=ls)
         ax.add_patch(e)
     x, y = mean
-    plt.scatter(x, y, marker='+') # mark the center
+    plt.scatter(x, y, marker='+', color=edgecolor) # mark the center
     if xlim is not None:
         ax.set_xlim(xlim)
 
@@ -502,13 +505,16 @@ def NESS(xs, est_xs, ps):
     est_err = xs - est_xs
     ness = []
     for x, p in zip(est_err, ps):
-        ness.append(np.dot(x.T, inv(p)).dot(x))
+        ness.append(np.dot(x.T, linalg.inv(p)).dot(x))
     return ness
 
 
 if __name__ == '__main__':
-    P1 = [[2, 1.9], [1.9, 2]]
-    plot_covariance_ellipse((10, 10), P1, facecolor='y', alpha=0.6)
+
+    plot_gaussian(2, 3)
+
+    #P1 = [[2, 1.9], [1.9, 2]]
+    #plot_covariance_ellipse((10, 10), P1, facecolor='y', alpha=0.6)
 
     """plot_std_vs_var()
     plt.figure()
