@@ -26,7 +26,8 @@ import numpy as np
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints)
-from filterpy.common import stats, Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise
+import filterpy.stats as stats
 from math import cos, sin
 
 
