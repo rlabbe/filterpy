@@ -18,8 +18,52 @@ for more information.
 from numpy import array, asarray, dot, ones, outer, sum, zeros
 
 class MMAEFilterBank(object):
+    """ Implements the fixed Multiple Model Adaptive Estimator (MMAE). This
+    is a bank of independent Kalman filters. This estimator computes the
+    likelihood that each filter is the correct one, and blends their state
+    estimates weighted by their likelihood to produce the state estimate.
+
+    **Example**
+
+    ..code:
+        ca = make_ca_filter(dt, noise_factor=0.6)
+        cv = make_ca_filter(dt, noise_factor=0.6)
+        cv.F[:,2] = 0 # remove acceleration term
+        cv.P[2,2] = 0
+        cv.Q[2,2] = 0
+
+        filters = [cv, ca]
+        bank = MMAEFilterBank(filters, p=(0.5, 0.5), dim_x=3)
+
+        for z in zs:
+            bank.predict()
+            bank.update(z)
+
+    **References**
+
+    Zarchan and Musoff. "Fundamentals of Kalman filtering: A Practical
+    Approach." AIAA, third edition.
+
+    """
+
 
     def __init__(self, filters, p, dim_x, H=None):
+        """ Creates an fixed MMAE Estimator.
+
+        **Parameters**
+
+        filters : list of Kalman filters
+            List of Kalman filters.
+
+        p : list-like of floats
+           Initial probability that each filter is the correct one. In general
+           you'd probably set each element to 1./len(p).
+
+        dim_x : float
+            number of random variables in the state X
+
+        H :
+        """
 
         assert len(filters) == len(p)
         assert dim_x > 0
@@ -28,10 +72,7 @@ class MMAEFilterBank(object):
         self.p = asarray(p)
         self.dim_x = dim_x
         self._x = None
-        if H is not None:
-            self.H = H
-        else:
-            self.H = ones(len(filters))
+
 
     @property
     def x(self):
@@ -42,6 +83,7 @@ class MMAEFilterBank(object):
     def P(self):
         """ Estimated covariance of the bank of filters."""
         return self._P
+
 
     def predict(self, u=0):
         """ Predict next position using the Kalman filter state propagation
@@ -56,6 +98,7 @@ class MMAEFilterBank(object):
 
         for f in self.filters:
             f.predict(u)
+
 
     def update(self, z, R=None, H=None):
         """
@@ -74,38 +117,30 @@ class MMAEFilterBank(object):
         H : np.array,  or None
             Optionally provide H to override the measurement function for this
             one call, otherwise  self.H will be used.
-
         """
 
+        # new probability is recursively defined as prior * likelihood
         for i, f in enumerate(self.filters):
             f.update(z, R, H)
-            self.p[i] *= f.likelihood    # prior * likelihood
+            self.p[i] *= f.likelihood
 
         self.p /= sum(self.p) # normalize
 
         # compute estimated state and covariance of the bank of filters.
         self._P = zeros(self.filters[0].P.shape)
 
+        # state can be in form [x,y,z,...] or [[x, y, z,...]].T
         is_row_vector = (self.filters[0].x.ndim == 1)
         if is_row_vector:
-
             self._x = zeros(self.dim_x)
-            for f, p, h in zip(self.filters, self.p, self.H):
-                self._x += dot(dot(f.x, h), p)
+            for f, p in zip(self.filters, self.p):
+                self._x += dot(f.x, p)
         else:
             self._x = zeros((self.dim_x, 1))
-            for f, p, h in zip(self.filters, self.p, self.H):
+            for f, p in zip(self.filters, self.p):
                 self._x = zeros((self.dim_x, 1))
-                self._x += dot(dot(h, f.x), p)
+                self._x += dot(f.x, p)
 
-
-        try:
-            for x, f, p in zip(self._x, self.filters, self.p):
-                y = f.x - x
-                self._P += p*[outer(y, y) + f.P]
-        except:
-            # I have no idea how to compute P if the dimensions are different
-            # shapes!
-            self._P = None
-            return
-
+        for x, f, p in zip(self._x, self.filters, self.p):
+            y = f.x - x
+            self._P += p*(outer(y, y) + f.P)
