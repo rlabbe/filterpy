@@ -178,8 +178,8 @@ class KalmanFilter(object):
         mean = np.array(dot(H, x)).flatten()
         flatz = np.array(z).flatten()
 
-        self.likelihood = multivariate_normal.pdf(flatz, mean, cov=S)
-        self.log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S)
+        self.likelihood = multivariate_normal.pdf(flatz, mean, cov=S, allow_singular=True)
+        self.log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S, allow_singular=True)
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
