@@ -128,9 +128,24 @@ def test_noisy_11d():
 
         plt.show()
 
+def test_univariate():
+    f = KalmanFilter(dim_x=1, dim_z=1, dim_u=1)
+    f.x = np.array([[0]])
+    f.P *= 50
+    print(f.P)
+    f.H = np.array([[1.]])
+    f.F = np.array([[1.]])
+    f.B = np.array([[1.]])
+    f.Q = .02
+    f.R *= .1
+
+    for i in range(50):
+        f.predict();
+        f.update(i)
+
 
 if __name__ == "__main__":
     DO_PLOT = True
 
-
-    test_noisy_11d()
+    test_univariate()
+    #test_noisy_11d()
