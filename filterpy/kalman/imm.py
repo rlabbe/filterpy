@@ -23,13 +23,44 @@ from numpy import dot, zeros
 
 class IMMEstimator(object):
     """ Implements an Interacting Multiple-Model (IMM) estimator.
+
+
+    **References**
+
+    Bar-Shalom, Y., Li, X-R., and Kirubarajan, T. "Estimation with
+    Application to Tracking and Navigation". Wiley-Interscience, 2001.
+
+    Crassidis, J and Junkins, J. "Optimal Estimation of
+    Dynamic Systems". CRC Press, second edition. 2012.
+
+    Labbe, R. "Kalman and Bayesian Filters in Python".
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
-    def __init__(self, x_shape, filters, p, trans):
+    def __init__(self, filters, mu, M):
+        """"
+        **Parameters**
+
+        filters : (N,) array_like of KalmanFilter objects
+            List of N filters. filters[i] is the ith Kalman filter in the
+            IMM estimator.
+
+        mu : (N,N) ndarray of float
+            mode probability: mu[i] is the probability that
+            filter i is the correct one.
+
+        M : (N,N) ndarray of float
+            Markov chain transition matrix. M[i,j] is the probability of
+            switching from filter i to filter j.
+        """
+
+        assert len(filters) > 1
 
         self.filters = filters
-        self.w = p
-        self.trans = trans
+        self.mu = mu
+        self.M = M
+
+        x_shape = filters[0].x.shape
         try:
             self.N = x_shape[0]
         except:
@@ -38,24 +69,11 @@ class IMMEstimator(object):
         self.x = np.zeros(x_shape)
         self.P = np.zeros((self.N, self.N))
 
-        self.cbar = dot(self.trans.T, self.w)
+        self.cbar = dot(self.M.T, self.mu)
         self.n = len(filters)
 
 
-
-    '''@property
-    def x(self):
-        """ The estimated state of the bank of filters."""
-        return self._x
-
-    @property
-    def P(self):
-        """ Estimated covariance of the bank of filters."""
-        return self._P'''
-
-
-
-    def update(self, z, R=None, H=None):
+    def update(self, z):
         """
         Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
@@ -64,59 +82,51 @@ class IMMEstimator(object):
 
         z : np.array
             measurement for this update.
-
-        R : np.array, scalar, or None
-            Optionally provide R to override the measurement noise for this
-            one call, otherwise  self.R will be used.
-
-        H : np.array,  or None
-            Optionally provide H to override the measurement function for this
-            one call, otherwise  self.H will be used.
-
         """
 
         L = zeros(len(self.filters))
         for i, f in enumerate(self.filters):
-            f.update(z, R, H)
+            f.update(z)
             L[i] = f.likelihood    # prior * likelihood
 
-        # compute weights
-        self.w =  self.cbar * L
-        self.w /= sum(self.w) # normalize
+        # compute mode probabilities for this step
+        self.mu =  self.cbar * L
+        self.mu /= sum(self.mu) # normalize
 
-        # compute IMM state and covariance
+
+        # compute mixed IMM state and covariance
         self.x.fill(0.)
         self.P.fill(0.)
 
-        for f, w in zip(self.filters, self.w):
+        for f, w in zip(self.filters, self.mu):
             self.x += f.x*w
 
-        for f, w in zip(self.filters, self.w):
+        for f, w in zip(self.filters, self.mu):
             y = f.x - self.x
             self.P += w*(np.outer(y, y) + f.P)
 
 
         # initial condition IMM state, covariance
         xs, Ps = [], []
-        self.cbar = dot(self.trans.T, self.w)
+        self.cbar = dot(self.M.T, self.mu)
 
         omega = np.zeros((self.n, self.n))
         for i in range(self.n):
-            omega[i, 0] = self.trans[i, 0]*self.w[i] / self.cbar[0]
-            omega[i, 1] = self.trans[i, 1]*self.w[i] / self.cbar[1]
+            omega[i, 0] = self.M[i, 0]*self.mu[i] / self.cbar[0]
+            omega[i, 1] = self.M[i, 1]*self.mu[i] / self.cbar[1]
 
 
-        # compute mixed states
+        # compute initial states
         for i, (f, w) in enumerate(zip(self.filters, omega.T)):
             x = np.zeros(self.x.shape)
-            P = np.zeros(self.P.shape)
             for kf, wj in zip(self.filters, w):
                 x += kf.x * wj
+            xs.append(x)
 
+            P = np.zeros(self.P.shape)
             for kf, wj in zip(self.filters, w):
                 y = kf.x - x
                 P += wj*(np.outer(y, y) + kf.P)
-            xs.append(x)
             Ps.append(P)
 
         for i in range(len(xs)):

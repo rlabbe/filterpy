@@ -155,9 +155,7 @@ def test_imm():
     Second edition.
     """
 
-
-
-    r = 100.
+    r = 1.
     dt = 1.
     phi_sim = np.array(
         [[1, dt, 0, 0],
@@ -171,17 +169,16 @@ def test_imm():
                     [0, dt]])
 
     x = np.array([[2000, 0, 10000, -15.]]).T
-    #x = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')
 
     simxs = []
     N = 600
     for i in range(N):
-
         x = np.dot(phi_sim, x)
         if i >= 400:
             x += np.dot(gam, np.array([[.075, .075]]).T)
         simxs.append(x)
     simxs = np.array(simxs)
+    #x = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/mycode/x.csv', delimiter=',')
 
     zs = np.zeros((N, 2))
     for i in range(len(zs)):
@@ -190,7 +187,7 @@ def test_imm():
 
     try:
         #data to test against crassidis' IMM matlab code
-        zs_tmp = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/x.csv', delimiter=',')[:-1]
+        zs_tmp = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/mycode/xx.csv', delimiter=',')[:-1]
         zs = zs_tmp
     except:
         pass
@@ -232,8 +229,7 @@ def test_imm():
     trans = np.array([[0.97, 0.03],
                       [0.03, 0.97]])
 
-
-    bank = IMMEstimator((6, 1), filters, (0.5, 0.5), trans)
+    bank = IMMEstimator(filters, (0.5, 0.5), trans)
 
     xs, probs = [], []
     cvxs, caxs = [], []
@@ -248,7 +244,7 @@ def test_imm():
         #print(i, ca.likelihood, cano.likelihood, bank.w)
 
         #print('p', bank.p)
-        probs.append(bank.w.copy())
+        probs.append(bank.mu.copy())
 
     if DO_PLOT:
         xs = np.array(xs)
