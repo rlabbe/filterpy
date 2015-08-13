@@ -121,13 +121,14 @@ class KalmanFilter(object):
         self.H = 0                 # Measurement function
         self.R = eye(dim_z)        # state uncertainty
         self._alpha_sq = 1.        # fading memory control
+        self.M = 0                 # process-measurement cross correlation
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
         self._K = 0 # kalman gain
         self._y = zeros((dim_z, 1))
-        self._S = np.zeros((dim_z, dim_z)) # system uncertainty in measurement space
+        self._S = np.zeros((dim_z, dim_z)) # system uncertainty
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -196,6 +197,69 @@ class KalmanFilter(object):
         self._S = S
         self._K = K
 
+
+
+    def update_correlated(self, z, R=None, H=None):
+        """ Add a new measurement (z) to the Kalman filter assuming that
+        process noise and measurement noise are correlated as defined in
+        the `self.M` matrix.
+
+        If z is None, nothing is changed.
+
+        **Parameters**
+
+        z : np.array
+            measurement for this update.
+
+        R : np.array, scalar, or None
+            Optionally provide R to override the measurement noise for this
+            one call, otherwise  self.R will be used.
+
+        H : np.array,  or None
+            Optionally provide H to override the measurement function for this
+            one call, otherwise  self.H will be used.
+
+        """
+
+        if z is None:
+            return
+
+        if R is None:
+            R = self.R
+        elif isscalar(R):
+            R = eye(self.dim_z) * R
+
+        # rename for readability and a tiny extra bit of speed
+        if H is None:
+            H = self.H
+        x = self._x
+        P = self._P
+        M = self.M
+
+        # y = z - Hx
+        # error (residual) between measurement and prediction
+        self._y = z - dot(H, x)
+
+        # project system uncertainty into measurement space
+        S = dot3(H, P, H.T) + dot(H, M) + dot(M.T, H.T) + R
+
+        mean = np.array(dot(H, x)).flatten()
+        flatz = np.array(z).flatten()
+
+        self.likelihood = multivariate_normal.pdf(flatz, mean, cov=S, allow_singular=True)
+        self.log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S, allow_singular=True)
+
+        # K = PH'inv(S)
+        # map system uncertainty into kalman gain
+        K = dot(dot(P, H.T) + M, linalg.inv(S))
+
+        # x = x + Ky
+        # predict new x with residual scaled by the kalman gain
+        self._x = x + dot(K, self._y)
+        self._P = P - dot(K, dot(H, P) + M.T)
+
+        self._S = S
+        self._K = K
 
 
     def test_matrix_dimensions(self):
