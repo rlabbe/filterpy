@@ -8,6 +8,6 @@ dist/
 *egg-info*
 _build/
 _static
-_templates
+_templatesq
 quadrature.py
 .settings/

@@ -1,3 +1,18 @@
+Version 0.0.27
+==============
+
+* Added function to compute update in the presense of
+correlated process and measurement noise.
+
+* Added IMM filter.
+
+* added tests for IMM and MMAE filters
+
+* Added display of semi-axis for covariance ellipses
+
+* various bug fixes
+
+ 
 Version 0.0.26
 ==============
 

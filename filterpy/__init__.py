@@ -14,4 +14,4 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-__version__ = "0.0.26"
+__version__ = "0.0.27"
