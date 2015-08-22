@@ -344,19 +344,6 @@ class KalmanFilter(object):
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        try:
-            z = zs[0]
-        except:
-            assert not isscalar(zs), 'zs must be list-like'
-
-        if self.dim_z == 1:
-            assert isscalar(z) or (z.ndim==1 and len(z) == 1), \
-            'zs must be a list of scalars or 1D, 1 element arrays'
-
-        else:
-            assert len(z) == self.dim_z, 'each element in zs must be a'
-            '1D array of length {}'.format(self.dim_z)
-
         n = np.size(zs,0)
         if Rs is None:
             Rs = [None]*n
