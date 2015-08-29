@@ -21,15 +21,16 @@ from __future__ import (absolute_import, division, print_function,
 
 import math
 from math import cos, sin
-import numpy as np
-import scipy.linalg as linalg
+from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+import scipy.linalg as linalg
 import scipy.sparse as sp
 import scipy.sparse.linalg as spln
 import scipy.stats
 from scipy.stats import norm
-from matplotlib.patches import Ellipse
-import random
+import warnings
 
 
 def gaussian(x, mean, var):
@@ -203,17 +204,124 @@ def multivariate_multiply(m1, c1, m2, c2):
 
 
 
-def plot_gaussian(mean=0., variance=1.,
-                  ax=None,
-                  mean_line=False,
-                  xlim=None,
-                  ylim=None,
-                  xlabel=None,
-                  ylabel=None):
-    """ plots the normal distribution with the given mean and variance. x-axis
-    contains the mean, the y-axis shows the probability.
+def plot_discrete_cdf(xs, ys, ax=None, xlabel=None, ylabel=None,
+                      label=None):
+    """Plots a normal distribution CDF with the given mean and variance.
+    x-axis contains the mean, the y-axis shows the cumulative probability.
 
-    **parameters**
+    **Parameters**
+
+    xs : list-like of scalars
+        x values corresponding to the values in `y`s. Can be `None`, in which
+        case range(len(ys)) will be used.
+
+    ys : list-like of scalars
+        list of probabilities to be plotted which should sum to 1.
+
+    ax : matplotlib axes object, optional
+        If provided, the axes to draw on, otherwise plt.gca() is used.
+
+    xlim, ylim: (float,float), optional
+        specify the limits for the x or y axis as tuple (low,high).
+        If not specified, limits will be automatically chosen to be 'nice'
+
+    xlabel : str,optional
+        label for the x-axis
+
+    ylabel : str, optional
+        label for the y-axis
+
+    label : str, optional
+        label for the legend
+
+    **Returns**
+        axis of plot
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if xs is None:
+        xs = range(len(ys))
+    ys = np.cumsum(ys)
+    ax.plot(xs, ys, label=label)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    return ax
+
+
+def plot_gaussian_cdf(mean=0., variance=1.,
+                      ax=None,
+                      xlim=None, ylim=(0., 1.),
+                      xlabel=None, ylabel=None,
+                      label=None):
+    """Plots a normal distribution CDF with the given mean and variance.
+    x-axis contains the mean, the y-axis shows the cumulative probability.
+
+    **Parameters**
+
+    mean : scalar, default 0.
+        mean for the normal distribution.
+
+    variance : scalar, default 0.
+        variance for the normal distribution.
+
+    ax : matplotlib axes object, optional
+        If provided, the axes to draw on, otherwise plt.gca() is used.
+
+    xlim, ylim: (float,float), optional
+        specify the limits for the x or y axis as tuple (low,high).
+        If not specified, limits will be automatically chosen to be 'nice'
+
+    xlabel : str,optional
+        label for the x-axis
+
+    ylabel : str, optional
+        label for the y-axis
+
+    label : str, optional
+        label for the legend
+
+    **Returns**
+        axis of plot
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    sigma = math.sqrt(variance)
+    n = scipy.stats.norm(mean, sigma)
+    if xlim is None:
+        xlim = [n.ppf(0.001), n.ppf(0.999)]
+
+    xs = np.arange(xlim[0], xlim[1], (xlim[1] - xlim[0]) / 1000.)
+    cdf = n.cdf(xs)
+    ax.plot(xs, cdf, label=label)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    return ax
+
+
+
+def plot_gaussian_pdf(mean=0., variance=1.,
+                      ax=None,
+                      mean_line=False,
+                      xlim=None, ylim=None,
+                      xlabel=None, ylabel=None,
+                      label=None):
+    """Plots a normal distribution PDF with the given mean and variance.
+    x-axis contains the mean, the y-axis shows the probability density.
+
+    **Parameters**
+
+    mean : scalar, default 0.
+        mean for the normal distribution.
+
+    variance : scalar, default 0.
+        variance for the normal distribution.
+
+    ax : matplotlib axes object, optional
+        If provided, the axes to draw on, otherwise plt.gca() is used.
 
     mean_line : boolean
         draws a line at x=mean
@@ -227,7 +335,14 @@ def plot_gaussian(mean=0., variance=1.,
 
     ylabel : str, optional
         label for the y-axis
+
+    label : str, optional
+        label for the legend
+
+    **Returns**
+        axis of plot
     """
+
     if ax is None:
         ax = plt.gca()
 
@@ -235,24 +350,65 @@ def plot_gaussian(mean=0., variance=1.,
     n = scipy.stats.norm(mean, sigma)
 
     if xlim is None:
-        min_x = n.ppf(0.001)
-        max_x = n.ppf(0.999)
-    else:
-        min_x = xlim[0]
-        max_x = xlim[1]
-    xs = np.arange(min_x, max_x, (max_x - min_x) / 1000)
-    plt.plot(xs,n.pdf(xs))
-    plt.xlim((min_x, max_x))
+        xlim = [n.ppf(0.001), n.ppf(0.999)]
+
+    xs = np.arange(xlim[0], xlim[1], (xlim[1] - xlim[0]) / 1000.)
+    ax.plot(xs,n.pdf(xs), label=label)
+    ax.set_xlim(xlim)
 
     if ylim is not None:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
 
     if mean_line:
         plt.axvline(mean)
-    if xlabel:
-       plt.xlabel(xlabel)
-    if ylabel:
-       plt.ylabel(ylabel)
+
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    return ax
+
+
+def plot_gaussian(mean=0., variance=1.,
+                  ax=None,
+                  mean_line=False,
+                  xlim=None,
+                  ylim=None,
+                  xlabel=None,
+                  ylabel=None,
+                  label=None):
+    """ DEPRECATED. Use plot_gaussian_pdf() instead. This is poorly named, as
+    there are multiple ways to plot a Gaussian.
+
+    Plots a normal distribution PDF with the given mean and variance.
+    x-axis contains the mean, the y-axis shows the probability density.
+
+    **Parameters**
+
+    ax : matplotlib axes object, optional
+        If provided, the axes to draw on, otherwise plt.gca() is used.
+
+    mean_line : boolean
+        draws a line at x=mean
+
+    xlim, ylim: (float,float), optional
+        specify the limits for the x or y axis as tuple (low,high).
+        If not specified, limits will be automatically chosen to be 'nice'
+
+    xlabel : str,optional
+        label for the x-axis
+
+    ylabel : str, optional
+        label for the y-axis
+
+    label : str, optional
+        label for the legend
+    """
+
+    warnings.warn('This function is deprecated. It is poorly named. '
+                  'A Gaussian can be plotted as a PDF or CDF. This '
+                  'plots a PDF. Use plot_gaussian_pdf() instead,',
+                  DeprecationWarning)
+    return plot_gaussian_pdf(mean, variance, ax, mean_line, xlim, ylim, xlabel,
+                             ylabel, label)
 
 
 def covariance_ellipse(P, deviations=1):
@@ -511,7 +667,14 @@ def NESS(xs, est_xs, ps):
 
 if __name__ == '__main__':
 
-    plot_gaussian(2, 3)
+    ax = plot_gaussian_pdf(2, 3)
+    plot_gaussian_cdf(2, 3, ax=ax)
+    plt.show()
+
+    ys =np.abs(np.random.randn(100))
+    ys /= np.sum(ys)
+    plot_discrete_cdf(xs=None, ys=ys)
+
 
     #P1 = [[2, 1.9], [1.9, 2]]
     #plot_covariance_ellipse((10, 10), P1, facecolor='y', alpha=0.6)
