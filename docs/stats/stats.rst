@@ -29,6 +29,19 @@ to Bayesian filters.
 
 -----
 
+.. autofunction:: plot_gaussian_cdf
+
+-----
+
+.. autofunction:: plot_gaussian_pdf
+
+-----
+
+.. autofunction:: plot_discrete_cdf
+
+
+-----
+
 .. autofunction:: plot_gaussian
 
 

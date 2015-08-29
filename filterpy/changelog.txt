@@ -1,3 +1,12 @@
+Version 0.0.28
+==============
+
+* Deprecated plot_gaussian in favor of plot_gaussian_pdf,
+which is a more descriptive name.
+
+* Added plot_gaussian_cdf and plot_discrete_cdf.
+
+
 Version 0.0.27
 ==============
 
