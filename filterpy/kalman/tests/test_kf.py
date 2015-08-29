@@ -125,9 +125,26 @@ def test_noisy_11d():
         plt.legend([p1,p2, p3, p4],
                    ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
 
-
         plt.show()
 
+
+def test_batch_filter():
+    f = KalmanFilter (dim_x=2, dim_z=1)
+
+    f.x = np.array([2., 0])      # initial state (location and velocity)
+
+    f.F = np.array([[1.,1.],
+                    [0.,1.]])    # state transition matrix
+
+    f.H = np.array([[1.,0.]])    # Measurement function
+    f.P *= 1000.                  # covariance matrix
+    f.R = 5                       # state uncertainty
+    f.Q = 0.0001                 # process uncertainty    
+
+    zs = [None, 1., 2.]
+    m,c,_,_ = f.batch_filter(zs,update_first=False)
+    m,c,_,_ = f.batch_filter(zs,update_first=True)
+    
 def test_univariate():
     f = KalmanFilter(dim_x=1, dim_z=1, dim_u=1)
     f.x = np.array([[0]])
@@ -146,6 +163,8 @@ def test_univariate():
 
 if __name__ == "__main__":
     DO_PLOT = True
+    
+    test_batch_filter()
 
     test_univariate()
     #test_noisy_11d()
