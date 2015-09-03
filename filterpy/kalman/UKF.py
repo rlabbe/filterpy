@@ -300,18 +300,6 @@ class UnscentedKalmanFilter(object):
         hx_args : tuple, optional, default (,)
             arguments to be passed into Hx function after the required state
             variable.
-
-        residual_x : function (x, x2), optional
-            Optional function that computes the residual (difference) between
-            the two state vectors. If you do not provide this, then the
-            built in minus operator will be used. You will normally want to use
-            the built in unless your residual computation is nonlinear (for
-            example, if they are angles)
-
-        residual_h : function (z, z2), optional
-            Optional function that computes the residual (difference) between
-            the two measurement vectors. If you do not provide this, then the
-            built in minus operator will be used.
         """
 
         if z is None:
