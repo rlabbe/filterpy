@@ -304,49 +304,57 @@ class KalmanFilter(object):
         self._P = self._alpha_sq * dot3(self._F, self._P, self._F.T) + self._Q
 
 
-    def batch_filter(self, zs, Rs=None, update_first=False):
+    def batch_filter(self, zs, Rs=None, Fs=None, Hs=None, Qs=None, update_first=False):
         """ Batch processes a sequences of measurements.
-
         **Parameters**
-
         zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
-
         Rs : list-like, optional
             optional list of values to use for the measurement error
             covariance; a value of None in any position will cause the filter
             to use `self.R` for that time step.
-
+        Fs : list-like, optional
+            optional list of values to use for the update matrix;
+            a value of None in any position will cause the filter
+            to use `self.R` for that time step.
+        Hs : list-like, optional
+            optional list of values to use for the measurement matrix;
+            a value of None in any position will cause the filter
+            to use `self.R` for that time step.
+        Qs : list-like, optional
+            optional list of values to use for the process error
+            covariance; a value of None in any position will cause the filter
+            to use `self.R` for that time step.
         update_first : bool, optional,
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
-
         **Returns**
-
-
         means: np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry
             is an np.array. In other words `means[k,:]` is the state at step
             `k`.
-
         covariance: np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
-
         means_predictions: np.array((n,dim_x,1))
             array of the state for each time step after the predictions. Each
             entry is an np.array. In other words `means[k,:]` is the state at
             step `k`.
-
         covariance_predictions: np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the prediction.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
         n = np.size(zs,0)
-        if Rs is None:
-            Rs = [None]*n
+        if np.all(Rs == None):
+            Rs = [self.R] * n
+        if np.all(Fs == None):
+            Fs = [self.F] * n
+        if np.all(Hs == None):
+            Hs = [self.H] * n
+        if np.all(Qs == None):
+            Qs = [self.Q] * n
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
@@ -361,8 +369,11 @@ class KalmanFilter(object):
         covariances_p = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i, (z, r) in enumerate(zip(zs, Rs)):
-                self.update(z, r)
+            for i, (z, R, F, H, Q) in enumerate(zip(zs, Rs, Fs, Hs, Qs)):
+                self.F = F
+                self.Q = Q
+
+                self.update(z, R, H)
                 means[i,:]         = self._x
                 covariances[i,:,:] = self._P
 
@@ -370,12 +381,15 @@ class KalmanFilter(object):
                 means_p[i,:]         = self._x
                 covariances_p[i,:,:] = self._P
         else:
-            for i, (z, r) in enumerate(zip(zs, Rs)):
+            for i, (z, R, F, H, Q) in enumerate(zip(zs, Rs, Fs, Hs, Qs)):
+                self.F = F
+                self.Q = Q
+
                 self.predict()
                 means_p[i,:]         = self._x
                 covariances_p[i,:,:] = self._P
 
-                self.update(z, r)
+                self.update(z, R, H)
                 means[i,:]         = self._x
                 covariances[i,:,:] = self._P
 
@@ -383,7 +397,7 @@ class KalmanFilter(object):
 
 
 
-    def rts_smoother(self, Xs, Ps, Qs=None):
+    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None):
         """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by a Kalman filter. The usual input
         would come from the output of `KalmanFilter.batch_filter()`.
@@ -397,10 +411,13 @@ class KalmanFilter(object):
         Ps : numpy.array
             array of the covariances of the output of a kalman filter.
 
-        Q : list-like collection of numpy.array, optional
+        Fs : list-like collection of numpy.array, optional
+            Update Matrix of the Kalman filter at each time step. Optional,
+            if not provided the filter's self.F will be used
+
+        Qs : list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
-
 
         **Returns**
 
@@ -428,8 +445,9 @@ class KalmanFilter(object):
         n = shape[0]
         dim_x = shape[1]
 
-        F = self._F
-        if not Qs:
+        if np.all(Fs == None):
+            Fs = [self.F] * n
+        if np.all(Qs == None):
             Qs = [self.Q] * n
 
         # smoother gain
@@ -438,10 +456,10 @@ class KalmanFilter(object):
         x, P = Xs.copy(), Ps.copy()
 
         for k in range(n-2,-1,-1):
-            P_pred = dot3(F, P[k], F.T) + Qs[k]
+            P_pred = dot3(Fs[k], P[k], Fs[k].T) + Qs[k]
 
-            K[k]  = dot3(P[k], F.T, linalg.inv(P_pred))
-            x[k] += dot (K[k], x[k+1] - dot(F, x[k]))
+            K[k]  = dot3(P[k], Fs[k].T, linalg.inv(P_pred))
+            x[k] += dot (K[k], x[k+1] - dot(Fs[k], x[k]))
             P[k] += dot3 (K[k], P[k+1] - P_pred, K[k].T)
 
         return (x, P, K)
