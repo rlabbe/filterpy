@@ -297,7 +297,7 @@ class KalmanFilter(object):
             to create the control input into the system.
 
         B : np.array(dim_x, dim_z), or None
-            Optional state transition matrix; a value of None in
+            Optional control transition matrix; a value of None in
             any position will cause the filter to use `self.B`.
 
         F : np.array(dim_x, dim_x), or None
@@ -466,8 +466,8 @@ class KalmanFilter(object):
             array of the covariances of the output of a kalman filter.
 
         Fs : list-like collection of numpy.array, optional
-            Update Matrix of the Kalman filter at each time step. Optional,
-            if not provided the filter's self.F will be used
+            State transition matrix of the Kalman filter at each time step. 
+            Optional, if not provided the filter's self.F will be used
 
         Qs : list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
