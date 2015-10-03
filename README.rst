@@ -1,3 +1,5 @@
+|Latest Version|
+
 FilterPy - Kalman filters and other optimal and non-optimal estimation filters in Python.
 -----------------------------------------------------------------------------------------
 
@@ -224,3 +226,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.TION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+.. |Latest Version| image:: https://pypip.in/version/FilterPy/badge.svg?text=version
+   :target: https://pypi.python.org/pypi/FilterPy/
