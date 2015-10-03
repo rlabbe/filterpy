@@ -51,7 +51,9 @@ version, however.
 
 Installation
 ------------
-
+.. image:: https://img.shields.io/pypi/v/filterpy.svg
+        :target: https://pypi.python.org/pypi/filterpy
+        
 ::
 
     pip install filterpy
