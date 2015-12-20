@@ -362,8 +362,10 @@ def plot_gaussian_pdf(mean=0., variance=1.,
     if mean_line:
         plt.axvline(mean)
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
     return ax
 
 
