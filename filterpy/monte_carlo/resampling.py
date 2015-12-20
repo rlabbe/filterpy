@@ -68,6 +68,24 @@ def residual_resample(weights):
 
 
 def stratified_resample(weights):
+    """ Performs the stratified resampling algorithm used by particle filters.
+
+    This algorithms aims to make selections relatively uniformly across the
+    particles. It divides the cumulative sum of the weights into N equal
+    divisions, and then selects one particle randomly from each division. This
+    guarantees that each sample is between 0 and 2/N apart.
+
+    **Parameters**
+    weights : list-like of float
+        list of weights as floats
+
+    **Returns**
+
+    indexes : ndarray of ints
+        array of indexes into the weights defining the resample. i.e. the
+        index of the zeroth resample is indexes[0], etc.
+    """
+
     N = len(weights)
     # make N subdivisions, and chose a random position within each one
     positions = (random(N) + range(N)) / N
@@ -85,6 +103,22 @@ def stratified_resample(weights):
 
 
 def systematic_resample(weights):
+    """ Performs the systemic resampling algorithm used by particle filters.
+
+    This algorithm separates the sample space into N divisions. A single random
+    offset is used to to choose where to sample from for all divisions. This
+    guarantees that every sample is exactly 1/N apart.
+
+    **Parameters**
+    weights : list-like of float
+        list of weights as floats
+
+    **Returns**
+
+    indexes : ndarray of ints
+        array of indexes into the weights defining the resample. i.e. the
+        index of the zeroth resample is indexes[0], etc.
+    """
     N = len(weights)
 
     # make N subdivisions, and choose positions with a consistent random offset
@@ -107,7 +141,9 @@ def multinomial_resample(weights):
     """ This is the naive form of roulette sampling where we compute the
     cumulative sum of the weights and then use binary search to select the
     resampled point based on a uniformly distributed random number. Run time
-    is O(n log n).
+    is O(n log n). You do not want to use this algorithm in practice; for some
+    reason it is popular in blogs and online courses so I included it for
+    reference.
 
    **Parameters**
     weights : list-like of float
