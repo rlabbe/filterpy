@@ -15,10 +15,8 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-
 import numpy as np
 from numpy.random import random
-
 
 
 def residual_resample(weights):
@@ -124,29 +122,3 @@ def multinomial_resample(weights):
     cumulative_sum = np.cumsum(weights)
     cumulative_sum[-1] = 1.  # avoid round-off errors: ensures sum is exactly one
     return np.searchsorted(cumulative_sum, random(len(weights)))
-
-
-if __name__ == '__main__':
-    w = np.array([1.,2.,3.,2.,1.])
-    w = w / np.sum(w)
-
-    '''print(residual_resample(w))
-    import matplotlib as mpl
-    cmap = mpl.colors.ListedColormap([[0., .4, 1.],
-                                      [0., .8, 1.],
-                                      [1., .8, 0.],
-                                      [1., .4, 0.]]*5)
-    bounds = np.array([1., 2., 4, 7, 8]*3)
-    bounds /= sum(bounds)
-    a = np.cumsum(bounds)
-
-    fig = plt.figure(figsize=(8,3))
-    ax = fig.add_axes([0.05, 0.475, 0.9, 0.15])
-    norm = mpl.colors.BoundaryNorm(a, cmap.N)
-    bar = mpl.colorbar.ColorbarBase(ax, cmap=cmap,
-                                     norm=norm,
-                                     drawedges=False,
-                                     spacing='proportional',
-                                     orientation='horizontal')
-    bar.set_ticks([])
-    plt.show()'''
