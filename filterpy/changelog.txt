@@ -1,3 +1,28 @@
+Version 0.1.0
+==============
+
+Move to minor version numbering doesn't mean anything other than
+it got absurd to be using 3 digits for version numbers. We are
+far past alpha here. I will be moving to 1.0.0 soon, probably after
+I finish the book and flesh out a few points.
+
+* Implemented a fixed-point smoother, but it is not working all that well.
+
+Color on this: There are various recusive equations for the fixed point
+filter that I have found in various book - Simon, Crassidis, and Grewal.
+None seem to work very well. I have code that works pretty good when R 
+is < 0.5 or so, but then the filter diverges when R is larger. I'm not seeing
+much in the literature that explains this very well, nor any evidence of
+this smoother actually being used in practice. I will give this a bit
+more effort, and if I can't get something reliable I'll put it in a branch
+and remove from trunk. Someone will have to tackle this on a rainy day.
+
+* KalmanFilter.batch_filter() now accepts lists of all the KF matrices
+
+* lots of docstring corrections and additions
+
+
+
 Version 0.0.28
 ==============
 
