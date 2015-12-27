@@ -72,8 +72,11 @@ class KalmanFilter(object):
     S :  numpy.array
         Systen uncertaintly projected to measurement space
 
+    likelihood : scalar
+        Likelihood of last measurement update.
+
     log_likelihood : scalar
-        Log likelihood of last measurment update.
+        Log likelihood of last measurement update.
     """
 
     def __init__(self, dim_x, dim_z, dim_u=0):
@@ -146,7 +149,6 @@ class KalmanFilter(object):
         H : np.array, or None
             Optionally provide H to override the measurement function for this
             one call, otherwise self.H will be used.
-
         """
 
         if z is None:
