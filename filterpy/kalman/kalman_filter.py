@@ -361,21 +361,22 @@ class KalmanFilter(object):
         Hx = dot(H, x)
 
         if z_shape == (): # scalar or np.array(scalar)
-            assert Hx.ndim == 1 or shape(Hx) == (1,1), "shape of z should be {}, not {}".format(
+            assert Hx.ndim == 1 or shape(Hx) == (1,1), \
+            "shape of z should be {}, not {} for the given H".format(
                    shape(Hx), z_shape)
 
         elif shape(Hx) == (1,):
-            assert z_shape[0] == 1, 'Shape of z must be {}'.format(shape(Hx))
+            assert z_shape[0] == 1, 'Shape of z must be {} for the given H'.format(shape(Hx))
 
         else:
             assert (z_shape == shape(Hx) or
                     (len(z_shape) == 1 and shape(Hx) == (z_shape[0], 1))), \
-                    "shape of z should be {}, not {}".format(
+                    "shape of z should be {}, not {} for the given H".format(
                     shape(Hx), z_shape)
 
         if np.ndim(Hx) > 1 and shape(Hx) != (1,1):
             assert shape(Hx) == z_shape, \
-               'shape of z should be {}, but it is {}'.format(
+               'shape of z should be {} for the given H, but it is {}'.format(
                shape(Hx), z_shape)
 
 

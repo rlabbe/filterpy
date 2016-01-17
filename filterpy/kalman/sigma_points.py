@@ -125,6 +125,8 @@ class MerweScaledSigmaPoints(object):
 
         if  np.isscalar(P):
             P = np.eye(n)*P
+        else:
+            P = np.asarray(P)
 
         lambda_ = self.alpha**2 * (n + self.kappa) - n
         U = self.sqrt((lambda_ + n)*P)

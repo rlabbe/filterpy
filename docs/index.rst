@@ -248,6 +248,15 @@ particle filtering.
    
    monte_carlo/resampling
 
+filterpy.discrete_bayes
+-----------------------
+
+Routines for performing discrete Bayes filtering.
+
+.. toctree::
+   :maxdepth: 1
+   
+   discrete_bayes/discrete_bayes
 
 filterpy.gh
 -----------

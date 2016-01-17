@@ -21,7 +21,8 @@ import mock
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.linalg', 'numpy.linalg', 'matplotlib.pyplot',
                 'numpy.random', 'scipy.sparse', 'scipy.sparse.linalg',
-                'scipy.stats', 'matplotlib.patches']
+                'scipy.stats', 'matplotlib.patches', 'scipy.ndimage.filters',
+                'scipy.ndimage.interpolation']
                 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
@@ -51,7 +52,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
