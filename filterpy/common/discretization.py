@@ -30,10 +30,11 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     variance in the noise.
 
     Q is computed as the G * G^T * variance, where G is the process noise per
-    time step. In other words, G = [[.5dt^2][dt]]^T for the constant velocity 
+    time step. In other words, G = [[.5dt^2][dt]]^T for the constant velocity
     model.
 
-    **Paramaeters**
+    Parameters
+    -----------
 
     dim : int (2 or 3)
         dimension for Q, where the final dimension is (dim x dim)
@@ -62,7 +63,8 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
     Model. dim may be either 2 or 3, dt is the time step, and sigma is the
     variance in the noise.
 
-    **Paramaeters**
+    Parameters
+    ----------
 
     dim : int (2 or 3)
         dimension for Q, where the final dimension is (dim x dim)
@@ -99,7 +101,8 @@ def van_loan_discretization(F, G, dt):
     that discretizes that equation.
 
 
-    **Example**::
+    Examples
+    --------
 
         Given y'' + y = 2u(t), we create the continuous state model of
 
@@ -124,7 +127,8 @@ def van_loan_discretization(F, G, dt):
         (example taken from Brown[2])
 
 
-    **References**
+    References
+    ----------
 
     [1] C. F. van Loan. "Computing Integrals Involving the Matrix Exponential."
         IEEE Trans. Automomatic Control, AC-23 (3): 395-404 (June 1978)

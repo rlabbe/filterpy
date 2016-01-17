@@ -1,3 +1,16 @@
+Version 0.1.10
+==============
+
+* Added discrete_bayes module, which supports discrete Bayesian filtering.
+
+* Brought docstrings (mostly) into compliance with NumPy documentation style.
+This requires installation of numpy doc with
+    pip install numpydoc
+    
+docs\conf.py has been modified to use numpydoc. 
+
+
+
 Version 0.1.0
 ==============
 

@@ -39,7 +39,8 @@ class GHFilterOrder(object):
     def __init__(self, x0, dt, order, g, h=None, k=None):
         """ Creates a g-h filter of order 0, 1, or 2.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x0 : 1D np.array or scalar
             Initial value for the filter state. Each value can be a scalar
@@ -70,7 +71,8 @@ class GHFilterOrder(object):
         k : float, optional
             filter k gain parameter, order 2 only
 
-        **Members**
+        Members
+        -------
 
         self.x : np.array
             State of the filter.
@@ -156,7 +158,8 @@ class GHFilter(object):
     A few basic examples are below, and the tests in ./gh_tests.py may
     give you more ideas on use.
 
-    **Examples**
+    Examples
+    --------
 
     Create a basic filter for a scalar value with g=.8, h=.2.
     Initialize to 0, with a derivative(velocity) of 0.
@@ -185,7 +188,8 @@ class GHFilter(object):
     (array([ 1.6,  3.4]), array([ 0.04,  0.06]))
 
 
-    **References**
+    References
+    ----------
 
     [1] Labbe, "Kalman and Bayesian Filters in Python"
     http://rlabbe.github.io/Kalman-and-Bayesian-Filters-in-Python
@@ -202,7 +206,8 @@ class GHFilter(object):
     def __init__(self, x, dx, dt, g, h):
         """ Creates a g-h filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : 1D np.array or scalar
             Initial value for the filter state. Each value can be a scalar
@@ -262,7 +267,8 @@ class GHFilter(object):
             predicted value of the derivative of x before incorporating the
             measurement z.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : any
             the measurement
@@ -271,7 +277,8 @@ class GHFilter(object):
         h : scalar (optional)
             Override the fixed self.h value for this update
 
-        **Returns**
+        Returns
+        -------
 
         x filter output for x
         dx filter output for dx (derivative of x
@@ -307,7 +314,8 @@ class GHFilter(object):
         by this function, in distinct contrast to update(), which changes
         most of them.
 
-        **Parameters**
+        Parameters
+        ----------
 
         data : list like
             contains the data to be filtered.
@@ -315,7 +323,8 @@ class GHFilter(object):
         save_predictions : boolean
             the predictions will be saved and returned if this is true
 
-        **Returns**
+        Returns
+        -------
 
         results : np.array shape (n+1, 2), where n=len(data)
            contains the results of the filter, where
@@ -370,7 +379,8 @@ class GHFilter(object):
         .. math::
             VRF(\hat{x}_{n+1,n}) = \\frac{VAR(\hat{x}_{n+1,n})}{\sigma^2_x}
 
-        **References**
+        References
+        ----------
 
         Asquith, "Weight Selection in First Order Linear Filters"
         Report No RG-TR-69-12, U.S. Army Missle Command. Redstone Arsenal, Al.
@@ -395,7 +405,8 @@ class GHFilter(object):
 
             VRF(\hat{\ddot{x}}_{n,n}) = \\frac{VAR(\hat{\ddot{x}}_{n,n})}{\sigma^2_x}
 
-        **Returns**
+        Returns
+        -------
 
         vrf_x   VRF of x state variable
         vrf_dx  VRF of the dx state variable (derivative of x)
@@ -415,7 +426,8 @@ class GHFilter(object):
 class GHKFilter(object):
     """ Implements the g-h-k filter.
 
-    **References**
+    References
+    ----------
 
     Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.
@@ -429,7 +441,8 @@ class GHKFilter(object):
     def __init__(self, x, dx, ddx, dt, g, h, k):
         """ Creates a g-h filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : 1D np.array or scalar
             Initial value for the filter state. Each value can be a scalar
@@ -482,7 +495,8 @@ class GHKFilter(object):
         will have been updated with the results of the computation. For
         convienence, self.x and self.dx are returned in a tuple.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : scalar
             the measurement
@@ -493,7 +507,8 @@ class GHKFilter(object):
         k : scalar (optional)
             Override the fixed self.k value for this update
 
-        **Returns**
+        Returns
+        -------
 
         x filter output for x
         dx filter output for dx (derivative of x
@@ -535,7 +550,8 @@ class GHKFilter(object):
         More exactly, none of the class member variables are modified
         by this function.
 
-        **Parameters**
+        Parameters
+        ----------
 
         data : list_like
             contains the data to be filtered.
@@ -543,7 +559,8 @@ class GHKFilter(object):
         save_predictions : boolean
             The predictions will be saved and returned if this is true
 
-        **Returns**
+        Returns
+        -------
 
         results : np.array shape (n+1, 2), where n=len(data)
            contains the results of the filter, where
@@ -599,7 +616,8 @@ class GHKFilter(object):
         .. math::
             VRF(\hat{x}_{n+1,n}) = \\frac{VAR(\hat{x}_{n+1,n})}{\sigma^2_x}
 
-        **References**
+        References
+        ----------
 
         Asquith and Woods, "Total Error Minimization in First
         and Second Order Prediction Filters" Report No RE-TR-70-17, U.S.
@@ -617,12 +635,14 @@ class GHKFilter(object):
     def bias_error(self, dddx):
         """ Returns the bias error given the specified constant jerk(dddx)
 
-        **Parameters**
+        Parameters
+        ----------
 
         dddx : type(self.x)
             3rd derivative (jerk) of the state variable x.
 
-        **References**
+        References
+        ----------
 
         Asquith and Woods, "Total Error Minimization in First
         and Second Order Prediction Filters" Report No RE-TR-70-17, U.S.
@@ -643,7 +663,8 @@ class GHKFilter(object):
 
             VRF(\hat{\ddot{x}}_{n,n}) = \\frac{VAR(\hat{\ddot{x}}_{n,n})}{\sigma^2_x}
 
-        **Returns**
+        Returns
+        -------
 
         vrf_x : type(x)
             VRF of x state variable
@@ -675,18 +696,23 @@ def optimal_noise_smoothing(g):
     """ provides g,h,k parameters for optimal smoothing of noise for a given
     value of g. This is due to Polge and Bhagavan[1].
 
-    **Parameters**
+    Parameters
+    ----------
 
     g : float
         value for g for which we will optimize for
 
-    **Returns**
+    Returns
+    -------
 
     (g,h,k) : (float, float, float)
         values for g,h,k that provide optimal smoothing of noise
 
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.gh import GHKFilter, optimal_noise_smoothing
 
@@ -695,7 +721,8 @@ def optimal_noise_smoothing(g):
         f.update(1.)
 
 
-    **References**
+    References
+    ----------
 
     [1] Polge and Bhagavan. "A Study of the g-h-k Tracking Filter".
     Report No. RE-CR-76-1. University of Alabama in Huntsville.
@@ -720,19 +747,22 @@ def least_squares_parameters(n):
 
         g_n = \\frac{2(2n+1)}{(n+2)(n+1)}
 
-
-
-    **Parameters**
+    Parameters
+    ----------
 
     n : int
         the nth measurement, starting at 0 (i.e. first measurement has n==0)
 
-    **Returns**
+    Returns
+    -------
 
     (g,h)  : (float, float)
         g and h parameters for this time step for the least-squares filter
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.gh import GHFilter, least_squares_parameters
 
@@ -781,7 +811,8 @@ def critical_damping_parameters(theta, order=2):
     In other words the last error is scaled by theta, the next to last by
     theta squared, the next by theta cubed, and so on.
 
-    **Parameters**
+    Parameters
+    ----------
 
     theta : float, 0 <= theta <= 1
         scaling factor for previous terms
@@ -790,8 +821,8 @@ def critical_damping_parameters(theta, order=2):
        order of filter to create the parameters for. g and h will be
        calculated for the order 2, and g, h, and k for order 3.
 
-    **Returns**
-
+    Returns
+    -------
     g : scalar
         optimal value for g in the g-h or g-h-k filter
 
@@ -801,14 +832,18 @@ def critical_damping_parameters(theta, order=2):
     k : scalar
         optimal value for g in the g-h-k filter
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.gh import GHFilter, critical_damping_parameters
 
         g,h = critical_damping_parameters(0.3)
         critical_filter = GHFilter(0, 0, 1, g, h)
 
-    **References**
+    References
+    ----------
 
     Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.
@@ -841,7 +876,8 @@ def benedict_bornder_constants(g, critical=False):
     "nearly" critically damp it; ringing will be reduced, but not entirely
     eliminated at the cost of reduced performance.
 
-    **Parameters**
+    Parameters
+    ----------
 
     g : float
         scaling factor g for the filter
@@ -849,7 +885,8 @@ def benedict_bornder_constants(g, critical=False):
     critical : boolean, default False
         Attempts to critically damp the filter.
 
-    **Returns**
+    Returns
+    -------
 
     g : float
         scaling factor g (same as the g that was passed in)
@@ -857,13 +894,17 @@ def benedict_bornder_constants(g, critical=False):
     h : float
         scaling factor h that minimizes the transient errors
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.gh import GHFilter, benedict_bornder_constants
         g, h = benedict_bornder_constants(.855)
         f = GHFilter(0, 0, 1, g, h)
 
-    **References**
+    References
+    ----------
 
     Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.

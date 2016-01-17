@@ -27,17 +27,22 @@ def residual_resample(weights):
     resample any remaining using a standard resampling algorithm [1]
 
 
-    **Parameters**
+    Parameters
+    ----------
+
     weights : list-like of float
         list of weights as floats
 
-    **Returns**
+    Returns
+    -------
 
     indexes : ndarray of ints
         array of indexes into the weights defining the resample. i.e. the
         index of the zeroth resample is indexes[0], etc.
 
-    **References**
+    References
+    ----------
+
     .. [1] J. S. Liu and R. Chen. Sequential Monte Carlo methods for dynamic
        systems. Journal of the American Statistical Association,
        93(443):1032–1044, 1998.
@@ -75,11 +80,13 @@ def stratified_resample(weights):
     divisions, and then selects one particle randomly from each division. This
     guarantees that each sample is between 0 and 2/N apart.
 
-    **Parameters**
+    Parameters
+    ----------
     weights : list-like of float
         list of weights as floats
 
-    **Returns**
+    Returns
+    -------
 
     indexes : ndarray of ints
         array of indexes into the weights defining the resample. i.e. the
@@ -109,11 +116,13 @@ def systematic_resample(weights):
     offset is used to to choose where to sample from for all divisions. This
     guarantees that every sample is exactly 1/N apart.
 
-    **Parameters**
+    Parameters
+    ----------
     weights : list-like of float
         list of weights as floats
 
-    **Returns**
+    Returns
+    -------
 
     indexes : ndarray of ints
         array of indexes into the weights defining the resample. i.e. the
@@ -136,7 +145,6 @@ def systematic_resample(weights):
     return indexes
 
 
-
 def multinomial_resample(weights):
     """ This is the naive form of roulette sampling where we compute the
     cumulative sum of the weights and then use binary search to select the
@@ -145,11 +153,14 @@ def multinomial_resample(weights):
     reason it is popular in blogs and online courses so I included it for
     reference.
 
-   **Parameters**
+   Parameters
+   ----------
+
     weights : list-like of float
         list of weights as floats
 
-    **Returns**
+    Returns
+    -------
 
     indexes : ndarray of ints
         array of indexes into the weights defining the resample. i.e. the

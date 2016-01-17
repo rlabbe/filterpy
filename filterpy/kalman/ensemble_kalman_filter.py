@@ -37,7 +37,8 @@ class EnsembleKalmanFilter(object):
     due to Crassidis and Junkins [1]. It works with both linear and nonlinear
     systems.
 
-    **References**
+    References
+    ----------
 
     - [1] John L Crassidis and John L. Junkins. "Optimal Estimation of
       Dynamic Systems. CRC Press, second edition. 2012. pp, 257-9.
@@ -48,7 +49,8 @@ class EnsembleKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : np.array(dim_z)
             state mean
@@ -75,9 +77,10 @@ class EnsembleKalmanFilter(object):
             State transition function. May be linear or nonlinear. Projects
             state x into the next time period. Returns the projected state x.
 
-        **Example**
+        Examples
+        --------
 
-        .. code::
+        .. code-block:: Python
 
             def hx(x):
                return np.array([x[0]])
@@ -124,7 +127,8 @@ class EnsembleKalmanFilter(object):
         covariance. Only need to call this if you are using the filter
         to filter more than one set of data; this is called by __init__
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : np.array(dim_z)
             state mean
@@ -144,7 +148,8 @@ class EnsembleKalmanFilter(object):
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this update.

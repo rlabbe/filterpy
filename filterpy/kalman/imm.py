@@ -24,8 +24,8 @@ from numpy import dot, zeros
 class IMMEstimator(object):
     """ Implements an Interacting Multiple-Model (IMM) estimator.
 
-
-    **References**
+    References
+    ----------
 
     Bar-Shalom, Y., Li, X-R., and Kirubarajan, T. "Estimation with
     Application to Tracking and Navigation". Wiley-Interscience, 2001.
@@ -39,7 +39,8 @@ class IMMEstimator(object):
 
     def __init__(self, filters, mu, M):
         """"
-        **Parameters**
+        Parameters
+        ----------
 
         filters : (N,) array_like of KalmanFilter objects
             List of N filters. filters[i] is the ith Kalman filter in the
@@ -78,7 +79,8 @@ class IMMEstimator(object):
         Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this update.

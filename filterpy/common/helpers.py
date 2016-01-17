@@ -37,7 +37,8 @@ def dotn(*args):
 def runge_kutta4(y, x, dx, f):
     """computes 4th order Runge-Kutta for dy/dx.
 
-    **Parameters**
+    Parameters
+    ----------
 
     y : scalar
         Initial/current value for y

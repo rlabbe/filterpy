@@ -29,10 +29,10 @@ class FadingKalmanFilter(object):
 
     def __init__(self, alpha, dim_x, dim_z, dim_u=0):
         """ Create a Kalman filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below will
-        not give you a functional filter.
+        various state variables to reasonable values; the defaults below will not give you a functional filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         alpha : float, >= 1
             alpha controls how much you want the filter to forget past
@@ -55,7 +55,7 @@ class FadingKalmanFilter(object):
             Default value of 0 indicates it is not used.
 
 
-        **Instance Variables**
+        **Attributes**
 
         You will have to assign reasonable values to all of these before
         running the filter. All must have dtype of float
@@ -117,7 +117,8 @@ class FadingKalmanFilter(object):
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this update.
@@ -167,7 +168,8 @@ class FadingKalmanFilter(object):
     def predict(self, u=0):
         """ Predict next position.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
@@ -184,7 +186,8 @@ class FadingKalmanFilter(object):
     def batch_filter(self, zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
-        **Parameters**
+        Parameters
+        ----------
 
         zs : list-like
             list of measurements at each time step `self.dt` Missing
@@ -199,7 +202,8 @@ class FadingKalmanFilter(object):
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
-        **Returns**
+        Returns
+        -------
 
         means: np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry
@@ -258,12 +262,14 @@ class FadingKalmanFilter(object):
         """ Predicts the next state of the filter and returns it. Does not
         alter the state of the filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             optional control input
 
-        **Returns**
+        Returns
+        -------
 
         (x, P)
             State vector and covariance array of the prediction.
@@ -284,12 +290,14 @@ class FadingKalmanFilter(object):
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : np.array
             kalman state vector
 
-        **Returns**
+        Returns
+        -------
 
         z : np.array
             measurement corresponding to the given state

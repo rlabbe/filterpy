@@ -165,7 +165,7 @@ filterpy.kalman
 
 The classes in this submodule implement the various Kalman filters. There is
 also support for smoother functions. The smoothers are methods of the classes.
-For example, the KalmanFilter class contains rts_smoother. to perform 
+For example, the KalmanFilter class contains rts_smoother to perform 
 Rauch-Tung-Striebal smoothing. 
    
   
@@ -202,9 +202,7 @@ These modules are used to implement the Unscented Kalman filter.
    
    kalman/UnscentedKalmanFilter
    kalman/unscented_transform
-   kalman/MerweScaledSigmaPoints
-   kalman/JulierSigmaPoints
-
+ 
 Ensemble Kalman Filter
 +++++++++++++++++++++++
 .. toctree::

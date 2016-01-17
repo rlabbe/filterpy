@@ -70,9 +70,9 @@ def update(likelihood, prior):
         Returns array representing the posterior.
 
 
-    Example
-    -------
-    .. code::
+    Examples
+    --------
+    .. code-block:: Python
 
         # self driving car. Sensor returns values that can be equated to positions
         # on the road. A real likelihood compuation would be much more complicated
@@ -113,9 +113,9 @@ def predict(pdf, offset, kernel, mode='wrap', cval=0.):
     If `mode='constant'`, or any other value the pdf is shifted, with `cval`
     used to fill in missing elements.
 
-    Example
-    -------
-    .. code::
+    Examples
+    --------
+    .. code-block:: Python
 
         belief = [.05, .05, .05, .05, .55, .05, .05, .05, .05, .05]
         prior = predict(belief, offset=2, kernel=[.1, .8, .1])

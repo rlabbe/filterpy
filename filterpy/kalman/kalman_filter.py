@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Copyright 2015 Roger R Labbe Jr.
+"""Copyright 2014-2016 Roger R Labbe Jr.
 
 FilterPy library.
 http://github.com/rlabbe/filterpy
@@ -38,8 +38,8 @@ class KalmanFilter(object):
     allows the linear algebra to work, but are the wrong shape for the problem
     you are trying to solve.
 
-    **Attributes**
-
+    Attributes
+    ----------
     x : numpy.array(dim_x, 1)
         State estimate vector
 
@@ -61,8 +61,8 @@ class KalmanFilter(object):
 
     You may read the following attributes.
 
-    **Readable Attributes**
-
+    Attributes
+    ----------
     y : numpy.array
         Residual of the update step.
 
@@ -84,19 +84,16 @@ class KalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        **Parameters**
-
+        Parameters
+        ----------  
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
             dimensions, dim_x would be 4.
-
             This is used to set the default size of P, Q, and u
-
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
-
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
@@ -136,8 +133,8 @@ class KalmanFilter(object):
         Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
-
+        Parameters
+        ----------
         z : np.array
             measurement for this update. z can be a scalar if dim_z is 1,
             otherwise it must be a column vector.
@@ -216,8 +213,8 @@ class KalmanFilter(object):
 
         If z is None, nothing is changed.
 
-        **Parameters**
-
+        Parameters
+        ----------
         z : np.array
             measurement for this update.
 
@@ -228,7 +225,6 @@ class KalmanFilter(object):
         H : np.array,  or None
             Optionally provide H to override the measurement function for this
             one call, otherwise  self.H will be used.
-
         """
 
         if z is None:
@@ -384,7 +380,8 @@ class KalmanFilter(object):
         """ Predict next position using the Kalman filter state propagation
         equations.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
@@ -422,7 +419,8 @@ class KalmanFilter(object):
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None, Rs=None, Bs=None, us=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
-        **Parameters**
+        Parameters
+        ----------
 
         zs : list-like
             list of measurements at each time step `self.dt` Missing
@@ -467,7 +465,8 @@ class KalmanFilter(object):
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
-        **Returns**
+        Returns
+        -------
 
         means: np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry
@@ -487,15 +486,18 @@ class KalmanFilter(object):
             array of the covariances for each time step after the prediction.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
 
-        **Example**
+        Examples
+        --------
 
-        zs = [t + random.randn()*4 for t in range (40)]
-        Fs = [kf.F for t in range (40)]
-        Hs = [kf.H for t in range (40)]
+        .. code-block:: Python
 
-        (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
-                                          Bs=None, us=None, update_first=False)
-        (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+            zs = [t + random.randn()*4 for t in range (40)]
+            Fs = [kf.F for t in range (40)]
+            Hs = [kf.H for t in range (40)]
+
+            (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
+                                              Bs=None, us=None, update_first=False)
+            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
 
         """
 
@@ -563,7 +565,8 @@ class KalmanFilter(object):
         means and covariances computed by a Kalman filter. The usual input
         would come from the output of `KalmanFilter.batch_filter()`.
 
-        **Parameters**
+        Parameters
+        ----------
 
         Xs : numpy.array
            array of the means (state variable x) of the output of a Kalman
@@ -580,7 +583,8 @@ class KalmanFilter(object):
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
 
-        **Returns**
+        Returns
+        -------
 
         'x' : numpy.ndarray
            smoothed means
@@ -591,8 +595,10 @@ class KalmanFilter(object):
         'K' : numpy.ndarray
             smoother gain at each step
 
+        Examples
+        --------
 
-        **Example**::
+        .. code-block:: Python
 
             zs = [t + random.randn()*4 for t in range (40)]
 
@@ -630,12 +636,14 @@ class KalmanFilter(object):
         """ Predicts the next state of the filter and returns it. Does not
         alter the state of the filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             optional control input
 
-        **Returns**
+        Returns
+        -------
 
         (x, P)
             State vector and covariance array of the prediction.
@@ -656,12 +664,14 @@ class KalmanFilter(object):
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : np.array
             kalman state vector
 
-        **Returns**
+        Returns
+        -------
 
         z : np.array
             measurement corresponding to the given state
@@ -678,7 +688,8 @@ class KalmanFilter(object):
         filter's estimates. This formulation of the Fading memory filter
         (there are many) is due to Dan Simon [1].
 
-        ** References **
+        References
+        ----------
 
         [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
             p. 208-212. (2006)
@@ -780,7 +791,8 @@ def kf_update(x, P, z, R, H):
     Add a new measurement (z) to the Kalman filter. If z is None, nothing
     is changed.
 
-    **Parameters**
+    Parameters
+    ----------
 
     x : numpy.array(dim_x, 1)
         State estimate vector
@@ -797,7 +809,8 @@ def kf_update(x, P, z, R, H):
     H : numpy.array(dim_x, dim_x)
         Measurement function
 
-    **Returns**
+    Returns
+    -------
 
     x : numpy.array
         Posterior state estimate vector
@@ -852,7 +865,8 @@ def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
     """ Predict next position using the Kalman filter state propagation
     equations.
 
-    **Parameters**
+    Parameters
+    ----------
 
     x : numpy.array
         State estimate vector
@@ -881,7 +895,8 @@ def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
         filter's estimates. This formulation of the Fading memory filter
         (there are many) is due to Dan Simon
 
-    **Returns**
+    Returns
+    -------
 
     x : numpy.array
         Prior state estimate vector
@@ -900,7 +915,8 @@ def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
 def kf_batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False):
     """ Batch processes a sequences of measurements.
 
-    **Parameters**
+    Parameters
+    ----------
 
     zs : list-like
         list of measurements at each time step. Missing measurements must be
@@ -941,7 +957,8 @@ def kf_batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=Fal
         predict, or predict followed by update. Default is predict->update.
 
 
-    **Returns**
+    Returns
+    -------
 
     means: np.array((n,dim_x,1))
         array of the state for each time step after the update. Each entry
@@ -961,7 +978,8 @@ def kf_batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=Fal
         array of the covariances for each time step after the prediction.
         In other words `covariance[k,:,:]` is the covariance at step `k`.
 
-    **Example**
+    Examples
+    --------
 
     zs = [t + random.randn()*4 for t in range (40)]
     Fs = [kf.F for t in range (40)]
@@ -1030,7 +1048,8 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     means and covariances computed by a Kalman filter. The usual input
     would come from the output of `KalmanFilter.batch_filter()`.
 
-    **Parameters**
+    Parameters
+    ----------
 
     Xs : numpy.array
        array of the means (state variable x) of the output of a Kalman
@@ -1047,7 +1066,8 @@ def rts_smoother(Xs, Ps, Fs, Qs):
         Process noise of the Kalman filter at each time step. Optional,
         if not provided the filter's self.Q will be used
 
-    **Returns**
+    Returns
+    -------
 
     'x' : numpy.ndarray
        smoothed means
@@ -1059,7 +1079,10 @@ def rts_smoother(Xs, Ps, Fs, Qs):
         smoother gain at each step
 
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         zs = [t + random.randn()*4 for t in range (40)]
 
