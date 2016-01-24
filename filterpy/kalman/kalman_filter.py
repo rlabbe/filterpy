@@ -85,7 +85,7 @@ class KalmanFilter(object):
         not give you a functional filter.
 
         Parameters
-        ----------  
+        ----------
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
             you are tracking the position and velocity of an object in two
@@ -199,8 +199,8 @@ class KalmanFilter(object):
         self._K = K
 
         # compute log likelihood
-        mean = np.array(dot(H, x)).flatten()
-        flatz = np.array(z).flatten()
+        mean = np.asarray(dot(H, x)).flatten()
+        flatz = np.asarray(z).flatten()
         self.log_likelihood = multivariate_normal.logpdf(
              flatz, mean, cov=S, allow_singular=True)
 
@@ -270,8 +270,8 @@ class KalmanFilter(object):
         self._K = K
 
         # compute log likelihood
-        mean = np.array(dot(H, x)).flatten()
-        flatz = np.array(z).flatten()
+        mean = np.asarray(dot(H, x)).flatten()
+        flatz = np.asarray(z).flatten()
 
         self.log_likelihood = multivariate_normal.logpdf(
              flatz, mean, cov=S, allow_singular=True)
@@ -786,28 +786,41 @@ class KalmanFilter(object):
 
 
 
-def kf_update(x, P, z, R, H):
+def update(x, P, z, R, H=None, return_all=False):
     """
     Add a new measurement (z) to the Kalman filter. If z is None, nothing
     is changed.
 
+    This can handle either the multidimensional or unidimensional case. If
+    all parameters are floats instead of arrays the filter will still work,
+    and return floats for x, P as the result.
+
+    update(1, 2, 1, 1, 1)  # univariate
+    update(x, P, 1
+
+
+
     Parameters
     ----------
 
-    x : numpy.array(dim_x, 1)
+    x : numpy.array(dim_x, 1), or float
         State estimate vector
 
-    P : numpy.array(dim_x, dim_x)
+    P : numpy.array(dim_x, dim_x), or float
         Covariance matrix
 
-    z : numpy.array
+    z : numpy.array(dim_z, 1), or float
         measurement for this update.
 
-    R : numpy.array(dim_z, dim_z)
+    R : numpy.array(dim_z, dim_z), or float
         Measurement noise matrix
 
-    H : numpy.array(dim_x, dim_x)
-        Measurement function
+    H : numpy.array(dim_x, dim_x), or float, optional
+        Measurement function. If not provided, a value of 1 is assumed.
+
+    return_all : bool, default False
+        If true, y, K, S, and log_likelihood are returned, otherwise
+        only x and P are returned.
 
     Returns
     -------
@@ -831,8 +844,27 @@ def kf_update(x, P, z, R, H):
         log likelihood of the measurement
     """
 
+
     if z is None:
-        return x, P, None, None, None, None
+        if return_all:
+            return x, P, None, None, None, None
+        else:
+            return x, P
+
+    if H is None:
+        H = np.array([1])
+
+    if np.isscalar(H):
+        H = np.array([H])
+
+    if not np.isscalar(x):
+        # handle special case: if z is in form [[z]] but x is not a column
+        # vector dimensions will not match
+        if x.ndim==1 and shape(z) == (1,1):
+            z = z[0]
+
+        if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
+            z = np.asarray([z])
 
     # error (residual) between measurement and prediction
     y = z - dot(H, x)
@@ -842,26 +874,38 @@ def kf_update(x, P, z, R, H):
 
 
     # map system uncertainty into kalman gain
-    K = dot3(P, H.T, linalg.inv(S))
+    try:
+        K = dot3(P, H.T, linalg.inv(S))
+    except:
+        K = dot3(P, H.T, 1/S)
+
 
     # predict new x with residual scaled by the kalman gain
     x = x + dot(K, y)
 
     # P = (I-KH)P(I-KH)' + KRK'
     KH = dot(K, H)
-    I_KH = np.eye(KH.shape[0]) - KH
+
+
+    try:
+        I_KH = np.eye(KH.shape[0]) - KH
+    except:
+        I_KH = np.array(1 - KH)
     P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
     # compute log likelihood
     mean = np.array(dot(H, x)).flatten()
-    flatz = np.array(z).flatten()
+    flatz = np.asarray(z).flatten()
     log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S, allow_singular=True)
 
-    return x, P, y, K, S, log_likelihood
+    if return_all:
+        return x, P, y, K, S, log_likelihood
+    else:
+        return x, P
 
 
 
-def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
+def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
     """ Predict next position using the Kalman filter state propagation
     equations.
 
@@ -905,6 +949,8 @@ def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
         Prior covariance matrix
     """
 
+    if np.isscalar(F):
+        F = np.array(F)
     x = dot(F, x) + dot(B, u)
     P = (alpha * alpha) * dot3(F, P, F.T) + Q
 
@@ -912,7 +958,7 @@ def kf_predict(x, P, F, Q, u=0, B=0, alpha=1.):
 
 
 
-def kf_batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False):
+def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False):
     """ Batch processes a sequences of measurements.
 
     Parameters
@@ -1021,21 +1067,21 @@ def kf_batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=Fal
     if update_first:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
-            x, P, _, _, _, _ = kf_update(x, P, z, R=R, H=H)
+            x, P = update(x, P, z, R=R, H=H)
             means[i,:]         = x
             covariances[i,:,:] = P
 
-            x, P = kf_predict(x, P, u=u, B=B, F=F, Q=Q)
+            x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
             means_p[i,:]         = x
             covariances_p[i,:,:] = P
     else:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
-            x, P = kf_predict(x, P, u=u, B=B, F=F, Q=Q)
+            x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
             means_p[i,:]         = x
             covariances_p[i,:,:] = P
 
-            x, P, _, _, _, _ = kf_update(x, P, z, R=R, H=H)
+            x, P  = update(x, P, z, R=R, H=H)
             means[i,:]         = x
             covariances[i,:,:] = P
 

@@ -1,5 +1,13 @@
-Version 0.1.10
-==============
+Version 0.1.2
+=============
+
+Modified the update() and predict() functions to work in the
+univariate case. You can pass int/floats into the equations
+and get floats back.
+
+
+Version 0.1.1
+=============
 
 * Added discrete_bayes module, which supports discrete Bayesian filtering.
 

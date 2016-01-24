@@ -308,10 +308,10 @@ def test_procedure_form():
         pos += 100
 
         # perform kalman filtering
-        x, P = kf_predict(x, P, F, Q)
+        x, P = predict(x, P, F, Q)
         kf.predict()
         assert norm(x - kf.x) < 1.e-12
-        x, P, _, _, _, _ = kf_update(x, P, z, R, H)
+        x, P, _, _, _, _ = update(x, P, z, R, H, True)
         kf.update(z)
         assert norm(x - kf.x) < 1.e-12
 
@@ -359,7 +359,7 @@ def test_procedural_batch_filter():
 
     n = len(zs)
     # test both list of matrices, and single matrix forms
-    mp, cp, _, _ = kf_batch_filter(x, P, zs, F, Q, [H]*n, R)
+    mp, cp, _, _ = batch_filter(x, P, zs, F, Q, [H]*n, R)
 
     for x1, x2 in zip(m, mp):
         assert abs(sum(sum(x1))) - abs(sum(sum(x2))) < 1.e-12
@@ -389,8 +389,8 @@ def proc_form():
         pos += 100
 
         # perform kalman filtering
-        x, P = kf_predict(x, P, F, Q)
-        x, P, _ = kf_update(z, R, x, P, H)
+        x, P = predict(x, P, F, Q)
+        x, P, _ = update(z, R, x, P, H)
 
 
 def class_form():

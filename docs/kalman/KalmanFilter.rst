@@ -1,5 +1,5 @@
-Kalman Filter
-=============
+KalmanFilter
+============
 
 Implements a linear Kalman filter. For now the best documentation
 is my free book Kalman and Bayesian Filters in Python [1]_
@@ -180,6 +180,21 @@ while some_condition_is_true:
     do_something_with_estimate (f.x)
 
 
+Procedural Form
+===============
+
+This module also contains stand alone functions to peform Kalman filtering.
+Use these if you are not a fan of objects.
+
+**Example**
+
+.. code::
+
+    while True:
+        z, R = read_sensor()
+        x, P = predict(x, P, F, Q)
+        x, P = update(x, P, z, R, H)    
+    
 **References**
 
 
@@ -206,3 +221,10 @@ Kalman filter
     :members:
 
     .. automethod:: __init__
+
+
+.. autofunction:: update
+.. autofunction:: predict
+.. autofunction:: batch_filter
+
+
