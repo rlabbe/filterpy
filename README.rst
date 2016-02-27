@@ -5,6 +5,13 @@ FilterPy - Kalman filters and other optimal and non-optimal estimation filters i
         :target: https://pypi.python.org/pypi/filterpy
 
 
+.. image:: https://anaconda.org/rlabbe/filterpy/badges/installer/conda.svg   
+       :target: https://conda.anaconda.org/rlabbe
+
+
+.. image:: https://anaconda.org/rlabbe/filterpy/badges/version.svg   
+       :target: https://anaconda.org/rlabbe/filterpy
+
 This library provides Kalman filtering and various related optimal and
 non-optimal filtering software written in Python. It contains Kalman
 filters, Extended Kalman filters, Unscented Kalman filters, Kalman
@@ -51,6 +58,10 @@ version, however.
 
 Installation
 ------------
+
+The most general installation is just to use pip, which should come with
+any modern Python distribution.
+
 .. image:: https://img.shields.io/pypi/v/filterpy.svg
         :target: https://pypi.python.org/pypi/filterpy
         
@@ -66,16 +77,32 @@ If you prefer to download the source yourself
     git clone http://github.com/rlabbe/filterpy
     python setup.py install
 
+If you use Anaconda, you can install from a conda channel. I just (Feb 2016)
+added this capability, it's quite possible it is not working yet. Please
+let me know if you run into problems.
+
+          
+.. image:: https://anaconda.org/rlabbe/filterpy/badges/installer/conda.svg   
+       :target: https://conda.anaconda.org/rlabbe
+      
+::
+
+    conda install -c rlabbe filterpy
+    
+    
 And, if you want to install from the bleeding edge git version
 
 ::
 
     pip install git+https://github.com/rlabbe/filterpy.git
 
-Note: at the moment github will probably be much more 'bleeding edge' than
-the pip install. I need to formalize this into a dev and stable path, but
-have yet to do so.
+Note: I make no guarantees that everything works if you install from here.
+I'm the only developer, and so I don't worry about dev/release branches and
+the like. Unless I fix a bug for you and tell you to get this version because
+I haven't made a new release yet, I strongly advise not installing from git.
 
+
+    
 
 Basic use
 ---------
@@ -232,6 +259,7 @@ and remove from trunk. Someone will have to tackle this on a rainy day.
 
 License
 -------
+.. image:: https://anaconda.org/rlabbe/filterpy/badges/license.svg   :target: https://anaconda.org/rlabbe/filterpy
 
 The MIT License (MIT)
 
