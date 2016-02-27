@@ -11,3 +11,10 @@ _static
 _templatesq
 quadrature.py
 .settings/
+.cache/
+win-32/
+win-64/
+linux-32/
+linux-64/
+osx-64/
+
