@@ -84,7 +84,7 @@ class ExtendedKalmanFilter(object):
             variable.
 
         hx_args : tuple, optional, default (,)
-            arguments to be passed into HJacobian after the required state
+            arguments to be passed into Hx after the required state
             variable.
 
         u : np.array or scalar
