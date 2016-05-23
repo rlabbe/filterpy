@@ -17,13 +17,13 @@ import sys
 import os
 
 import mock
- 
+
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.linalg', 'numpy.linalg', 'matplotlib.pyplot',
                 'numpy.random', 'scipy.sparse', 'scipy.sparse.linalg',
                 'scipy.stats', 'matplotlib.patches', 'scipy.ndimage.filters',
-                'scipy.ndimage.interpolation']
-                
+                'scipy.ndimage.interpolation', 'scipy.ndimage']
+
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
@@ -32,7 +32,8 @@ for mod_name in MOCK_MODULES:
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../filterpy'))
+#sys.path.insert(0, os.path.abspath('../filterpy'))
+sys.path.insert(0, os.path.abspath('../'))
 
 from filterpy import *
 import filterpy
@@ -53,7 +54,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc'
+    'sphinx.ext.autodoc',
+    'numpydoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

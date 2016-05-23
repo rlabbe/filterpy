@@ -468,21 +468,21 @@ class KalmanFilter(object):
         Returns
         -------
 
-        means: np.array((n,dim_x,1))
+        means : np.array((n,dim_x,1))
             array of the state for each time step after the update. Each entry
             is an np.array. In other words `means[k,:]` is the state at step
             `k`.
 
-        covariance: np.array((n,dim_x,dim_x))
+        covariance : np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
 
-        means_predictions: np.array((n,dim_x,1))
+        means_predictions : np.array((n,dim_x,1))
             array of the state for each time step after the predictions. Each
             entry is an np.array. In other words `means[k,:]` is the state at
             step `k`.
 
-        covariance_predictions: np.array((n,dim_x,dim_x))
+        covariance_predictions : np.array((n,dim_x,dim_x))
             array of the covariances for each time step after the prediction.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
 
@@ -645,7 +645,7 @@ class KalmanFilter(object):
         Returns
         -------
 
-        (x, P)
+        (x, P) : tuple
             State vector and covariance array of the prediction.
         """
 
@@ -1006,34 +1006,36 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
     Returns
     -------
 
-    means: np.array((n,dim_x,1))
+    means : np.array((n,dim_x,1))
         array of the state for each time step after the update. Each entry
         is an np.array. In other words `means[k,:]` is the state at step
         `k`.
 
-    covariance: np.array((n,dim_x,dim_x))
+    covariance : np.array((n,dim_x,dim_x))
         array of the covariances for each time step after the update.
         In other words `covariance[k,:,:]` is the covariance at step `k`.
 
-    means_predictions: np.array((n,dim_x,1))
+    means_predictions : np.array((n,dim_x,1))
         array of the state for each time step after the predictions. Each
         entry is an np.array. In other words `means[k,:]` is the state at
         step `k`.
 
-    covariance_predictions: np.array((n,dim_x,dim_x))
+    covariance_predictions : np.array((n,dim_x,dim_x))
         array of the covariances for each time step after the prediction.
         In other words `covariance[k,:,:]` is the covariance at step `k`.
 
     Examples
     --------
 
-    zs = [t + random.randn()*4 for t in range (40)]
-    Fs = [kf.F for t in range (40)]
-    Hs = [kf.H for t in range (40)]
+    .. code-block:: Python
 
-    (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
-                                      Bs=None, us=None, update_first=False)
-    (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+        zs = [t + random.randn()*4 for t in range (40)]
+        Fs = [kf.F for t in range (40)]
+        Hs = [kf.H for t in range (40)]
+
+        (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
+                                          Bs=None, us=None, update_first=False)
+        (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
 
     """
 
