@@ -22,7 +22,7 @@ from filterpy.kalman import unscented_transform
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
-
+from scipy.stats import multivariate_normal
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -56,12 +56,17 @@ class UnscentedKalmanFilter(object):
     Readable Attributes
     -------------------
 
-    xp : numpy.array(dim_x)
-        predicted state (result of predict())
+    x : numpy.array(dim_x)
+        predicted/updated state (result of predict()/update())
 
-    Pp : numpy.array(dim_x, dim_x)
-        predicted covariance matrix (result of predict())
+    P : numpy.array(dim_x, dim_x)
+        predicted/updated covariance matrix (result of predict()/update())
 
+    likelihood : scalar
+        Likelihood of last measurement update.
+
+    log_likelihood : scalar
+        Log likelihood of last measurement update.
 
     References
     ----------
@@ -214,6 +219,7 @@ class UnscentedKalmanFilter(object):
         self.points_fn = points
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
+        self.log_likelihood = 0.0
 
         if sqrt_fn is None:
             self.msqrt = cholesky
@@ -340,7 +346,12 @@ class UnscentedKalmanFilter(object):
         y = self.residual_z(z, zp)   #residual
         self.x = self.x + dot(K, y)
         self.P = self.P - dot3(K, Pz, K.T)
+        self.log_likelihood = multivariate_normal.logpdf(
+            np.zeros((len(y))), y, Pxz+Pz, allow_singular=True)
 
+    @property
+    def likelihood(self):
+        return math.exp(self.log_likelihood)
 
     def batch_filter(self, zs, Rs=None, residual=None, UT=None):
         """ Performs the UKF filter over the list of measurement in `zs`.
