@@ -29,6 +29,32 @@ from filterpy.common import setter, setter_scalar, dot3
 
 class SquareRootKalmanFilter(object):
 
+    """
+    Attributes
+    ----------
+
+    x : ndarray (dim_x, 1), default = [0,0,0...0]
+        state of the filter
+
+    P : ndarray (dim_x, dim_x), default identity matrix
+        covariance matrix
+
+    Q : ndarray (dim_x, dim_x), default identity matrix
+        Process uncertainty matrix
+
+    R : ndarray (dim_z, dim_z), default identity matrix
+        measurement uncertainty
+
+    H : ndarray (dim_z, dim_x)
+        measurement function
+
+    F : ndarray (dim_x, dim_x)
+        state transistion matrix
+
+    B : ndarray (dim_x, dim_u), default 0
+        control transition matrix
+    """
+
     def __init__(self, dim_x, dim_z, dim_u=0):
         """ Create a Kalman filter which uses a square root implementation.
         This uses the square root of the state covariance matrix, which doubles
@@ -48,7 +74,8 @@ class SquareRootKalmanFilter(object):
         reasonable values; the defaults below will not give you a functional
         filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
@@ -66,34 +93,9 @@ class SquareRootKalmanFilter(object):
             Default value of 0 indicates it is not used.
 
 
-        **Instance Variables:**
 
-        You will have to assign reasonable values to all of these before
-        running the filter. All must have dtype of float
-
-        x : ndarray (dim_x, 1), default = [0,0,0...0]
-            state of the filter
-
-        P : ndarray (dim_x, dim_x), default identity matrix
-            covariance matrix
-
-        Q : ndarray (dim_x, dim_x), default identity matrix
-            Process uncertainty matrix
-
-        R : ndarray (dim_z, dim_z), default identity matrix
-            measurement uncertainty
-
-        H : ndarray (dim_z, dim_x)
-            measurement function
-
-        F : ndarray (dim_x, dim_x)
-            state transistion matrix
-
-        B : ndarray (dim_x, dim_u), default 0
-            control transition matrix
-
-
-        **References**
+        References
+        ----------
 
         [1] Robert Grover Brown. Introduction to Random Signals and Applied
             Kalman Filtering. Wiley and sons, 2012.
@@ -133,7 +135,8 @@ class SquareRootKalmanFilter(object):
         Add a new measurement (z) to the kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this update.
@@ -178,7 +181,8 @@ class SquareRootKalmanFilter(object):
     def predict(self, u=0):
         """ Predict next position.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
@@ -204,12 +208,14 @@ class SquareRootKalmanFilter(object):
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
 
-        **Parameters**
+        Parameters
+        ----------
 
         x : np.array
             kalman state vector
 
-        **Returns**
+        Returns
+        -------
 
         z : np.array
             measurement corresponding to the given state

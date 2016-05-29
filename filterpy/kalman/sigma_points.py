@@ -28,7 +28,8 @@ class MerweScaledSigmaPoints(object):
 
         Unless you know better, this should be your default choice.
 
-        **Parameters**
+        Parameters
+        ----------
 
         n : int
             Dimensionality of the state. 2n+1 weights will be generated.
@@ -67,7 +68,8 @@ class MerweScaledSigmaPoints(object):
             subtraction, such as angles (359-1 degreees is 2, not 358). x and y
             are state vectors, not scalars.
 
-        **References**
+        References
+        ----------
 
         .. [1] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
                Inference in Dynamic State-Space Models" (Doctoral dissertation)
@@ -97,7 +99,8 @@ class MerweScaledSigmaPoints(object):
         sigma_points (5, 9, 2) # mean 5, covariance 9
         sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
 
-        **Parameters**
+        Parameters
+        ----------
 
         X An array-like object of the means of length n
             Can be a scalar if 1D.
@@ -106,7 +109,8 @@ class MerweScaledSigmaPoints(object):
         P : scalar, or np.array
            Covariance of the filter. If scalar, is treated as eye(n)*P.
 
-        **Returns**
+        Returns
+        -------
 
         sigmas : np.array, of size (n, 2n+1)
             Two dimensional array of sigma points. Each column contains all of
@@ -125,6 +129,8 @@ class MerweScaledSigmaPoints(object):
 
         if  np.isscalar(P):
             P = np.eye(n)*P
+        else:
+            P = np.asarray(P)
 
         lambda_ = self.alpha**2 * (n + self.kappa) - n
         U = self.sqrt((lambda_ + n)*P)
@@ -141,7 +147,8 @@ class MerweScaledSigmaPoints(object):
     def weights(self):
         """ Computes the weights for the scaled unscented Kalman filter.
 
-        **Returns**
+        Returns
+        -------
 
         Wm : ndarray[2n+1]
             weights for mean
@@ -165,13 +172,12 @@ class MerweScaledSigmaPoints(object):
 class JulierSigmaPoints(object):
 
     def __init__(self,n,  kappa, sqrt_method=None, subtract=None):
-        """
-        Generates sigma points and weights according to Simon J. Julier
+        """v Generates sigma points and weights according to Simon J. Julier
         and Jeffery K. Uhlmann's original paper [1]. It parametizes the sigma
         points using kappa.
 
-        **Parameters**
-
+        Parameters
+        ----------
 
         n : int
             Dimensionality of the state. 2n+1 weights will be generated.
@@ -198,13 +204,13 @@ class JulierSigmaPoints(object):
             reasons it returns a lower triangular matrix. The SciPy version
             does the right thing.
 
-
         subtract : callable (x, y), optional
             Function that computes the difference between x and y.
             You will have to supply this if your state variable cannot support
             subtraction, such as angles (359-1 degreees is 2, not 358). x and y
 
-    **References**
+    References
+    ----------
 
     .. [1] Julier, Simon J.; Uhlmann, Jeffrey "A New Extension of the Kalman
         Filter to Nonlinear Systems". Proc. SPIE 3068, Signal Processing,
@@ -233,7 +239,8 @@ class JulierSigmaPoints(object):
         sigma_points (5, 9, 2) # mean 5, covariance 9
         sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
 
-        **Parameters**
+        Parameters
+        ----------
 
         X : array-like object of the means of length n
             Can be a scalar if 1D.
@@ -245,7 +252,8 @@ class JulierSigmaPoints(object):
         kappa : float
             Scaling factor.
 
-        **Returns**
+        Returns
+        -------
 
         sigmas : np.array, of size (n, 2n+1)
             2D array of sigma points :math:`\chi`. Each column contains all of
@@ -290,7 +298,8 @@ class JulierSigmaPoints(object):
         """ Computes the weights for the unscented Kalman filter. In this
         formulatyion the weights for the mean and covariance are the same.
 
-        **Returns**
+        Returns
+        -------s
 
         Wm : ndarray[2n+1]
             weights for mean

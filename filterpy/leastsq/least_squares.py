@@ -30,7 +30,10 @@ class LeastSquaresFilter(object):
 
     It is implemented to be directly callable like a function. See examples.
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.leastsq import LeastSquaresFilter
 
@@ -42,7 +45,8 @@ class LeastSquaresFilter(object):
             print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
 
 
-    **Member Variables**
+    Attributes
+    ----------
 
     n : int
         step in the recursion. 0 prior to first call, 1 after the first call,
@@ -56,8 +60,8 @@ class LeastSquaresFilter(object):
         estimate(s) of the output. 'd' denotes derivative, so 'dx' is the first
         derivative of x, 'ddx' is the second derivative.
 
-
-    **References**
+    References
+    ----------
 
     .. [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
           Approach." Third Edition. AIAA, 2009.
@@ -72,7 +76,8 @@ class LeastSquaresFilter(object):
     def __init__(self, dt, order, noise_sigma=0.):
         """ Least Squares filter of order 0 to 2.
 
-        **Parameters**
+        Parameters
+        ----------
 
         dt : float
            time step per update
@@ -150,7 +155,8 @@ class LeastSquaresFilter(object):
         """ Computes and returns the error and  standard deviation  of the
         filter at this time step.
 
-        **Returns**
+        Returns
+        -------
 
         error : np.array size 1xorder+1
         std : np.array size 1xorder+1

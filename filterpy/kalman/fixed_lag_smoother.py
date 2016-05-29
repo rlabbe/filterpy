@@ -42,7 +42,10 @@ class FixedLagSmoother(object):
     November 18, 2014.
 
 
-    **Example**::
+    Examples
+    --------
+
+    .. code-block:: Python
 
         from filterpy.kalman import FixedLagSmoother
         fls = FixedLagSmoother(dim_x=2, dim_z=1)
@@ -62,8 +65,8 @@ class FixedLagSmoother(object):
         zs = [...some measurements...]
         xhatsmooth, xhat = fls.smooth_batch(zs, N=4)
 
-
-    **References**
+    References
+    ----------
 
     Wikipedia http://en.wikipedia.org/wiki/Kalman_filter#Fixed-lag_smoother
 
@@ -81,7 +84,8 @@ class FixedLagSmoother(object):
         setting the various state variables to reasonable values; the defaults
         below will not give you a functional filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
@@ -142,7 +146,8 @@ class FixedLagSmoother(object):
         one data set; as data will be hopelessly intermingled. If you want
         to filter something else, create a new FixedLagSmoother object.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : ndarray or scalar
             measurement to be smoothed
@@ -220,7 +225,8 @@ class FixedLagSmoother(object):
         data. In particular, self.x is NOT modified. All date is returned
         by the function.
 
-        **Parameters**
+        Parameters
+        ----------
 
 
         zs : ndarray of measurements
@@ -236,7 +242,8 @@ class FixedLagSmoother(object):
             If provided, control input to the filter for each time step
 
 
-        **Returns**
+        Returns
+        -------
 
         (xhat_smooth, xhat) : ndarray, ndarray
 

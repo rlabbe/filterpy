@@ -22,7 +22,7 @@ from .ensemble_kalman_filter import *
 from .fading_memory import *
 from .fixed_lag_smoother import FixedLagSmoother
 from .kalman_filter import *
-from .imm import *
+from .IMM import *
 from .unscented_transform import unscented_transform
 from .information_filter import *
 from .mmae import *

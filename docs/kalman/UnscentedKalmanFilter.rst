@@ -27,7 +27,6 @@ This implements the unscented Kalman filter.
     .. automethod:: __init__
 
 
-
 --------
 
 

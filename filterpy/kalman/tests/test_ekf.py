@@ -67,6 +67,10 @@ rk.F = eye(3) + array ([[0, 1, 0],
 
 
 
+def fx(x, dt):
+    return np.dot(rk.F, x)
+
+
 rk.x = array([-10., 90., 1100.])
 rk.R *= 10
 rk.Q = array([[0, 0, 0],

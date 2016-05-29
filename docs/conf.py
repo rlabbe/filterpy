@@ -21,7 +21,8 @@ import mock
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.linalg', 'numpy.linalg', 'matplotlib.pyplot',
                 'numpy.random', 'scipy.sparse', 'scipy.sparse.linalg',
-                'scipy.stats', 'matplotlib.patches']
+                'scipy.stats', 'matplotlib.patches', 'scipy.ndimage.filters',
+                'scipy.ndimage.interpolation']
                 
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
@@ -48,6 +49,7 @@ import filterpy.kalman
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
+    'numpydoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
@@ -68,7 +70,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'FilterPy'
-copyright = '2015, Roger R. Labbe'
+copyright = '2014-2016, Roger R. Labbe'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,10 +97,10 @@ exclude_patterns = ['_build']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+#default_role = "autolink"
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = False
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
@@ -183,13 +185,13 @@ html_static_path = ['_static']
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-#html_show_copyright = True
+html_show_copyright = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the

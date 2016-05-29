@@ -14,7 +14,7 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from filterpy.common import norm_cdf
+from filterpy.stats import norm_cdf
 
 
 def test_norm_cdf():

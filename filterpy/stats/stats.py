@@ -40,7 +40,8 @@ def gaussian(x, mean, var):
     gaussian (1,2,3) is equivalent to scipy.stats.norm(2,math.sqrt(3)).pdf(1)
     It is quite a bit faster albeit much less flexible than the latter.
 
-    **Parameters**
+    Parameters
+    ----------
 
     x : scalar or array-like
         The value for which we compute the probability
@@ -51,16 +52,21 @@ def gaussian(x, mean, var):
     var : scalar
         Variance of the Gaussian
 
-    **Returns**
+    Returns
+    -------
 
     probability : float
         probability of x for the Gaussian (mean, var). E.g. 0.101 denotes
         10.1%.
 
-    **Examples**
+    Examples
+    --------
 
-    gaussian(8, 1, 2)
-    gaussian([8, 7, 9], 1, 2)
+    >>> gaussian(8, 1, 2)
+    1.3498566943461957e-06
+
+    >>> gaussian([8, 7, 9], 1, 2)
+    array([1.34985669e-06, 3.48132630e-05, 3.17455867e-08])
     """
 
     return (np.exp((-0.5*(np.asarray(x)-mean)**2)/var) /
@@ -94,10 +100,15 @@ def multivariate_gaussian(x, mu, cov):
     which is not available before version 0.14. You may either pass in a
     multivariate set of data:
 
+    .. code-block:: Python
+
        multivariate_gaussian (array([1,1]), array([3,4]), eye(2)*1.4)
        multivariate_gaussian (array([1,1,1]), array([3,4,5]), 1.4)
 
     or unidimensional data:
+
+    .. code-block:: Python
+
        multivariate_gaussian(1, 3, 1.4)
 
     In the multivariate case if cov is a scalar it is interpreted as eye(n)*cov
@@ -106,11 +117,15 @@ def multivariate_gaussian(x, mu, cov):
     faster than this function.
 
     equivalent calls:
-       multivariate_gaussian(1, 2, 3)
+
+    .. code-block:: Python
+
+      multivariate_gaussian(1, 2, 3)
        scipy.stats.multivariate_normal(2,3).pdf(1)
 
 
-    **Parameters**
+    Parameters
+    ----------
 
     x : float, or np.array-like
        Value to compute the probability for. May be a scalar if univariate,
@@ -127,7 +142,8 @@ def multivariate_gaussian(x, mu, cov):
        type that can be converted to an np.array (list, tuple, etc).np.array is
        best for speed.
 
-    **Returns**
+    Returns
+    -------
 
     probability : float
         probability for x for the Gaussian (mu,cov)
@@ -155,12 +171,16 @@ def multivariate_multiply(m1, c1, m2, c2):
     """ Multiplies the two multivariate Gaussians together and returns the
     results as the tuple (mean, covariance).
 
-    **example**
+    Examples
+    --------
 
-    m, c = multivariate_multiply([7.0, 2], [[1.0, 2.0], [2.0, 1.0]],
-                                 [3.2, 0], [[8.0, 1.1], [1.1,8.0]])
+    .. code-block:: Python
 
-    **Parameters**
+        m, c = multivariate_multiply([7.0, 2], [[1.0, 2.0], [2.0, 1.0]],
+                                     [3.2, 0], [[8.0, 1.1], [1.1,8.0]])
+
+    Parameters
+    ----------
 
     m1 : array-like
         Mean of first Gaussian. Must be convertable to an 1D array via
@@ -180,7 +200,8 @@ def multivariate_multiply(m1, c1, m2, c2):
         Mean of second Gaussian. Must be convertable to an 2D array via
         numpy.asarray().
 
-    **Returns**
+    Returns
+    -------
 
     m : ndarray
         mean of the result
@@ -209,7 +230,8 @@ def plot_discrete_cdf(xs, ys, ax=None, xlabel=None, ylabel=None,
     """Plots a normal distribution CDF with the given mean and variance.
     x-axis contains the mean, the y-axis shows the cumulative probability.
 
-    **Parameters**
+    Parameters
+    ----------
 
     xs : list-like of scalars
         x values corresponding to the values in `y`s. Can be `None`, in which
@@ -234,7 +256,8 @@ def plot_discrete_cdf(xs, ys, ax=None, xlabel=None, ylabel=None,
     label : str, optional
         label for the legend
 
-    **Returns**
+    Returns
+    -------
         axis of plot
     """
     if ax is None:
@@ -257,7 +280,8 @@ def plot_gaussian_cdf(mean=0., variance=1.,
     """Plots a normal distribution CDF with the given mean and variance.
     x-axis contains the mean, the y-axis shows the cumulative probability.
 
-    **Parameters**
+    Parameters
+    ----------
 
     mean : scalar, default 0.
         mean for the normal distribution.
@@ -281,7 +305,8 @@ def plot_gaussian_cdf(mean=0., variance=1.,
     label : str, optional
         label for the legend
 
-    **Returns**
+    Returns
+    -------
         axis of plot
     """
     if ax is None:
@@ -312,7 +337,8 @@ def plot_gaussian_pdf(mean=0., variance=1.,
     """Plots a normal distribution PDF with the given mean and variance.
     x-axis contains the mean, the y-axis shows the probability density.
 
-    **Parameters**
+    Parameters
+    ----------
 
     mean : scalar, default 0.
         mean for the normal distribution.
@@ -339,7 +365,8 @@ def plot_gaussian_pdf(mean=0., variance=1.,
     label : str, optional
         label for the legend
 
-    **Returns**
+    Returns
+    -------
         axis of plot
     """
 
@@ -362,8 +389,10 @@ def plot_gaussian_pdf(mean=0., variance=1.,
     if mean_line:
         plt.axvline(mean)
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
     return ax
 
 
@@ -381,7 +410,8 @@ def plot_gaussian(mean=0., variance=1.,
     Plots a normal distribution PDF with the given mean and variance.
     x-axis contains the mean, the y-axis shows the probability density.
 
-    **Parameters**
+    Parameters
+    ----------
 
     ax : matplotlib axes object, optional
         If provided, the axes to draw on, otherwise plt.gca() is used.
@@ -415,7 +445,8 @@ def covariance_ellipse(P, deviations=1):
     """ returns a tuple defining the ellipse representing the 2 dimensional
     covariance matrix P.
 
-    **Parameters**
+    Parameters
+    ----------
 
     P : nd.array shape (2,2)
        covariance matrix
@@ -524,7 +555,8 @@ def norm_cdf (x_range, mu, var=1, std=None):
     """ computes the probability that a Gaussian distribution lies
     within a range of values.
 
-    **Paramateters**
+    Parameters
+    ----------
 
     x_range : (float, float)
         tuple of range to compute probability for
@@ -533,13 +565,13 @@ def norm_cdf (x_range, mu, var=1, std=None):
         mean of the Gaussian
 
     var : float, optional
-        variance of the Gaussian. Ignored if std is provided
+        variance of the Gaussian. Ignored if `std` is provided
 
     std : float, optional
-       standard deviation of the Gaussian. This overrides the var parameter
+       standard deviation of the Gaussian. This overrides the `var` parameter
 
-
-    **Returns**
+    Returns
+    -------
 
     probability : float
         probability that Gaussian is within x_range. E.g. .1 means 10%.
@@ -634,13 +666,17 @@ def NESS(xs, est_xs, ps):
     then the mean of the NESS should be equal to or less than the dimension
     of x.
 
-    **Example**
+    Examples
+    --------
 
-    xs = ground_truth()
-    est_xs, ps, _, _ = kf.batch_filter(zs)
-    NESS(xs, est_xs, ps)
+    .. code-block: Python
 
-    **Parameters**
+        xs = ground_truth()
+        est_xs, ps, _, _ = kf.batch_filter(zs)
+        NESS(xs, est_xs, ps)
+
+    Parameters
+    ----------
 
     xs : list-like
         sequence of true values for the state x
@@ -651,7 +687,8 @@ def NESS(xs, est_xs, ps):
     ps : list-like
         sequence of covariance matrices from the estimator
 
-    **Returns**
+    Returns
+    -------
 
     ness : list of floats
        list of NESS computed for each estimate

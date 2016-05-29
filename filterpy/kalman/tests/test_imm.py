@@ -193,13 +193,14 @@ def test_imm():
         pass
     ca = KalmanFilter(6, 2)
     cano = KalmanFilter(6, 2)
+    dt2 = (dt**2)/2
     ca.F = np.array(
-        [[1, dt, dt**2/2, 0, 0, 0],
-         [0, 1, dt, 0, 0, 0],
-         [0, 0, 1, 0, 0, 0],
-         [0, 0, 0, 1, dt, dt**2/2],
-         [0, 0, 0, 0, 1, dt],
-         [0, 0, 0, 0, 0, 1]])
+        [[1, dt, dt2, 0, 0,  0],
+         [0, 1,  dt,  0, 0,  0],
+         [0, 0,   1,  0, 0,  0],
+         [0, 0,   0,  1, dt, dt2],
+         [0, 0,   0,  0,  1, dt],
+         [0, 0,   0,  0,  0,  1]])
     cano.F = ca.F.copy()
 
     ca.x = np.array([[2000., 0, 0, 10000, -15, 0]]).T
@@ -210,9 +211,9 @@ def test_imm():
     ca.R *= r**2
     cano.R *= r**2
     cano.Q *= 0
-    q = np.array([[.05, .125, .16666666666666666666666666667],
-         [.125, .333333333333333333333333333333333333, .5],
-         [.166666666666666666666666667, .5, 1]])*1.e-3
+    q = np.array([[.05, .125, 1/6],
+         [.125, 1/3, .5],
+         [1/6, .5, 1]])*1.e-3
 
     ca.Q[0:3, 0:3] = q
     ca.Q[3:6, 3:6] = q
@@ -223,9 +224,6 @@ def test_imm():
 
     filters = [ca, cano]
 
-    trans = np.array([[0.8, 0.2],
-                      [0.05, 0.95]])
-
     trans = np.array([[0.97, 0.03],
                       [0.03, 0.97]])
 
@@ -233,7 +231,7 @@ def test_imm():
 
     xs, probs = [], []
     cvxs, caxs = [], []
-    for i, z in enumerate(zs):
+    for i, z in enumerate(zs[0:10]):
         z = np.array([z]).T
         bank.update(z)
         #print(ca.likelihood, cano.likelihood)

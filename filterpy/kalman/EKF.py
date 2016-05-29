@@ -30,7 +30,8 @@ class ExtendedKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         dim_x : int
             Number of state variables for the Kalman filter. For example, if
@@ -63,7 +64,8 @@ class ExtendedKalmanFilter(object):
         """ Performs the predict/update innovation of the extended Kalman
         filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this step.
@@ -84,7 +86,7 @@ class ExtendedKalmanFilter(object):
             variable.
 
         hx_args : tuple, optional, default (,)
-            arguments to be passed into HJacobian after the required state
+            arguments to be passed into Hx after the required state
             variable.
 
         u : np.array or scalar
@@ -127,7 +129,8 @@ class ExtendedKalmanFilter(object):
                residual=np.subtract):
         """ Performs the update innovation of the extended Kalman filter.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this step.
@@ -207,7 +210,8 @@ class ExtendedKalmanFilter(object):
     def predict(self, u=0):
         """ Predict next position.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B

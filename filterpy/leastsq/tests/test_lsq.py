@@ -92,8 +92,8 @@ class LeastSquaresFilterOriginal(object):
         print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
 
 
-    Member Variables
-    ----------------
+    Attributes
+    ----------
 
     n : int
         step in the recursion. 0 prior to first call, 1 after the first call,

@@ -23,7 +23,8 @@ class MMAEFilterBank(object):
     likelihood that each filter is the correct one, and blends their state
     estimates weighted by their likelihood to produce the state estimate.
 
-    **Example**
+    Examples
+    --------
 
     ..code:
         ca = make_ca_filter(dt, noise_factor=0.6)
@@ -39,7 +40,8 @@ class MMAEFilterBank(object):
             bank.predict()
             bank.update(z)
 
-    **References**
+    References
+    ----------
 
     Zarchan and Musoff. "Fundamentals of Kalman filtering: A Practical
     Approach." AIAA, third edition.
@@ -50,7 +52,8 @@ class MMAEFilterBank(object):
     def __init__(self, filters, p, dim_x, H=None):
         """ Creates an fixed MMAE Estimator.
 
-        **Parameters**
+        Parameters
+        ----------
 
         filters : list of Kalman filters
             List of Kalman filters.
@@ -89,7 +92,8 @@ class MMAEFilterBank(object):
         """ Predict next position using the Kalman filter state propagation
         equations for each filter in the bank.
 
-        **Parameters**
+        Parameters
+        ----------
 
         u : np.array
             Optional control vector. If non-zero, it is multiplied by B
@@ -105,7 +109,8 @@ class MMAEFilterBank(object):
         Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
 
-        **Parameters**
+        Parameters
+        ----------
 
         z : np.array
             measurement for this update.
