@@ -126,7 +126,7 @@ def optimal_test():
     plt.plot(zs)
 
 
-def foo():
+def test_GHFilterOrder():
     def fx(x):
         return 2*x+1
 
@@ -140,7 +140,6 @@ def foo():
 
         assert abs(f1.x[0]-f2.x) < 1.e-18
 
-foo()
 
 if __name__ == "__main__":
     optimal_test()
@@ -148,5 +147,7 @@ if __name__ == "__main__":
     test_least_squares()
     test_1d_array()
     test_2d_array()
+
+    test_GHFilterOrder()
 
     print('all passed')
