@@ -597,7 +597,7 @@ def _is_inside_ellipse(x, y, ex, ey, orientation, width, height):
     return ((x-ex)*co - (y-ey)*so)**2/width**2 + \
            ((x-ex)*so + (y-ey)*co)**2/height**2 <= 1
 
-def _to_cov(x,n):
+def _to_cov(x, n):
     """ If x is a scalar, returns a covariance matrix generated from it
     as the identity matrix multiplied by x. The dimension will be nxn.
     If x is already a numpy array then it is returned unchanged.
@@ -608,7 +608,14 @@ def _to_cov(x,n):
             x = np.asarray(x)[0]
         return x
     except:
-        return np.eye(n) * x
+        cov = np.asarray(x)
+        try:
+            # asarray of a scalar returns an unsized object, so len will raise
+            # an exception
+            len(cov)
+            return cov
+        except:
+            return np.eye(n) * x
 
 
 def _do_plot_test():
@@ -704,14 +711,24 @@ def NESS(xs, est_xs, ps):
 
 if __name__ == '__main__':
 
-    ax = plot_gaussian_pdf(2, 3)
+    """ax = plot_gaussian_pdf(2, 3)
     plot_gaussian_cdf(2, 3, ax=ax)
     plt.show()
 
     ys =np.abs(np.random.randn(100))
     ys /= np.sum(ys)
-    plot_discrete_cdf(xs=None, ys=ys)
+    plot_discrete_cdf(xs=None, ys=ys)"""
 
+    mean=(0,0)
+
+    cov=[[1,.5],[.5,1]]
+    print("For list and np.array covariances:")
+    for covariance in (cov,np.asarray(cov)):
+        a = [[multivariate_gaussian((i,j),mean,covariance)
+              for i in (-1,0,1)]
+             for j in (-1,0,1)]
+        print(np.asarray(a))
+        print()
 
     #P1 = [[2, 1.9], [1.9, 2]]
     #plot_covariance_ellipse((10, 10), P1, facecolor='y', alpha=0.6)
