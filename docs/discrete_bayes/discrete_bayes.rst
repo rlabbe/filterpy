@@ -16,5 +16,3 @@ words go here
 -----
 
 .. autofunction:: predict
-
------
