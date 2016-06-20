@@ -1,11 +1,11 @@
 package:
   name: filterpy
-  version: "0.1.2"
+  version: "0.1.3"
 
 source:
-  fn: filterpy-0.1.2.tar.gz
-  url: https://pypi.python.org/packages/source/f/filterpy/filterpy-0.1.2.tar.gz
-  md5: 15941385b73ec4e6d72f306d1c5b4621
+  fn: filterpy-0.1.3.tar.gz
+  url: https://pypi.python.org/packages/source/f/filterpy/filterpy-0.1.3.tar.gz
+  md5: ba1e6fb84efaae3d21a73ba9fb563cab
 #  patches:
    # List any patch files here
    # - fix.patch

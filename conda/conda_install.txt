@@ -16,6 +16,7 @@ $ conda config --set anaconda_upload no
 
 $ cd ~/Dropbox/filterpy/conda
 $ edit meta.yaml, update version #
+$ conda skeleton pypi --version 0.1.2 filterpy
 $ conda build  .
 
 $ conda convert --platform all ~/anaconda3/conda-bld/linux-64/filterpy-0.1.2-0.tar.bz2
