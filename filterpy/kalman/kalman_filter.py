@@ -623,11 +623,11 @@ class KalmanFilter(object):
         x, P = Xs.copy(), Ps.copy()
 
         for k in range(n-2,-1,-1):
-            P_pred = dot3(Fs[k], P[k], Fs[k].T) + Qs[k]
+            P_pred = dot3(Fs[k+1], P[k], Fs[k+1].T) + Qs[k+1]
 
-            K[k]  = dot3(P[k], Fs[k].T, linalg.inv(P_pred))
-            x[k] += dot (K[k], x[k+1] - dot(Fs[k], x[k]))
-            P[k] += dot3 (K[k], P[k+1] - P_pred, K[k].T)
+            K[k]  = dot3(P[k], Fs[k+1].T, linalg.inv(P_pred))
+            x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
+            P[k] += dot3(K[k], P[k+1] - P_pred, K[k].T)
 
         return (x, P, K)
 
