@@ -56,12 +56,11 @@ class UnscentedKalmanFilter(object):
     Readable Attributes
     -------------------
 
-    xp : numpy.array(dim_x)
-        predicted state (result of predict())
+    K : numpy.array
+        Kalman gain
 
-    Pp : numpy.array(dim_x, dim_x)
-        predicted covariance matrix (result of predict())
-
+    y : numpy.array
+        innovation residual
 
     References
     ----------
