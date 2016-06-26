@@ -235,6 +235,49 @@ def test_linear_2d():
         print(smooth_x)
 
 
+
+def test_linear_1d():
+    """ should work like a linear KF if problem is linear """
+
+
+    def fx(x, dt):
+        F = np.array([[1., dt],
+                      [0,  1]], dtype=float)
+
+        return np.dot(F, x)
+
+    def hx(x):
+        return np.array([x[0]])
+
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(2, .1, 2., -1)
+    kf = UKF(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+
+
+    kf.x = np.array([1, 2])
+    kf.P = np.array([[1, 1.1],
+                     [1.1, 3]])
+    kf.R *= 0.05
+    kf.Q = np.array([[0., 0], [0., .001]])
+
+    z = np.array([2.])
+    kf.predict()
+    kf.update(z)
+
+    zs = []
+    for i in range(50):
+        z = np.array([i+randn()*0.1])
+        zs.append(z)
+
+        kf.predict()
+        kf.update(z)
+        print('K', kf.K.T)
+        print('x', kf.x)
+
+
+
+
 def test_batch_missing_data():
     """ batch filter should accept missing data with None in the measurements """
 
@@ -746,8 +789,8 @@ if __name__ == "__main__":
 
     DO_PLOT = True
 
-
-    test_batch_missing_data()
+    test_linear_1d()
+    #test_batch_missing_data()
 
     #test_linear_2d()
     #test_sigma_points_1D()

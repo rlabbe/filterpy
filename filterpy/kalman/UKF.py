@@ -336,10 +336,11 @@ class UnscentedKalmanFilter(object):
             dz =  self.residual_z(self.sigmas_h[i], zp)
             Pxz += self.Wc[i] * outer(dx, dz)
 
-        K = dot(Pxz, inv(Pz))   # Kalman gain
-        y = self.residual_z(z, zp)   #residual
-        self.x = self.x + dot(K, y)
-        self.P = self.P - dot3(K, Pz, K.T)
+        self.K = dot(Pxz, inv(Pz))        # Kalman gain
+        self.y = self.residual_z(z, zp)   #residual
+
+        self.x = self.x + dot(self.K, self.y)
+        self.P = self.P - dot3(self.K, Pz, self.K.T)
 
 
     def batch_filter(self, zs, Rs=None, residual=None, UT=None):
