@@ -29,3 +29,4 @@ from .mmae import *
 from .sigma_points import *
 from .square_root import *
 from .UKF import *
+from .CubatureKalmanFilter import *
