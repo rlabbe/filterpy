@@ -22,16 +22,17 @@ from __future__ import (absolute_import, division, print_function,
 import matplotlib.pyplot as plt
 import numpy.random as random
 from numpy.random import randn
+from numpy import asarray
 import numpy as np
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
-                             JulierSigmaPoints)
+                             JulierSigmaPoints, SimplexSigmaPoints)
 from filterpy.common import Q_discrete_white_noise
 import filterpy.stats as stats
 from math import cos, sin
 
 
-DO_PLOT = False
+DO_PLOT = True
 
 
 def test_sigma_plot():
@@ -47,12 +48,18 @@ def test_sigma_plot():
 
     sp0 = JulierSigmaPoints(n=2, kappa=kappa)
     sp1 = JulierSigmaPoints(n=2, kappa=kappa*1000)
+    sp2 = MerweScaledSigmaPoints(n=2, kappa=0, beta=2, alpha=1e-3)
+    sp3 = SimplexSigmaPoints(n=2)
 
     w0, _ = sp0.weights()
     w1, _ = sp1.weights()
+    w2, _ = sp2.weights()
+    w3, _ = sp3.weights()
 
-    Xi0 = sp0.sigma_points (x, P)
-    Xi1 = sp1.sigma_points (x, P)
+    Xi0 = sp0.sigma_points(x, P)
+    Xi1 = sp1.sigma_points(x, P)
+    Xi2 = sp2.sigma_points(x, P)
+    Xi3 = sp3.sigma_points(x, P)
 
     assert max(Xi1[:,0]) > max(Xi0[:,0])
     assert max(Xi1[:,1]) > max(Xi0[:,1])
@@ -62,14 +69,30 @@ def test_sigma_plot():
         for i in range(Xi0.shape[0]):
             plt.scatter((Xi0[i,0]-x[0, 0])*w0[i] + x[0, 0],
                         (Xi0[i,1]-x[0, 1])*w0[i] + x[0, 1],
-                         color='blue')
+                         color='blue', label='Julier low $\kappa$')
 
         for i in range(Xi1.shape[0]):
             plt.scatter((Xi1[i, 0]-x[0, 0]) * w1[i] + x[0,0],
                         (Xi1[i, 1]-x[0, 1]) * w1[i] + x[0,1],
-                         color='green')
+                         color='green', label='Julier high $\kappa$')
+        # for i in range(Xi2.shape[0]):
+        #     plt.scatter((Xi2[i, 0] - x[0, 0]) * w2[i] + x[0, 0],
+        #                 (Xi2[i, 1] - x[0, 1]) * w2[i] + x[0, 1],
+        #                 color='red')
+        for i in range(Xi3.shape[0]):
+            plt.scatter((Xi3[i, 0] - x[0, 0]) * w3[i] + x[0, 0],
+                        (Xi3[i, 1] - x[0, 1]) * w3[i] + x[0, 1],
+                        color='black', label='Simplex')
 
         stats.plot_covariance_ellipse([1, 2], P)
+
+
+def test_simplex_weights():
+    for n in range(1,15):
+        for k in np.linspace(0,5,0.1):
+            Wm = UKF.weights(n, k)
+
+            assert abs(sum(Wm) - 1) < 1.e-12
 
 
 def test_julier_weights():
@@ -91,7 +114,7 @@ def test_scaled_weights():
                     assert abs(sum(Wc) - 1) < 1.e-1
 
 
-def test_sigma_points_1D():
+def test_julier_sigma_points_1D():
     """ tests passing 1D data into sigma_points"""
 
     kappa = 0.
@@ -106,8 +129,8 @@ def test_sigma_points_1D():
     mean = 5
     cov = 9
 
-    Xi = sp.sigma_points (mean, cov)
-    xm, ucov = unscented_transform(Xi,Wm, Wc, 0)
+    Xi = sp.sigma_points(mean, cov)
+    xm, ucov = unscented_transform(Xi, Wm, Wc, 0)
 
     # sum of weights*sigma points should be the original mean
     m = 0.0
@@ -120,6 +143,34 @@ def test_sigma_points_1D():
 
     assert Xi.shape == (3,1)
 
+
+def test_simplex_sigma_points_1D():
+    """ tests passing 1D data into sigma_points"""
+
+    sp = SimplexSigmaPoints(1)
+
+    #ukf = UKF(dim_x=1, dim_z=1, dt=0.1, hx=None, fx=None, kappa=kappa)
+
+    Wm, Wc = sp.weights()
+    assert np.allclose(Wm, Wc, 1e-12)
+    assert len(Wm) == 2
+
+    mean = 5
+    cov = 9
+
+    Xi = sp.sigma_points(mean, cov)
+    xm, ucov = unscented_transform(Xi, Wm, Wc, 0)
+
+    # sum of weights*sigma points should be the original mean
+    m = 0.0
+    for x, w in zip(Xi, Wm):
+        m += x*w
+
+    assert abs(m-mean) < 1.e-12
+    assert abs(xm[0] - mean) < 1.e-12
+    assert abs(ucov[0,0]-cov) < 1.e-12
+
+    assert Xi.shape == (2,1)
 
 
 class RadarSim(object):
@@ -145,11 +196,12 @@ def test_radar():
         return A.dot(x)
 
     def hx(x):
-        return np.sqrt (x[0]**2 + x[2]**2)
+        return np.sqrt(x[0]**2 + x[2]**2)
 
     dt = 0.05
 
     sp = JulierSigmaPoints(n=3, kappa=0.)
+    # sp = SimplexSigmaPoints(n=3)
     kf = UKF(3, 1, dt, fx=fx, hx=hx, points=sp)
 
     kf.Q *= 0.01
@@ -185,7 +237,6 @@ def test_radar():
         plt.subplot(312)
         plt.plot(t, xs[:,1])
         plt.subplot(313)
-
         plt.plot(t, xs[:,2])
 
 
@@ -206,7 +257,8 @@ def test_linear_2d():
 
 
     dt = 0.1
-    points = MerweScaledSigmaPoints(4, .1, 2., -1)
+    # points = MerweScaledSigmaPoints(4, .1, 2., -1)
+    points = SimplexSigmaPoints(n=4)
     kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
 
 
@@ -789,16 +841,17 @@ if __name__ == "__main__":
 
     DO_PLOT = True
 
-    test_linear_1d()
-    #test_batch_missing_data()
-
-    #test_linear_2d()
-    #test_sigma_points_1D()
-    #test_fixed_lag()
-    #DO_PLOT = True
-    #test_rts()
-    #kf_circle()
-    #test_circle()
+    # test_linear_1d()
+    # test_batch_missing_data()
+    #
+    # test_linear_2d()
+    # test_julier_sigma_points_1D()
+    # test_simplex_sigma_points_1D()
+    # test_fixed_lag()
+    # DO_PLOT = True
+    # test_rts()
+    # kf_circle()
+    # test_circle()
 
 
     '''test_1D_sigma_points()
@@ -813,15 +866,17 @@ if __name__ == "__main__":
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    #test_radar()
-    #test_sigma_plot()
-    #test_julier_weights()
-    #test_scaled_weights()
-
+    test_radar()
+    # test_sigma_plot()
+    # test_julier_weights()
+    # test_scaled_weights()
+    # test_simplex_weights()
     #print('xi=\n',Xi)
     """
     xm, cov = unscented_transform(Xi, W)
     print(xm)
     print(cov)"""
 #    sigma_points ([5,2],9*np.eye(2), 2)
+    plt.legend()
+    plt.show()
 

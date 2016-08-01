@@ -14,9 +14,9 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+from __future__ import division
 import numpy as np
 from scipy.linalg import cholesky
-
 
 class MerweScaledSigmaPoints(object):
 
@@ -76,6 +76,7 @@ class MerweScaledSigmaPoints(object):
         """
 
         self.n = n
+        self.name = 'Merwe'
         self.alpha = alpha
         self.beta = beta
         self.kappa = kappa
@@ -218,6 +219,7 @@ class JulierSigmaPoints(object):
        """
 
         self.n = n
+        self.name = 'Julier'
         self.kappa = kappa
         if sqrt_method is None:
             self.sqrt = cholesky
@@ -312,4 +314,136 @@ class JulierSigmaPoints(object):
 
         W = np.full(2*n+1, .5 / (n + k))
         W[0] = k / (n+k)
+        return W, W
+
+
+class SimplexSigmaPoints(object):
+
+    def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
+        """
+        Generates sigma points and weights according to the simplex method presented in [1]
+         DOI: 10.1051/cocv/2010006
+
+        Parameters
+        ----------
+
+        n : int
+            Dimensionality of the state. n+1 weights will be generated.
+
+        sqrt_method : function(ndarray), default=scipy.linalg.cholesky
+            Defines how we compute the square root of a matrix, which has
+            no unique answer. Cholesky is the default choice due to its
+            speed. Typically your alternative choice will be
+            scipy.linalg.sqrtm
+
+            If your method returns a triangular matrix it must be upper
+            triangular. Do not use numpy.linalg.cholesky - for historical
+            reasons it returns a lower triangular matrix. The SciPy version
+            does the right thing.
+
+        subtract : callable (x, y), optional
+            Function that computes the difference between x and y.
+            You will have to supply this if your state variable cannot support
+            subtraction, such as angles (359-1 degreees is 2, not 358). x and y
+            are state vectors, not scalars.
+
+        References
+        ----------
+
+        .. [1] Phillippe Moireau and Dominique Chapelle "Reduced-Order Unscented Kalman Filtering with Application to
+        Parameter Identification in Large-Dimensional Systems"
+        """
+
+        self.n = n
+        self.name = 'Simplex'
+        self.alpha = alpha
+        if sqrt_method is None:
+            self.sqrt = cholesky
+        else:
+            self.sqrt = sqrt_method
+
+        if subtract is None:
+            self.subtract= np.subtract
+        else:
+            self.subtract = subtract
+
+
+    def sigma_points(self, x, P):
+        """ Computes the implex sigma points for an unscented Kalman filter
+        given the mean (x) and covariance(P) of the filter.
+        Returns tuple of the sigma points and weights.
+
+        Works with both scalar and array inputs:
+        sigma_points (5, 9, 2) # mean 5, covariance 9
+        sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
+
+        Parameters
+        ----------
+
+        X An array-like object of the means of length n
+            Can be a scalar if 1D.
+            examples: 1, [1,2], np.array([1,2])
+
+        P : scalar, or np.array
+           Covariance of the filter. If scalar, is treated as eye(n)*P.
+
+        Returns
+        -------
+
+        sigmas : np.array, of size (n, n+1)
+            Two dimensional array of sigma points. Each column contains all of
+            the sigmas for one dimension in the problem space.
+
+            Ordered by Xi_0, Xi_{1..n}
+        """
+
+        assert self.n == np.size(x), "expected size {}, but size is {}".format(
+            self.n, np.size(x))
+
+        n = self.n
+
+        if np.isscalar(x):
+            x = np.asarray([x])
+        x = x.reshape(-1, 1)
+        if np.isscalar(P):
+            P = np.eye(n)*P
+        else:
+            P = np.asarray(P)
+
+        U = self.sqrt(P)
+
+        lambda_ = n/(n+1)
+        Istar = np.array([[-1/np.sqrt(2*lambda_), 1/np.sqrt(2*lambda_)]])
+        for d in range(2, n+1):
+            row = np.ones((1, Istar.shape[1] + 1)) * 1. / np.sqrt(lambda_*d*(d + 1))
+            row[0, -1] = -d / np.sqrt(lambda_ * d * (d + 1))
+            Istar = np.r_[np.c_[Istar, np.zeros((Istar.shape[0]))], row]
+
+        I = np.sqrt(n)*Istar
+        scaled_unitary = U.dot(I)
+
+        # sigmas = np.zeros((n+1, n))
+        sigmas = self.subtract(x, -scaled_unitary)
+
+        return sigmas.T
+
+
+    def weights(self):
+        """ Computes the weights for the scaled unscented Kalman filter.
+
+        Returns
+        -------
+
+        Wm : ndarray[n+1]
+            weights for mean
+
+        Wc : ndarray[n+1]
+            weights for the covariances
+        """
+
+        n = self.n
+
+        c = 1 / (n + 1)
+        W = np.full(n + 1, c)
+
         return W, W
