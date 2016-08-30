@@ -20,7 +20,12 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
+
 from filterpy.kalman import *
 from filterpy.common import Q_discrete_white_noise
 from scipy.linalg import block_diag, norm
@@ -538,7 +543,7 @@ def test_z_dim():
 
 
 if __name__ == "__main__":
-    DO_PLOT = True
+    DO_PLOT = False
     test_z_dim()
     #test_batch_filter()
 

@@ -18,7 +18,11 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from numpy import random
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 from filterpy.kalman import KalmanFilter, FixedLagSmoother
 
 
@@ -141,7 +145,7 @@ def one_run_test_fls():
 
 
 if __name__ == '__main__':
-    DO_PLOT = True
+    DO_PLOT = False
 
 
     one_run_test_fls()

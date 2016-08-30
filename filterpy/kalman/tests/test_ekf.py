@@ -18,8 +18,11 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 import numpy.random as random
 from numpy.random import randn
 from math import sqrt
@@ -79,7 +82,7 @@ rk.Q = array([[0, 0, 0],
 
 rk.P *= 50
 
-DO_PLOT = True
+DO_PLOT = False
 
 rs = []
 xs = []

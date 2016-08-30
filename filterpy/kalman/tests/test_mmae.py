@@ -22,11 +22,15 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy.random as random
 import numpy as np
-import matplotlib.pyplot as plt
 from filterpy.kalman import KalmanFilter, MMAEFilterBank
 from numpy import array
 from filterpy.common import Q_discrete_white_noise
-import matplotlib.pyplot as plt
+
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 from numpy.random import randn
 from math import sin, cos, radians
 
@@ -206,5 +210,5 @@ def test_MMAE2():
         plt.plot(pos[:, 0])
 
 if __name__ == '__main__':
-    DO_PLOT = True
+    DO_PLOT = False
     test_MMAE2()

@@ -20,7 +20,11 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 from filterpy.kalman import KalmanFilter
 from numpy import array, asarray
 
@@ -147,6 +151,6 @@ def test_fusion():
     assert (std1 < std2)
 
 if __name__ == "__main__":
-    DO_PLOT=True
+    DO_PLOT=False
     sensor_fusion_test(2,4e100)
     single_measurement_test()
