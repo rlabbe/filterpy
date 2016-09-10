@@ -79,7 +79,7 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
 
     assert dim == 2 or dim == 3
     if dim == 2:
-        Q = array([[(dt**4)/3, (dt**2)/2],
+        Q = array([[(dt**3)/3, (dt**2)/2],
                    [(dt**2)/2,    dt]])
     else:
         Q = array([[(dt**5)/20, (dt**4)/8, (dt**3)/6],
