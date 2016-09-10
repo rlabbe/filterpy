@@ -342,7 +342,7 @@ class UnscentedKalmanFilter(object):
         self.P = self.P - dot3(self.K, Pz, self.K.T)
 
 
-    def batch_filter(self, zs, Rs=None, residual=None, UT=None):
+    def batch_filter(self, zs, Rs=None, UT=None):
         """ Performs the UKF filter over the list of measurement in `zs`.
 
         Parameters
@@ -356,13 +356,6 @@ class UnscentedKalmanFilter(object):
             optional list of values to use for the measurement error
             covariance; a value of None in any position will cause the filter
             to use `self.R` for that time step.
-
-        residual : function (z, z2), optional
-            Optional function that computes the residual (difference) between
-            the two measurement vectors. If you do not provide this, then the
-            built in minus operator will be used. You will normally want to use
-            the built in unless your residual computation is nonlinear (for
-            example, if they are angles)
 
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
@@ -396,10 +389,6 @@ class UnscentedKalmanFilter(object):
             assert len(z) == self._dim_z, 'each element in zs must be a' \
             '1D array of length {}'.format(self._dim_z)
 
-
-        if residual is None:
-            residual = np.subtract
-
         z_n = np.size(zs, 0)
         if Rs is None:
             Rs = [None] * z_n
@@ -414,8 +403,8 @@ class UnscentedKalmanFilter(object):
         covariances = zeros((z_n, self._dim_x, self._dim_x))
 
         for i, (z, r) in enumerate(zip(zs, Rs)):
-            self.predict()
-            self.update(z, r)
+            self.predict(UT=UT)
+            self.update(z, r, UT=UT)
             means[i,:]         = self.x
             covariances[i,:,:] = self.P
 
