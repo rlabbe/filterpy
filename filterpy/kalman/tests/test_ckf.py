@@ -8,6 +8,7 @@ Created on Sun Jun 26 08:03:07 2016
 
 from filterpy.kalman import CubatureKalmanFilter as CKF
 from filterpy.kalman import UnscentedKalmanFilter as UKF
+from filterpy.kalman import MerweScaledSigmaPoints
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import randn
@@ -134,8 +135,6 @@ def test_1d():
         assert abs(ckf.x[0] -kf.x[0]) < 1e-10
         assert abs(ckf.x[1] -kf.x[1]) < 1e-10
 
-
-    plt.show()
 
 if __name__ == "__main__":
     test_1d()

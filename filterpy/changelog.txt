@@ -1,3 +1,8 @@
+Version 0.1.5
+=============
+
+* Bug in Q_continuous_white_noise(). The first term in the matrix should be (dt**3)/3, not (dt**4)/3. 
+
 Version 0.1.4
 =============
 
