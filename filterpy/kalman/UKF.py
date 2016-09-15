@@ -179,6 +179,7 @@ class UnscentedKalmanFilter(object):
                         y = 2*np.pi
                     return y
 
+
         References
         ----------
 
@@ -206,11 +207,11 @@ class UnscentedKalmanFilter(object):
         self.P = eye(dim_x)
         self._dim_x = dim_x
         self._dim_z = dim_z
+        self.points_fn = points
         self._dt = dt
-        self._num_sigmas = 2*dim_x + 1
+        self._num_sigmas = points.num_sigmas()
         self.hx = hx
         self.fx = fx
-        self.points_fn = points
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
 
@@ -234,7 +235,8 @@ class UnscentedKalmanFilter(object):
 
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
-        self.sigmas_f = zeros((2*self._dim_x+1, self._dim_x))
+
+        self.sigmas_f = zeros((self._num_sigmas, self._dim_x))
         self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
 
@@ -473,7 +475,7 @@ class UnscentedKalmanFilter(object):
         # smoother gain
         Ks = zeros((n,dim_x,dim_x))
 
-        num_sigmas = 2*dim_x + 1
+        num_sigmas = self._num_sigmas
 
         xs, ps = Xs.copy(), Ps.copy()
         sigmas_f = zeros((num_sigmas, dim_x))
