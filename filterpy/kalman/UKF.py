@@ -209,10 +209,7 @@ class UnscentedKalmanFilter(object):
         self._dim_z = dim_z
         self.points_fn = points
         self._dt = dt
-        if self.points_fn.name == 'Simplex':
-            self._num_sigmas = dim_x + 1
-        else:
-            self._num_sigmas = 2*dim_x + 1
+        self._num_sigmas = points.num_sigmas()
         self.hx = hx
         self.fx = fx
         self.x_mean = x_mean_fn

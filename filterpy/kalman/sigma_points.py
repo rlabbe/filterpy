@@ -76,7 +76,6 @@ class MerweScaledSigmaPoints(object):
         """
 
         self.n = n
-        self.name = 'Merwe'
         self.alpha = alpha
         self.beta = beta
         self.kappa = kappa
@@ -89,6 +88,11 @@ class MerweScaledSigmaPoints(object):
             self.subtract= np.subtract
         else:
             self.subtract = subtract
+
+
+    def num_sigmas(self):
+        """ Number of sigma points for each variable in the state x"""
+        return 2*self.n + 1
 
 
     def sigma_points(self, x, P):
@@ -219,7 +223,6 @@ class JulierSigmaPoints(object):
        """
 
         self.n = n
-        self.name = 'Julier'
         self.kappa = kappa
         if sqrt_method is None:
             self.sqrt = cholesky
@@ -230,6 +233,11 @@ class JulierSigmaPoints(object):
             self.subtract= np.subtract
         else:
             self.subtract = subtract
+
+
+    def num_sigmas(self):
+        """ Number of sigma points for each variable in the state x"""
+        return 2*self.n + 1
 
 
     def sigma_points(self, x, P):
@@ -321,8 +329,8 @@ class SimplexSigmaPoints(object):
 
     def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
         """
-        Generates sigma points and weights according to the simplex method presented in [1]
-         DOI: 10.1051/cocv/2010006
+        Generates sigma points and weights according to the simplex method
+        presented in [1] DOI: 10.1051/cocv/2010006
 
         Parameters
         ----------
@@ -350,12 +358,12 @@ class SimplexSigmaPoints(object):
         References
         ----------
 
-        .. [1] Phillippe Moireau and Dominique Chapelle "Reduced-Order Unscented Kalman Filtering with Application to
-        Parameter Identification in Large-Dimensional Systems"
+        .. [1] Phillippe Moireau and Dominique Chapelle "Reduced-Order Unscented
+        Kalman Filtering with Application to Parameter Identification in
+        Large-Dimensional Systems"
         """
 
         self.n = n
-        self.name = 'Simplex'
         self.alpha = alpha
         if sqrt_method is None:
             self.sqrt = cholesky
@@ -366,6 +374,11 @@ class SimplexSigmaPoints(object):
             self.subtract= np.subtract
         else:
             self.subtract = subtract
+
+
+    def num_sigmas(self):
+        """ Number of sigma points for each variable in the state x"""
+        return self.n + 1
 
 
     def sigma_points(self, x, P):
@@ -412,7 +425,7 @@ class SimplexSigmaPoints(object):
 
         U = self.sqrt(P)
 
-        lambda_ = n/(n+1)
+        lambda_ = n / (n + 1)
         Istar = np.array([[-1/np.sqrt(2*lambda_), 1/np.sqrt(2*lambda_)]])
         for d in range(2, n+1):
             row = np.ones((1, Istar.shape[1] + 1)) * 1. / np.sqrt(lambda_*d*(d + 1))
@@ -422,9 +435,7 @@ class SimplexSigmaPoints(object):
         I = np.sqrt(n)*Istar
         scaled_unitary = U.dot(I)
 
-        # sigmas = np.zeros((n+1, n))
         sigmas = self.subtract(x, -scaled_unitary)
-
         return sigmas.T
 
 
@@ -442,8 +453,7 @@ class SimplexSigmaPoints(object):
         """
 
         n = self.n
-
-        c = 1 / (n + 1)
+        c = 1. / (n + 1)
         W = np.full(n + 1, c)
 
         return W, W

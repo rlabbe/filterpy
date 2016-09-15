@@ -32,7 +32,7 @@ import filterpy.stats as stats
 from math import cos, sin
 
 
-DO_PLOT = True
+DO_PLOT = False
 
 
 def test_sigma_plot():
@@ -840,13 +840,13 @@ def two_radar():
 if __name__ == "__main__":
 
     DO_PLOT = True
-
+    #test_sigma_plot()
     # test_linear_1d()
     # test_batch_missing_data()
     #
     # test_linear_2d()
     # test_julier_sigma_points_1D()
-    # test_simplex_sigma_points_1D()
+    #test_simplex_sigma_points_1D()
     # test_fixed_lag()
     # DO_PLOT = True
     # test_rts()
@@ -866,7 +866,7 @@ if __name__ == "__main__":
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    test_radar()
+    #test_radar()
     # test_sigma_plot()
     # test_julier_weights()
     # test_scaled_weights()
@@ -877,6 +877,6 @@ if __name__ == "__main__":
     print(xm)
     print(cov)"""
 #    sigma_points ([5,2],9*np.eye(2), 2)
-    plt.legend()
-    plt.show()
+    #plt.legend()
+    #plt.show()
 
