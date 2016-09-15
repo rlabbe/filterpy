@@ -20,7 +20,7 @@ Steps to Create Release
 
 * You need to manually update the documentation code at pythonhosted, PyPi's documentation server.
 
-    cd /docs/html
+    cd /docs/_build/html
     zip -r filterpy.zip *.*
     
     add all files to a zip file (index.html must be at base)
