@@ -700,6 +700,7 @@ class KalmanFilter(object):
 
     @property
     def likelihood(self):
+        """ likelihood of measurement"""
         return math.exp(self.log_likelihood)
 
 
@@ -712,22 +713,24 @@ class KalmanFilter(object):
 
     @property
     def Q(self):
-        """ Process uncertainty"""
+        """ Process uncertainty matrix"""
         return self._Q
 
 
     @Q.setter
     def Q(self, value):
+        """ Process uncertainty matrix"""
         self._Q = setter_scalar(value, self.dim_x)
 
     @property
     def P(self):
-        """ covariance matrix"""
+        """ state covariance matrix"""
         return self._P
 
 
     @P.setter
     def P(self, value):
+        """ state covariance matrix"""
         self._P = setter_scalar(value, self.dim_x)
 
 
@@ -739,6 +742,7 @@ class KalmanFilter(object):
 
     @F.setter
     def F(self, value):
+        """ state transition matrix"""
         self._F = setter(value, self.dim_x, self.dim_x)
 
     @property
@@ -749,7 +753,6 @@ class KalmanFilter(object):
 
     @B.setter
     def B(self, value):
-        self._B = value
         """ control transition matrix"""
         if np.isscalar(value):
             self._B = value
@@ -759,12 +762,13 @@ class KalmanFilter(object):
 
     @property
     def x(self):
-        """ filter state vector."""
+        """ state vector."""
         return self._x
 
 
     @x.setter
     def x(self, value):
+        """ state vector."""
         self._x = setter_1d(value, self.dim_x)
 
 

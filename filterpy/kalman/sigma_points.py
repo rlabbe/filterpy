@@ -21,9 +21,8 @@ from scipy.linalg import cholesky
 class MerweScaledSigmaPoints(object):
 
     def __init__(self, n, alpha, beta, kappa, sqrt_method=None, subtract=None):
-        """
-        Generates sigma points and weights according to Van der Merwe's
-        2004 dissertation [1]. It parametizes the sigma points using
+        """ Generates sigma points and weights according to Van der Merwe's
+        2004 dissertation[1]. It parametizes the sigma points using
         alpha, beta, kappa terms, and is the version seen in most publications.
 
         Unless you know better, this should be your default choice.
@@ -73,6 +72,7 @@ class MerweScaledSigmaPoints(object):
 
         .. [1] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
                Inference in Dynamic State-Space Models" (Doctoral dissertation)
+               
         """
 
         self.n = n
@@ -177,8 +177,8 @@ class MerweScaledSigmaPoints(object):
 class JulierSigmaPoints(object):
 
     def __init__(self,n,  kappa, sqrt_method=None, subtract=None):
-        """v Generates sigma points and weights according to Simon J. Julier
-        and Jeffery K. Uhlmann's original paper [1]. It parametizes the sigma
+        """ Generates sigma points and weights according to Simon J. Julier
+        and Jeffery K. Uhlmann's original paper []. It parametizes the sigma
         points using kappa.
 
         Parameters
@@ -214,12 +214,12 @@ class JulierSigmaPoints(object):
             You will have to supply this if your state variable cannot support
             subtraction, such as angles (359-1 degreees is 2, not 358). x and y
 
-    References
-    ----------
+        References
+        ----------
 
-    .. [1] Julier, Simon J.; Uhlmann, Jeffrey "A New Extension of the Kalman
-        Filter to Nonlinear Systems". Proc. SPIE 3068, Signal Processing,
-        Sensor Fusion, and Target Recognition VI, 182 (July 28, 1997)
+        .. [1] Julier, Simon J.; Uhlmann, Jeffrey "A New Extension of the Kalman
+            Filter to Nonlinear Systems". Proc. SPIE 3068, Signal Processing,
+            Sensor Fusion, and Target Recognition VI, 182 (July 28, 1997)
        """
 
         self.n = n
@@ -278,6 +278,7 @@ class JulierSigmaPoints(object):
                   \chi[1..n] = &x + [\sqrt{(n+\kappa)P}]_k \\
                   \chi[n+1..2n] = &x - [\sqrt{(n+\kappa)P}]_k
                 \end{eqnarray}
+                
         """
 
         assert self.n == np.size(x)
@@ -309,7 +310,7 @@ class JulierSigmaPoints(object):
         formulatyion the weights for the mean and covariance are the same.
 
         Returns
-        -------s
+        -------
 
         Wm : ndarray[2n+1]
             weights for mean
@@ -317,6 +318,7 @@ class JulierSigmaPoints(object):
         Wc : ndarray[2n+1]
             weights for the covariances
         """
+        
         n = self.n
         k = self.kappa
 
@@ -328,9 +330,8 @@ class JulierSigmaPoints(object):
 class SimplexSigmaPoints(object):
 
     def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
-        """
-        Generates sigma points and weights according to the simplex method
-        presented in [1] DOI: 10.1051/cocv/2010006
+        """ Generates sigma points and weights according to the simplex 
+        method presented in [1] DOI: 10.1051/cocv/2010006
 
         Parameters
         ----------

@@ -224,23 +224,25 @@ class ExtendedKalmanFilter(object):
 
     @property
     def Q(self):
-        """ Process uncertainty"""
+        """ Process uncertainty matrix"""
         return self._Q
 
 
     @Q.setter
     def Q(self, value):
+        """ Process uncertainty matrix"""
         self._Q = setter_scalar(value, self.dim_x)
 
 
     @property
     def P(self):
-        """ covariance matrix"""
+        """ state covariance matrix"""
         return self._P
 
 
     @P.setter
     def P(self, value):
+        """ state covariance matrix"""
         self._P = setter_scalar(value, self.dim_x)
 
 
@@ -252,21 +254,25 @@ class ExtendedKalmanFilter(object):
 
     @R.setter
     def R(self, value):
+        """ measurement uncertainty"""
         self._R = setter_scalar(value, self.dim_z)
 
 
     @property
     def F(self):
+        """State Transition matrix"""
         return self._F
 
 
     @F.setter
     def F(self, value):
+        """State Transition matrix"""
         self._F = setter(value, self.dim_x, self.dim_x)
 
 
     @property
     def B(self):
+        """ control transition matrix"""
         return self._B
 
 
@@ -278,10 +284,12 @@ class ExtendedKalmanFilter(object):
 
     @property
     def x(self):
+        """ state estimate vector """
         return self._x
 
     @x.setter
     def x(self, value):
+        """ state estimate vector """
         self._x = setter_1d(value, self.dim_x)
 
     @property

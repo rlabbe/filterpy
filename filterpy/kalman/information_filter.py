@@ -284,7 +284,7 @@ class InformationFilter(object):
 
     @property
     def Q(self):
-        """ Process uncertainty"""
+        """Process uncertainty"""
         return self._Q
 
 
@@ -305,7 +305,7 @@ class InformationFilter(object):
 
     @property
     def R_inv(self):
-        """ measurement uncertainty"""
+        """inverse measurement uncertainty"""
         return self._R_inv
 
 
@@ -315,6 +315,7 @@ class InformationFilter(object):
 
     @property
     def H(self):
+        """Measurement function"""
         return self._H
 
 
@@ -325,6 +326,7 @@ class InformationFilter(object):
 
     @property
     def F(self):
+        """State Transition matrix"""
         return self._F
 
 
@@ -347,6 +349,7 @@ class InformationFilter(object):
 
     @property
     def x(self):
+        """ State estimate vector """
         return self._x
 
 

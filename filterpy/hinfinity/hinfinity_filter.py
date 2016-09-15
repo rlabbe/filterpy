@@ -250,7 +250,7 @@ class HInfinityFilter(object):
 
     @property
     def x(self):
-        """ state vector property"""
+        """ state vector"""
         return self._x
 
 
@@ -271,7 +271,7 @@ class HInfinityFilter(object):
 
     @property
     def P(self):
-        """ covariance matrix property"""
+        """ covariance matrix"""
         return self._P
 
 
@@ -282,6 +282,7 @@ class HInfinityFilter(object):
 
     @property
     def F(self):
+        """ State transition matrix"""
         return self._F
 
 

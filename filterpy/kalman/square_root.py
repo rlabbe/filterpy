@@ -15,16 +15,12 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from scipy.linalg import cholesky, qr, pinv
 from numpy import dot, zeros, eye
 from filterpy.common import setter, setter_scalar, dot3
-
-
-
 
 
 class SquareRootKalmanFilter(object):
@@ -237,6 +233,7 @@ class SquareRootKalmanFilter(object):
 
     @Q.setter
     def Q(self, value):
+        """ Process uncertainty"""
         self._Q = setter_scalar(value, self.dim_x)
         self._Q1_2 = cholesky (self._Q, lower=True)
 
@@ -254,6 +251,7 @@ class SquareRootKalmanFilter(object):
 
     @P.setter
     def P(self, value):
+        """ covariance matrix"""
         self._P = setter_scalar(value, self.dim_x)
         self._P1_2 = cholesky(self._P, lower=True)
 
@@ -271,17 +269,19 @@ class SquareRootKalmanFilter(object):
 
     @R.setter
     def R(self, value):
+        """ measurement uncertainty"""
         self._R = setter_scalar(value, self.dim_z)
         self._R1_2 = cholesky (self._R, lower=True)
 
     @property
     def H(self):
-        """ Measurement function"""
+        """Measurement function"""
         return self._H
 
 
     @H.setter
     def H(self, value):
+        """Measurement function"""
         self._H = setter(value, self.dim_z, self.dim_x)
 
 
@@ -293,6 +293,7 @@ class SquareRootKalmanFilter(object):
 
     @F.setter
     def F(self, value):
+        """ state transition matrix"""
         self._F = setter(value, self.dim_x, self.dim_x)
 
     @property
@@ -315,6 +316,7 @@ class SquareRootKalmanFilter(object):
 
     @x.setter
     def x(self, value):
+        """ filter state vector."""
         self._x = setter(value, self.dim_x, 1)
 
     @property

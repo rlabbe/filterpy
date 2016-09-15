@@ -106,8 +106,8 @@ def van_loan_discretization(F, G, dt):
 
         Given y'' + y = 2u(t), we create the continuous state model of
 
-        x' = | 0 1| * x + |0|*u(t)
-             |-1 0|       |2|
+        x' = [ 0 1] * x + [0]*u(t)
+             [-1 0]       [2]
 
         and a time step of 0.1:
 
