@@ -516,7 +516,7 @@ class UnscentedKalmanFilter(object):
             x = Xs[k]
             for i in range(num_sigmas):
                 y = sigmas_f[i] - x
-                Pb += self.Wm[i] * outer(y, y)
+                Pb += self.Wc[i] * outer(y, y)
             Pb += Qs[k]
 
             # compute cross variance
@@ -524,7 +524,7 @@ class UnscentedKalmanFilter(object):
             for i in range(num_sigmas):
                 z = sigmas[i] - Xs[k]
                 y = sigmas_f[i] - xb
-                Pxb += self.Wm[i] * outer(z, y)
+                Pxb += self.Wc[i] * outer(z, y)
 
             # compute gain
             K = dot(Pxb, inv(Pb))
