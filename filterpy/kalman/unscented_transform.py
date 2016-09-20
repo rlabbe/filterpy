@@ -69,10 +69,9 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
 
             def residual(a, b):
                 y = a[0] - b[0]
+                y = y % (2 * np.pi)
                 if y > np.pi:
                     y -= 2*np.pi
-                if y < -np.pi:
-                    y = 2*np.pi
                 return y
 
 
