@@ -515,22 +515,22 @@ class UnscentedKalmanFilter(object):
             Pb = 0
             x = Xs[k]
             for i in range(num_sigmas):
-                y = sigmas_f[i] - x
+                y = self.residual_x(sigmas_f[i], x)
                 Pb += self.Wc[i] * outer(y, y)
             Pb += Qs[k]
 
             # compute cross variance
             Pxb = 0
             for i in range(num_sigmas):
-                z = sigmas[i] - Xs[k]
-                y = sigmas_f[i] - xb
+                z = self.residual_x(sigmas[i], Xs[k])
+                y = self.residual_x(sigmas_f[i], xb)
                 Pxb += self.Wc[i] * outer(z, y)
 
             # compute gain
             K = dot(Pxb, inv(Pb))
 
             # update the smoothed estimates
-            xs[k] += dot (K, xs[k+1] - xb)
+            xs[k] += dot (K, self.residual_x(xs[k+1], xb))
             ps[k] += dot3(K, ps[k+1] - Pb, K.T)
             Ks[k] = K
 
