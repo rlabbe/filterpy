@@ -188,7 +188,7 @@ def multivariate_multiply(m1, c1, m2, c2):
         are all valid.
 
     c1 : matrix-like
-        Mean of first Gaussian. Must be convertable to an 2D array via
+        Covariance of first Gaussian. Must be convertable to an 2D array via
         numpy.asarray().
 
      m2 : array-like
@@ -197,7 +197,7 @@ def multivariate_multiply(m1, c1, m2, c2):
         are all valid.
 
     c2 : matrix-like
-        Mean of second Gaussian. Must be convertable to an 2D array via
+        Covariance of second Gaussian. Must be convertable to an 2D array via
         numpy.asarray().
 
     Returns

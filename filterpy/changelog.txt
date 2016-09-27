@@ -1,3 +1,10 @@
+Version 0.1.5
+=============
+
+* Fix #53: UKF rts_smoother does not use residual functions
+* Fixed #54: Comments in multivariate_multiply incorrectly called the
+  covariance the mean. 
+
 Version 0.1.4
 =============
 
