@@ -1,6 +1,9 @@
 Steps to Create Release
 =======================
+
 * update filterpy/filterpy/__init__.py with the version number.
+
+* update filterpy/filterpy/changelog.txt with the changes for this release.
 
 * 'rm *' in dist
 

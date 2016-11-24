@@ -134,8 +134,8 @@ def test_circle():
 
 if __name__ == '__main__':
     DO_PLOT = True
-    test_circle ()
-    #test_1d_const_vel()
+    #test_circle ()
+    test_1d_const_vel()
 
 
 #test_noisy_1d()

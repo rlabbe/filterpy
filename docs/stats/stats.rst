@@ -21,6 +21,10 @@ to Bayesian filters.
 
 -----
 
+.. autofunction:: logpdf
+
+-----
+
 .. autofunction:: multivariate_gaussian
 
 -----

@@ -17,11 +17,11 @@ for more information.
 
 from __future__ import (absolute_import, division, unicode_literals)
 from filterpy.common import setter, setter_1d, setter_scalar, dot3
+from filterpy.stats import logpdf
 import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import scipy.linalg as linalg
-from scipy.stats import multivariate_normal
 
 
 class KalmanFilter(object):
@@ -198,12 +198,7 @@ class KalmanFilter(object):
         self._S = S
         self._K = K
 
-        # compute log likelihood
-        mean = np.asarray(dot(H, x)).flatten()
-        flatz = np.asarray(z).flatten()
-        self.log_likelihood = multivariate_normal.logpdf(
-             flatz, mean, cov=S, allow_singular=True)
-
+        self.log_likelihood = logpdf(z, dot(H, x), S)
 
 
     def update_correlated(self, z, R=None, H=None):
@@ -270,11 +265,7 @@ class KalmanFilter(object):
         self._K = K
 
         # compute log likelihood
-        mean = np.asarray(dot(H, x)).flatten()
-        flatz = np.asarray(z).flatten()
-
-        self.log_likelihood = multivariate_normal.logpdf(
-             flatz, mean, cov=S, allow_singular=True)
+        self.log_likelihood = logpdf(z, dot(H, x), S)
 
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
@@ -897,12 +888,10 @@ def update(x, P, z, R, H=None, return_all=False):
         I_KH = np.array(1 - KH)
     P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
-    # compute log likelihood
-    mean = np.array(dot(H, x)).flatten()
-    flatz = np.asarray(z).flatten()
-    log_likelihood = multivariate_normal.logpdf(flatz, mean, cov=S, allow_singular=True)
 
     if return_all:
+        # compute log likelihood
+        log_likelihood = logpdf(z, dot(H, x), S)
         return x, P, y, K, S, log_likelihood
     else:
         return x, P

@@ -19,11 +19,11 @@ from __future__ import (absolute_import, division, print_function,
 
 from filterpy.common import dot3
 from filterpy.kalman import unscented_transform
+from filterpy.stats import logpdf
 import math
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
-from scipy.stats import multivariate_normal
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -359,8 +359,16 @@ class UnscentedKalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot3(self.K, Pz, self.K.T)
 
-        self.log_likelihood = multivariate_normal.logpdf(
-            x=self.y, mean=np.zeros(len(self.y)), cov=Pz, allow_singular=True)
+        self.log_likelihood = logpdf(self.y, np.zeros(len(self.y)), Pz)
+
+
+    def cross_variance(self, x, z, sigmas_f, sigmas_h):
+        Pxz = zeros((sigmas_f.shape[1], sigmas_h.shape[1]))
+        N = sigmas_f.shape[0]
+        for i in range(N):
+            dx = self.residual_x(sigmas_f[i], x)
+            dz =  self.residual_z(sigmas_h[i], z)
+            Pxz += self.Wc[i] * outer(dx, dz)
 
 
     @property

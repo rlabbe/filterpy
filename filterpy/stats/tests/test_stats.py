@@ -14,8 +14,9 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from filterpy.stats import norm_cdf, multivariate_gaussian
+from filterpy.stats import norm_cdf, multivariate_gaussian, logpdf
 import numpy as np
+from math import exp
 
 
 def test_multivariate_gaussian():
@@ -61,3 +62,13 @@ def test_norm_cdf():
 
     std_3 = (norm_cdf((mu-3*std, mu+3*std), mu, var))
     assert abs(std_3 - .9973) < .0001
+
+
+def test_logpdf():
+    assert 3.9 < exp(logpdf(1, 1, .01)) < 4.
+    assert 3.9 < exp(logpdf([1], [1], .01)) < 4.
+    assert 3.9 < exp(logpdf([[1]], [[1]], .01)) < 4.
+
+    logpdf([1., 2], [1.1, 2], cov=np.array([[1., 2], [2, 5]]), allow_singular=False)
+    logpdf([1., 2], [1.1, 2], cov=np.array([[1., 2], [2, 5]]), allow_singular=True)
+

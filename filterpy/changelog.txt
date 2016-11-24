@@ -4,6 +4,10 @@ Version 0.1.5
 * Fix #53: UKF rts_smoother does not use residual functions
 * Fixed #54: Comments in multivariate_multiply incorrectly called the
   covariance the mean. 
+* Added logpdf to stats. Computes logpdf - mostly a wrapper around
+  stats.multivariate_normal.logpdf as older versions of that function 
+  do not support the allow_singular keyword. But it also flattens out the
+  vectors for you so you do not have to do anything special with column vectors.
 
 Version 0.1.4
 =============
