@@ -16,17 +16,10 @@ for more information.
 
 from numpy.random import randn
 import numpy as np
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 
 from filterpy.kalman import EnsembleKalmanFilter as EnKF
 from filterpy.common import Q_discrete_white_noise
 from math import cos, sin
-
-DO_PLOT = False
 
 def test_1d_const_vel():
 
@@ -66,16 +59,6 @@ def test_1d_const_vel():
 
     results = np.asarray(results)
     ps = np.asarray(ps)
-
-    if DO_PLOT:
-        plt.plot(results, label='EnKF')
-        plt.plot(measurements, c='r', label='z')
-        plt.plot (results-ps, c='k',linestyle='--', label='3$\sigma$')
-        plt.plot(results+ps, c='k', linestyle='--')
-        plt.legend(loc='best')
-        #print(ps)
-
-
 
 def test_circle():
     def hx(x):
@@ -123,24 +106,3 @@ def test_circle():
     results = np.asarray(results)
     measurements = np.asarray(measurements)
 
-    if DO_PLOT:
-        plt.plot(results[:,0], results[:,2], label='EnKF')
-        plt.plot(measurements[:,0], measurements[:,1], c='r', label='z')
-        #plt.plot (results-ps, c='k',linestyle='--', label='3$\sigma$')
-        #plt.plot(results+ps, c='k', linestyle='--')
-        plt.legend(loc='best')
-        plt.axis('equal')
-        #print(ps)
-
-
-
-
-
-
-if __name__ == '__main__':
-    DO_PLOT = False
-    test_circle ()
-    #test_1d_const_vel()
-
-
-#test_noisy_1d()

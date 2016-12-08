@@ -18,7 +18,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-import matplotlib.pyplot as plt
 from numpy.random import randn
 import numpy as np
 from filterpy.memory import FadingMemoryFilter
@@ -35,10 +34,6 @@ def dotest_2d_data():
     for x in xs:
         data = [x+randn()*3, x+2+randn()*3]
         fm.update(data)
-        plt.scatter(fm.x[0,0], fm.x[0,1], c = 'r')
-        plt.scatter(data[0], data[1], c='b')
-
-
 
 def dotest_1d(order, beta):
     fm = FadingMemoryFilter(x0=0, dt=1, order=order, beta=beta)
@@ -49,12 +44,7 @@ def dotest_1d(order, beta):
     for x in xs:
         data = x+randn()*3
         fm.update(data)
-        plt.scatter(x, fm.x[0], c = 'r')
         fxs.append(fm.x[0])
-        plt.scatter(x,data,c='b')
-
-    plt.plot(fxs, c='r')
-
 
 def test_ghk_formulation():
     beta = .6

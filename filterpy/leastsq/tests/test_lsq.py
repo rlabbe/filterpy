@@ -18,12 +18,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import warnings
 import numpy.random as random
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 
 import numpy as np
 from math import sqrt
@@ -248,10 +243,6 @@ def test_lsq():
         assert near_equal(x2[0], lx, 1.e-13)
         xs.append(x)
 
-    if DO_PLOT:
-        plt.plot(xs)
-        plt.plot(lsq_xs)
-
     for x,y in zip(xs, lsq_xs):
         r = x-y
         assert r < 1.e-8
@@ -267,13 +258,6 @@ def test_first_order ():
     for x in xs:
         ys.append (lsf.update(x)[0])
 
-    if DO_PLOT:
-        plt.plot(xs,c='b')
-        plt.plot(ys, c='g')
-        plt.plot([0,len(xs)-1], [ys[0], ys[-1]])
-
-
-
 def test_second_order ():
     ''' data and example from Zarchan, page 114'''
 
@@ -288,12 +272,6 @@ def test_second_order ():
         assert near_equal(y, y0)
         ys.append (y)
 
-    if DO_PLOT:
-        plt.scatter(range(len(xs)), xs,c='r', marker='+')
-        plt.plot(ys, c='g')
-        plt.plot([0,len(xs)-1], [ys[0], ys[-1]], c='b')
-
-
 def test_fig_3_8():
     """ figure 3.8 in Zarchan, p. 108"""
     lsf = LeastSquaresFilter(0.1, order=1)
@@ -307,11 +285,6 @@ def test_fig_3_8():
         assert near_equal(y, y0)
         ys.append (y)
 
-    if DO_PLOT:
-        plt.plot(xs)
-        plt.plot(ys)
-
-
 def test_listing_3_4():
     """ listing 3.4 in Zarchan, p. 117"""
 
@@ -322,12 +295,6 @@ def test_listing_3_4():
     for x in xs:
         ys.append (lsf.update(x)[0])
 
-    if DO_PLOT:
-        plt.plot(xs)
-        plt.plot(ys)
-
-
-
 def lsq2_plot():
     fl = LSQ(2)
     fl.H = np.array([[1., 1.],[0., 1.]])
@@ -336,8 +303,6 @@ def lsq2_plot():
 
     for x in range(10):
         fl.update(np.array([[x], [x]], dtype=float))
-        if DO_PLOT:
-            plt.scatter(x, fl.x[0,0])
 
 fl = LSQ(1)
 fl.H = np.eye(1)
@@ -351,12 +316,6 @@ for x in range(40):
     z = x + random.randn() * 5
     fl.update(np.array([[z]], dtype=float))
     y = lsf.update(z)[0]
-
-    if DO_PLOT:
-        plt.scatter(x, z, c='r', marker='+')
-        plt.scatter(x, fl.x[0,0], c='b')
-        plt.scatter(x, y, c='g', alpha=0.5)
-        plt.plot([0,40], [0,40])
 
 
 

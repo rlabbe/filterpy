@@ -20,15 +20,9 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 from filterpy.kalman import KalmanFilter
 from numpy import array, asarray
 
-DO_PLOT = False
 SEED = 1124
 
 
@@ -69,18 +63,6 @@ def single_measurement_test():
     res = nom-xs[:,0]
     std_dev = np.std(res)
     print('std: {:.3f}'.format (std_dev))
-
-    global DO_PLOT
-    if DO_PLOT:
-
-        plt.subplot(211)
-        plt.plot(xs[:,0])
-        #plt.plot(zs[:,0])
-
-
-        plt.subplot(212)
-        plt.plot(res)
-        plt.show()
 
     return std_dev
 
@@ -128,18 +110,6 @@ def sensor_fusion_test(wheel_sigma=2., gps_sigma=4.):
     std_dev = np.std(res)
     print('fusion std: {:.3f}'.format (np.std(res)))
 
-    if DO_PLOT:
-
-        plt.subplot(211)
-        plt.plot(xs[:,0])
-        #plt.plot(zs[:,0])
-        #plt.plot(zs[:,1])
-
-        plt.subplot(212)
-        plt.axhline(0)
-        plt.plot(res)
-        plt.show()
-
     print(kf2.Q)
     print(kf2.K)
     return std_dev
@@ -151,6 +121,5 @@ def test_fusion():
     assert (std1 < std2)
 
 if __name__ == "__main__":
-    DO_PLOT=False
     sensor_fusion_test(2,4e100)
     single_measurement_test()

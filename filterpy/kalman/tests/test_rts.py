@@ -18,17 +18,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from numpy import random
-import warnings
-
-try:
-    import matplotlib.pyplot as plt
-    plot = True
-except ImportError:
-    warnings.warn("matplotlib not installed")
-    plot = False
-
 from filterpy.kalman import KalmanFilter
-
 
 if __name__ == '__main__':
 
@@ -51,17 +41,3 @@ if __name__ == '__main__':
     mus = [x[0] for x in mu]
 
     M,P,C = fk.rts_smoother(mu, cov)
-
-
-    if plot:
-        plot data
-        p1, = plt.plot(zs,'cyan', alpha=0.5)
-        p2, = plt.plot (M[:,0],c='b')
-        p3, = plt.plot (mus,c='r')
-        p4, = plt.plot ([0,len(zs)],[0,len(zs)], 'g') # perfect result
-        plt.legend([p1,p2, p3, p4],
-                  ["measurement", "RKS", "KF output", "ideal"], loc=4)
-
-
-        plt.show()
-

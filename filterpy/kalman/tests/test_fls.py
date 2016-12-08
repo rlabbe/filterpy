@@ -18,18 +18,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from numpy import random
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 from filterpy.kalman import KalmanFilter, FixedLagSmoother
-
-
-
-
-DO_PLOT = False
-
 
 def test_fls():
 
@@ -123,34 +112,4 @@ def one_run_test_fls():
 
     fl_res = abs(xfl-nom)
     kf_res = abs(xkf-nom)
-
-    if DO_PLOT:
-        plt.cla()
-        plt.plot(zs,'o', alpha=0.5, marker='o', label='zs')
-        plt.plot(x[:,0], label='FLS')
-        plt.plot(xfl, label='FLS S')
-        plt.plot(xkf, label='KF')
-        plt.plot(rts_x[:,0], label='RTS')
-        plt.legend(loc=4)
-        plt.show()
-
-
-        print(fl_res)
-        print(kf_res)
-
-        print('std fixed lag:', np.mean(fl_res[N:]))
-        print('std kalman:', np.mean(kf_res[N:]))
-
     return np.mean(fl_res) <= np.mean(kf_res)
-
-
-if __name__ == '__main__':
-    DO_PLOT = False
-
-
-    one_run_test_fls()
-
-    DO_PLOT = False
-    test_fls()
-
-    test_batch_equals_recursive()

@@ -20,13 +20,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 import numpy as np
 import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 from filterpy.kalman import FadingKalmanFilter
 
-DO_PLOT = False
 def test_noisy_1d():
     f = FadingKalmanFilter (5., dim_x=2, dim_z=1)
 
@@ -65,20 +60,3 @@ def test_noisy_1d():
     f.X = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
     m,c,_,_ = f.batch_filter(zs,update_first=False)
-
-    # plot data
-    if DO_PLOT:
-        p1, = plt.plot(measurements,'r', alpha=0.5)
-        p2, = plt.plot (results,'b')
-        p4, = plt.plot(m[:,0], 'm')
-        p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
-        plt.legend([p1,p2, p3, p4],
-                   ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
-
-
-        plt.show()
-
-
-if __name__ == "__main__":
-    DO_PLOT = False
-    test_noisy_1d()

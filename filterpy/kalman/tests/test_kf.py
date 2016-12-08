@@ -20,18 +20,10 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 
 from filterpy.kalman import *
 from filterpy.common import Q_discrete_white_noise
 from scipy.linalg import block_diag, norm
-
-DO_PLOT = False
-
 
 class PosSensor1(object):
     def __init__(self, pos=(0, 0), vel=(0, 0), noise_std=1.):
@@ -129,73 +121,51 @@ def test_noisy_1d():
     f.P = np.eye(2)*100.
     m,c,_,_ = f.batch_filter(zs,update_first=False)
 
-    # plot data
-    if DO_PLOT:
-        p1, = plt.plot(measurements,'r', alpha=0.5)
-        p2, = plt.plot (results,'b')
-        p4, = plt.plot(m[:,0], 'm')
-        p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
-        plt.legend([p1,p2, p3, p4],
-                   ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
+#def test_1d_vel():
+    #from scipy.linalg import inv
+    #global ks
+    #dt = 1.
+    #std_z = 0.0001
 
+    #x = np.array([[0.], [0.]])
 
-        plt.show()
+    #F = np.array([[1., dt],
+                  #[0., 1.]])
 
+    #H = np.array([[1.,0.]])
+    #P = np.eye(2)
+    #R = np.eye(1)*std_z**2
+    #Q = np.eye(2)*0.001
 
-def test_1d_vel():
-    from scipy.linalg import inv
-    global ks
-    dt = 1.
-    std_z = 0.0001
+    #measurements = []
+    #results = []
 
-    x = np.array([[0.], [0.]])
+    #xest = []
+    #ks = []
+    #pos = 0.
+    #for t in range (20):
+        #z = pos + random.randn() * std_z
+        #pos += 100
 
-    F = np.array([[1., dt],
-                  [0., 1.]])
+        ## perform kalman filtering
+        #x = F @ x
+        #P = F @ P @ F.T + Q
 
-    H = np.array([[1.,0.]])
-    P = np.eye(2)
-    R = np.eye(1)*std_z**2
-    Q = np.eye(2)*0.001
+        #P2 = P.copy()
+        #P2[0,1] = 0 # force there to be no correlation
+        #P2[1,0] = 0
+        #S = H @ P2 @ H.T + R
+        #K = P2 @ H.T @inv(S)
+        #y = z - H@x
+        #x = x + K@y
 
-    measurements = []
-    results = []
+        ## save data
+        #xest.append (x.copy())
+        #measurements.append(z)
+        #ks.append(K.copy())
 
-    xest = []
-    ks = []
-    pos = 0.
-    for t in range (20):
-        z = pos + random.randn() * std_z
-        pos += 100
-
-        # perform kalman filtering
-        x = F @ x
-        P = F @ P @ F.T + Q
-
-        P2 = P.copy()
-        P2[0,1] = 0 # force there to be no correlation
-        P2[1,0] = 0
-        S = H @ P2 @ H.T + R
-        K = P2 @ H.T @inv(S)
-        y = z - H@x
-        x = x + K@y
-
-        # save data
-        xest.append (x.copy())
-        measurements.append(z)
-        ks.append(K.copy())
-
-    xest = np.array(xest)
-    ks = np.array(ks)
-    # plot data
-    if DO_PLOT:
-        plt.subplot(121)
-        plt.plot(xest[:, 1])
-        plt.subplot(122)
-        plt.plot(ks[:, 1])
-        plt.show()
-
-
+    #xest = np.array(xest)
+    #ks = np.array(ks)
 
 def test_noisy_11d():
     f = KalmanFilter (dim_x=2, dim_z=1)
@@ -234,18 +204,6 @@ def test_noisy_11d():
     f.x = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
     m,c,_,_ = f.batch_filter(zs,update_first=False)
-
-    # plot data
-    if DO_PLOT:
-        p1, = plt.plot(measurements,'r', alpha=0.5)
-        p2, = plt.plot (results,'b')
-        p4, = plt.plot(m[:,0], 'm')
-        p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
-        plt.legend([p1,p2, p3, p4],
-                   ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
-
-        plt.show()
-
 
 def test_batch_filter():
     f = KalmanFilter (dim_x=2, dim_z=1)
@@ -326,13 +284,6 @@ def test_procedure_form():
 
     xest = np.asarray(xest)
     measurements = np.asarray(measurements)
-    # plot data
-    if DO_PLOT:
-        plt.plot(xest[:, 0])
-        plt.plot(xest[:, 1])
-        plt.plot(measurements)
-
-
 
 def test_procedural_batch_filter():
     f = KalmanFilter (dim_x=2, dim_z=1)

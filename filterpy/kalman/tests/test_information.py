@@ -19,17 +19,10 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy.random as random
 import numpy as np
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 
 from scipy.linalg import inv
 from filterpy.kalman import KalmanFilter, InformationFilter
 
-
-DO_PLOT = False
 def test_1d_0P():
     f = KalmanFilter (dim_x=2, dim_z=1)
     inf = InformationFilter (dim_x=2, dim_z=1)
@@ -77,13 +70,6 @@ def test_1d_0P():
 
         #assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12
 
-    if DO_PLOT:
-        plt.plot(m)
-        plt.plot(r)
-        plt.plot(r2)
-
-
-
 def test_1d():
     f = KalmanFilter (dim_x=2, dim_z=1)
     inf = InformationFilter (dim_x=2, dim_z=1)
@@ -127,13 +113,3 @@ def test_1d():
         m.append(z)
 
         assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12
-
-    if DO_PLOT:
-        plt.plot(m)
-        plt.plot(r)
-        plt.plot(r2)
-
-
-if __name__ == "__main__":
-    DO_PLOT = False
-    test_1d()

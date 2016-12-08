@@ -21,13 +21,6 @@ from filterpy.gh import (GHFilter, GHKFilter, least_squares_parameters,
                          optimal_noise_smoothing, GHFilterOrder)
 from numpy import array
 from numpy.random import randn
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
-
-DO_PLOT = False
 
 def test_least_squares():
 
@@ -126,10 +119,6 @@ def optimal_test():
         f.update(z)
         ys.append(f.x)
         zs.append(z)
-
-    if DO_PLOT:
-        plt.plot(ys)
-        plt.plot(zs)
 
 def foo():
     def fx(x):

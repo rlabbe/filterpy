@@ -26,18 +26,8 @@ from filterpy.kalman import KalmanFilter, MMAEFilterBank
 from numpy import array
 from filterpy.common import Q_discrete_white_noise
 
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 from numpy.random import randn
 from math import sin, cos, radians
-
-
-DO_PLOT = False
-
-
 
 class NoisySensor(object):
     def __init__(self, noise_factor=1):
@@ -191,24 +181,3 @@ def test_MMAE2():
         #print('p', bank.p)
         probs.append(bank.p[0] / bank.p[1])
 
-    if DO_PLOT:
-        plt.subplot(121)
-        plt.plot(xs)
-        plt.plot(pos[:, 0])
-        plt.subplot(122)
-        plt.plot(probs)
-        plt.title('probability ratio p(cv)/p(ca)')
-
-        plt.figure()
-        plt.plot(cvxs, label='CV')
-        plt.plot(caxs, label='CA')
-        plt.plot(pos[:, 0])
-        plt.legend()
-
-        plt.figure()
-        plt.plot(xs)
-        plt.plot(pos[:, 0])
-
-if __name__ == '__main__':
-    DO_PLOT = False
-    test_MMAE2()

@@ -17,12 +17,6 @@ for more information.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 import numpy.random as random
 from numpy.random import randn
 from math import sqrt
@@ -31,9 +25,6 @@ from filterpy.kalman import ExtendedKalmanFilter
 from numpy import array, eye, asarray
 
 from filterpy.examples import RadarSim
-
-
-
 
 def H_of(x):
     """ compute Jacobian of H matrix for state x """
@@ -110,22 +101,3 @@ p_pos = ps[:,0,0]
 p_vel = ps[:,1,1]
 p_alt = ps[:,2,2]
 pos = asarray(pos)
-
-if DO_PLOT:
-
-    plt.subplot(311)
-    plt.plot(xs[:,0])
-    plt.ylabel('position')
-
-    plt.subplot(312)
-    plt.plot(xs[:,1])
-    plt.ylabel('velocity')
-
-    plt.subplot(313)
-    #plt.plot(xs[:,2])
-    #plt.ylabel('altitude')
-
-
-    plt.plot(p_pos)
-    plt.plot(-p_pos)
-    plt.plot(xs[:,0]-pos)

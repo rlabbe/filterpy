@@ -25,16 +25,8 @@ import numpy as np
 from filterpy.kalman import IMMEstimator, KalmanFilter, MMAEFilterBank
 from numpy import array, asarray
 from filterpy.common import Q_discrete_white_noise
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 from numpy.random import randn
 from math import sin, cos, radians
-
-
-DO_PLOT = False
 
 class NoisySensor(object):
     def __init__(self, noise_factor=1):
@@ -247,34 +239,3 @@ def test_imm():
         #print('p', bank.p)
         probs.append(bank.mu.copy())
 
-    if DO_PLOT:
-        xs = np.array(xs)
-        cvxs = np.array(cvxs)
-        caxs = np.array(caxs)
-        probs = np.array(probs)
-        plt.subplot(121)
-        plt.plot(xs[:, 0], xs[:, 3], 'k')
-        #plt.plot(cvxs[:, 0], caxs[:, 3])
-        #plt.plot(simxs[:, 0], simxs[:, 2], 'g')
-        plt.scatter(zs[:, 0], zs[:, 1], marker='+', alpha=0.2)
-
-        plt.subplot(122)
-        plt.plot(probs[:, 0])
-        plt.plot(probs[:, 1])
-        plt.ylim(-1.5, 1.5)
-        plt.title('probability ratio p(cv)/p(ca)')
-
-
-        '''plt.figure()
-        plt.plot(cvxs, label='CV')
-        plt.plot(caxs, label='CA')
-        plt.plot(xs[:, 0], label='GT')
-        plt.legend()
-
-        plt.figure()
-        plt.plot(xs)
-        plt.plot(xs[:, 0])'''
-
-if __name__ == '__main__':
-    DO_PLOT = False
-    test_imm()

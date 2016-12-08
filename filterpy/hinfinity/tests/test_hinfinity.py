@@ -20,14 +20,6 @@ from __future__ import (absolute_import, division, print_function,
 from numpy import array
 from filterpy.hinfinity import HInfinityFilter
 
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
-
-DO_PLOT = False
-
 def test_Hinfinity():
     dt = 0.1
     f = HInfinityFilter(2, 1, 0, gamma=.4)
@@ -55,12 +47,3 @@ def test_Hinfinity():
         xs.append(f.x[0,0])
         vs.append(f.x[1,0])
         f.predict()
-
-    if DO_PLOT:
-        plt.subplot(211)
-        plt.plot(xs)
-        plt.subplot(212)
-        plt.plot(vs)
-
-if __name__ == "__main__":
-    test_Hinfinity()

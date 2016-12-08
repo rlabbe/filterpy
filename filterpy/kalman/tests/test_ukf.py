@@ -18,12 +18,6 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
-import warnings
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn("matplotlib not installed")
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
@@ -33,10 +27,6 @@ from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
 from filterpy.common import Q_discrete_white_noise
 import filterpy.stats as stats
 from math import cos, sin
-
-
-DO_PLOT = False
-
 
 def test_sigma_plot():
     """ Test to make sure sigma's correctly mirror the shape and orientation
@@ -60,21 +50,6 @@ def test_sigma_plot():
 
     assert max(Xi1[:,0]) > max(Xi0[:,0])
     assert max(Xi1[:,1]) > max(Xi0[:,1])
-
-    if DO_PLOT:
-        plt.figure()
-        for i in range(Xi0.shape[0]):
-            plt.scatter((Xi0[i,0]-x[0, 0])*w0[i] + x[0, 0],
-                        (Xi0[i,1]-x[0, 1])*w0[i] + x[0, 1],
-                         color='blue')
-
-        for i in range(Xi1.shape[0]):
-            plt.scatter((Xi1[i, 0]-x[0, 0]) * w1[i] + x[0,0],
-                        (Xi1[i, 1]-x[0, 1]) * w1[i] + x[0,1],
-                         color='green')
-
-        stats.plot_covariance_ellipse([1, 2], P)
-
 
 def test_julier_weights():
     for n in range(1,15):
@@ -180,19 +155,6 @@ def test_radar():
         xs[i,:] = kf.x
         rs.append(r)
 
-    if DO_PLOT:
-        print(xs[:,0].shape)
-
-        plt.figure()
-        plt.subplot(311)
-        plt.plot(t, xs[:,0])
-        plt.subplot(312)
-        plt.plot(t, xs[:,1])
-        plt.subplot(313)
-
-        plt.plot(t, xs[:,2])
-
-
 def test_linear_2d():
     """ should work like a linear KF if problem is linear """
 
@@ -228,16 +190,6 @@ def test_linear_2d():
 
     Ms, Ps = kf.batch_filter(zs)
     smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
-
-    if DO_PLOT:
-        zs = np.asarray(zs)
-
-        #plt.plot(zs[:,0])
-        plt.plot(Ms[:,0])
-        plt.plot(smooth_x[:,0], smooth_x[:,2])
-
-        print(smooth_x)
-
 
 def test_batch_missing_data():
     """ batch filter should accept missing data with None in the measurements """
@@ -323,23 +275,6 @@ def test_rts():
     Qs = [kf.Q]*len(t)
     M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, Qs=Qs)
 
-
-    if DO_PLOT:
-        print(xs[:,0].shape)
-
-        plt.figure()
-        plt.subplot(311)
-        plt.plot(t, xs[:,0])
-        plt.plot(t, M2[:,0], c='g')
-        plt.subplot(312)
-        plt.plot(t, xs[:,1])
-        plt.plot(t, M2[:,1], c='g')
-        plt.subplot(313)
-
-        plt.plot(t, xs[:,2])
-        plt.plot(t, M2[:,2], c='g')
-
-
 def test_fixed_lag():
     def fx(x, dt):
         A = np.eye(3) + dt * np.array ([[0, 1, 0],
@@ -410,23 +345,6 @@ def test_fixed_lag():
 
     flxs = np.asarray(flxs)
     print(xs[:,0].shape)
-
-    plt.figure()
-    plt.subplot(311)
-    plt.plot(t, xs[:,0])
-    plt.plot(t, flxs[:,0], c='r')
-    plt.plot(t, M2[:,0], c='g')
-    plt.subplot(312)
-    plt.plot(t, xs[:,1])
-    plt.plot(t, flxs[:,1], c='r')
-    plt.plot(t, M2[:,1], c='g')
-
-    plt.subplot(313)
-    plt.plot(t, xs[:,2])
-    plt.plot(t, flxs[:,2], c='r')
-    plt.plot(t, M2[:,2], c='g')
-
-
 
 def test_circle():
     from filterpy.kalman import KalmanFilter
@@ -501,14 +419,6 @@ def test_circle():
     kfxs = np.asarray(kfxs)
 
     print(results)
-    if DO_PLOT:
-        plt.plot(zs[:,0], zs[:,1], c='r', label='z')
-        plt.plot(results[:,0], results[:,1], c='k', label='UKF')
-        plt.plot(kfxs[:,0], kfxs[:,3], c='g', label='KF')
-        plt.legend(loc='best')
-        plt.axis('equal')
-
-
 
 def kf_circle():
     from filterpy.kalman import KalmanFilter
@@ -569,220 +479,4 @@ def kf_circle():
 
     zs = np.asarray(zs)
     kfxs = np.asarray(kfxs)
-
-
-    if DO_PLOT:
-        plt.plot(zs[:,0], zs[:,1], c='r', label='z')
-        plt.plot(kfxs[:,0], kfxs[:,1], c='g', label='KF')
-        plt.legend(loc='best')
-        plt.axis('equal')
-
-
-
-
-def two_radar():
-
-    # code is not complete - I was using to test RTS smoother. very similar
-    # to two_radary.py in book.
-
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    from numpy import array
-    from numpy.linalg import norm
-    from numpy.random import randn
-    from math import atan2, radians
-
-    from filterpy.common import Q_discrete_white_noise
-
-    class RadarStation(object):
-
-        def __init__(self, pos, range_std, bearing_std):
-            self.pos = asarray(pos)
-
-            self.range_std = range_std
-            self.bearing_std = bearing_std
-
-
-        def reading_of(self, ac_pos):
-            """ Returns range and bearing to aircraft as tuple. bearing is in
-            radians.
-            """
-
-            diff = np.subtract(self.pos, ac_pos)
-            rng = norm(diff)
-            brg = atan2(diff[1], diff[0])
-            return rng, brg
-
-
-        def noisy_reading(self, ac_pos):
-            rng, brg = self.reading_of(ac_pos)
-            rng += randn() * self.range_std
-            brg += randn() * self.bearing_std
-            return rng, brg
-
-
-
-
-    class ACSim(object):
-
-        def __init__(self, pos, vel, vel_std):
-            self.pos = asarray(pos, dtype=float)
-            self.vel = asarray(vel, dtype=float)
-            self.vel_std = vel_std
-
-
-        def update(self):
-            vel = self.vel + (randn() * self.vel_std)
-            self.pos += vel
-
-            return self.pos
-
-    dt = 1.
-
-
-    def hx(x):
-        r1, b1 = hx.R1.reading_of((x[0], x[2]))
-        r2, b2 = hx.R2.reading_of((x[0], x[2]))
-
-        return array([r1, b1, r2, b2])
-        pass
-
-
-
-    def fx(x, dt):
-        x_est = x.copy()
-        x_est[0] += x[1]*dt
-        x_est[2] += x[3]*dt
-        return x_est
-
-
-
-    vx, vy = 0.1, 0.1
-
-    f = UnscentedKalmanFilter(dim_x=4, dim_z=4, dt=dt, hx=hx, fx=fx, kappa=0)
-    aircraft = ACSim ((100,100), (vx*dt,vy*dt), 0.00000002)
-
-
-    range_std = 0.001  # 1 meter
-    bearing_std = 1/1000 # 1mrad
-
-    R1 = RadarStation ((0,0), range_std, bearing_std)
-    R2 = RadarStation ((200,0), range_std, bearing_std)
-
-    hx.R1 = R1
-    hx.R2 = R2
-
-    f.x = array([100, vx, 100, vy])
-
-    f.R = np.diag([range_std**2, bearing_std**2, range_std**2, bearing_std**2])
-    q = Q_discrete_white_noise(2, var=0.0002, dt=dt)
-    #q = np.array([[0,0],[0,0.0002]])
-    f.Q[0:2, 0:2] = q
-    f.Q[2:4, 2:4] = q
-    f.P = np.diag([.1, 0.01, .1, 0.01])
-
-
-    track = []
-    zs = []
-
-
-    for i in range(int(300/dt)):
-
-        pos = aircraft.update()
-
-        r1, b1 = R1.noisy_reading(pos)
-        r2, b2 = R2.noisy_reading(pos)
-
-        z = np.array([r1, b1, r2, b2])
-        zs.append(z)
-        track.append(pos.copy())
-
-    zs = asarray(zs)
-
-
-    xs, Ps, Pxz, pM, pP = f.batch_filter(zs)
-    ms, _, _ = f.rts_smoother(xs, Ps)
-
-    track = asarray(track)
-    time = np.arange(0,len(xs)*dt, dt)
-
-    plt.figure()
-    plt.subplot(411)
-    plt.plot(time, track[:,0])
-    plt.plot(time, xs[:,0])
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.ylabel('x position (m)')
-    plt.tight_layout()
-
-
-
-    plt.subplot(412)
-    plt.plot(time, track[:,1])
-    plt.plot(time, xs[:,2])
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.ylabel('y position (m)')
-    plt.tight_layout()
-
-
-    plt.subplot(413)
-    plt.plot(time, xs[:,1])
-    plt.plot(time, ms[:,1])
-    plt.legend(loc=4)
-    plt.ylim([0, 0.2])
-    plt.xlabel('time (sec)')
-    plt.ylabel('x velocity (m/s)')
-    plt.tight_layout()
-
-    plt.subplot(414)
-    plt.plot(time, xs[:,3])
-    plt.plot(time, ms[:,3])
-    plt.ylabel('y velocity (m/s)')
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.tight_layout()
-    plt.show()
-
-
-if __name__ == "__main__":
-
-    DO_PLOT = False
-
-
-    test_batch_missing_data()
-
-    #test_linear_2d()
-    #test_sigma_points_1D()
-    #test_fixed_lag()
-    #DO_PLOT = True
-    #test_rts()
-    #kf_circle()
-    #test_circle()
-
-
-    '''test_1D_sigma_points()
-    #plot_sigma_test ()
-
-    x = np.array([[1,2]])
-    P = np.array([[2, 1.2],
-                  [1.2, 2]])\
-
-
-    kappa = .1
-
-    xi,w = sigma_points (x,P,kappa)
-    xm, cov = unscented_transform(xi, w)'''
-    #test_radar()
-    #test_sigma_plot()
-    #test_julier_weights()
-    #test_scaled_weights()
-
-    #print('xi=\n',Xi)
-    """
-    xm, cov = unscented_transform(Xi, W)
-    print(xm)
-    print(cov)"""
-#    sigma_points ([5,2],9*np.eye(2), 2)
 
