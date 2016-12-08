@@ -19,7 +19,12 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy.random as random
 import numpy as np
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
+
 from scipy.linalg import inv
 from filterpy.kalman import KalmanFilter, InformationFilter
 
@@ -130,5 +135,5 @@ def test_1d():
 
 
 if __name__ == "__main__":
-    DO_PLOT = True
+    DO_PLOT = False
     test_1d()

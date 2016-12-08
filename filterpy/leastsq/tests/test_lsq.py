@@ -18,9 +18,13 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-
+import warnings
 import numpy.random as random
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
+
 import numpy as np
 from math import sqrt
 from numpy import dot
@@ -29,7 +33,7 @@ from filterpy.common import dot3
 from filterpy.leastsq import LeastSquaresFilter
 from filterpy.gh import GHFilter
 
-
+DO_PLOT = False
 
 def near_equal(x,y, e=1.e-14):
     return abs(x-y) < e
@@ -244,9 +248,9 @@ def test_lsq():
         assert near_equal(x2[0], lx, 1.e-13)
         xs.append(x)
 
-
-    plt.plot(xs)
-    plt.plot(lsq_xs)
+    if DO_PLOT:
+        plt.plot(xs)
+        plt.plot(lsq_xs)
 
     for x,y in zip(xs, lsq_xs):
         r = x-y
@@ -263,9 +267,10 @@ def test_first_order ():
     for x in xs:
         ys.append (lsf.update(x)[0])
 
-    plt.plot(xs,c='b')
-    plt.plot(ys, c='g')
-    plt.plot([0,len(xs)-1], [ys[0], ys[-1]])
+    if DO_PLOT:
+        plt.plot(xs,c='b')
+        plt.plot(ys, c='g')
+        plt.plot([0,len(xs)-1], [ys[0], ys[-1]])
 
 
 
@@ -283,10 +288,10 @@ def test_second_order ():
         assert near_equal(y, y0)
         ys.append (y)
 
-
-    plt.scatter(range(len(xs)), xs,c='r', marker='+')
-    plt.plot(ys, c='g')
-    plt.plot([0,len(xs)-1], [ys[0], ys[-1]], c='b')
+    if DO_PLOT:
+        plt.scatter(range(len(xs)), xs,c='r', marker='+')
+        plt.plot(ys, c='g')
+        plt.plot([0,len(xs)-1], [ys[0], ys[-1]], c='b')
 
 
 def test_fig_3_8():
@@ -302,8 +307,9 @@ def test_fig_3_8():
         assert near_equal(y, y0)
         ys.append (y)
 
-    plt.plot(xs)
-    plt.plot(ys)
+    if DO_PLOT:
+        plt.plot(xs)
+        plt.plot(ys)
 
 
 def test_listing_3_4():
@@ -316,8 +322,9 @@ def test_listing_3_4():
     for x in xs:
         ys.append (lsf.update(x)[0])
 
-    plt.plot(xs)
-    plt.plot(ys)
+    if DO_PLOT:
+        plt.plot(xs)
+        plt.plot(ys)
 
 
 
@@ -329,7 +336,8 @@ def lsq2_plot():
 
     for x in range(10):
         fl.update(np.array([[x], [x]], dtype=float))
-        plt.scatter(x, fl.x[0,0])
+        if DO_PLOT:
+            plt.scatter(x, fl.x[0,0])
 
 fl = LSQ(1)
 fl.H = np.eye(1)
@@ -341,16 +349,14 @@ lsf = LeastSquaresFilter(0.1, order=2)
 random.seed(234)
 for x in range(40):
     z = x + random.randn() * 5
-    plt.scatter(x, z, c='r', marker='+')
-
     fl.update(np.array([[z]], dtype=float))
-    plt.scatter(x, fl.x[0,0], c='b')
-
     y = lsf.update(z)[0]
-    plt.scatter(x, y, c='g', alpha=0.5)
 
-
-    plt.plot([0,40], [0,40])
+    if DO_PLOT:
+        plt.scatter(x, z, c='r', marker='+')
+        plt.scatter(x, fl.x[0,0], c='b')
+        plt.scatter(x, y, c='g', alpha=0.5)
+        plt.plot([0,40], [0,40])
 
 
 

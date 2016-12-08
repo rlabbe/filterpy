@@ -16,7 +16,12 @@ for more information.
 
 from numpy.random import randn
 import numpy as np
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
+
 from filterpy.kalman import EnsembleKalmanFilter as EnKF
 from filterpy.common import Q_discrete_white_noise
 from math import cos, sin
@@ -133,7 +138,7 @@ def test_circle():
 
 
 if __name__ == '__main__':
-    DO_PLOT = True
+    DO_PLOT = False
     test_circle ()
     #test_1d_const_vel()
 

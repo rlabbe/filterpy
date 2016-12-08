@@ -19,7 +19,11 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-import matplotlib.pyplot as plt
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
@@ -744,7 +748,7 @@ def two_radar():
 
 if __name__ == "__main__":
 
-    DO_PLOT = True
+    DO_PLOT = False
 
 
     test_batch_missing_data()
