@@ -18,11 +18,15 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from numpy import array
-import matplotlib.pyplot as plt
 from filterpy.hinfinity import HInfinityFilter
 
+import warnings
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn("matplotlib not installed")
 
-
+DO_PLOT = False
 
 def test_Hinfinity():
     dt = 0.1
@@ -52,10 +56,11 @@ def test_Hinfinity():
         vs.append(f.x[1,0])
         f.predict()
 
-    plt.subplot(211)
-    plt.plot(xs)
-    plt.subplot(212)
-    plt.plot(vs)
+    if DO_PLOT:
+        plt.subplot(211)
+        plt.plot(xs)
+        plt.subplot(212)
+        plt.plot(vs)
 
 if __name__ == "__main__":
     test_Hinfinity()
