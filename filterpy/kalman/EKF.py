@@ -47,6 +47,7 @@ class ExtendedKalmanFilter(object):
 
         self.dim_x = dim_x
         self.dim_z = dim_z
+        self.dim_u = dim_u
 
         self._x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)       # uncertainty covariance
