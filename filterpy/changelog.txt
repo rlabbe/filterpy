@@ -1,3 +1,10 @@
+Version 1.0.0
+=============
+
+* Mark as first stable release
+* Fix #42: For conda-build to work, correct setup.py and MANIFEST.in
+  path to LICENSE file, ensuring they are distributed to pypi.
+
 Version 0.1.5
 =============
 

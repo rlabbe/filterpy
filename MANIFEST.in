@@ -1,2 +1,2 @@
 include filterpy/changelog.txt
-include filterpy/LICENSE.txt
+include LICENSE
