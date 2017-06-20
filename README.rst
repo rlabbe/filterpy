@@ -5,13 +5,6 @@ FilterPy - Kalman filters and other optimal and non-optimal estimation filters i
         :target: https://pypi.python.org/pypi/filterpy
 
 
-.. image:: https://anaconda.org/rlabbe/filterpy/badges/installer/conda.svg   
-       :target: https://conda.anaconda.org/rlabbe
-
-
-.. image:: https://anaconda.org/rlabbe/filterpy/badges/version.svg   
-       :target: https://anaconda.org/rlabbe/filterpy
-
 This library provides Kalman filtering and various related optimal and
 non-optimal filtering software written in Python. It contains Kalman
 filters, Extended Kalman filters, Unscented Kalman filters, Kalman
@@ -77,17 +70,16 @@ If you prefer to download the source yourself
     git clone http://github.com/rlabbe/filterpy
     python setup.py install
 
-If you use Anaconda, you can install from a conda channel. I just (Feb 2016)
-added this capability, it's quite possible it is not working yet. Please
-let me know if you run into problems.
+If you use Anaconda, you can install from the conda-forge channel. You
+will need to add the conda-forge channel if you haven't already done so:
 
-          
-.. image:: https://anaconda.org/rlabbe/filterpy/badges/installer/conda.svg   
-       :target: https://conda.anaconda.org/rlabbe
-      
 ::
+    conda config -add channels conda-forge
+    
+and then install with:
 
-    conda install -c rlabbe filterpy
+::
+    conda install filterpy
     
     
 And, if you want to install from the bleeding edge git version
