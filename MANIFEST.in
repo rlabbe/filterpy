@@ -1,2 +1,3 @@
 include filterpy/changelog.txt
 include LICENSE
+recursive-include tests *.py

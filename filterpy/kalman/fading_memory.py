@@ -93,23 +93,23 @@ class FadingKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._x = zeros((dim_x,1)) # state
-        self._P = eye(dim_x)       # uncertainty covariance
-        self._Q = eye(dim_x)       # process uncertainty
-        self._B = 0                # control transition matrix
-        self._F = 0                # state transition matrix
-        self._H = 0                # Measurement function
-        self._R = eye(dim_z)       # state uncertainty
+        self.x = zeros((dim_x,1)) # state
+        self.P = eye(dim_x)       # uncertainty covariance
+        self.Q = eye(dim_x)       # process uncertainty
+        self.B = 0                # control transition matrix
+        self.F = 0                # state transition matrix
+        self.H = 0                 # Measurement function
+        self.R = eye(dim_z)       # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self._K = 0 # kalman gain
-        self._y = zeros((dim_z, 1))
-        self._S = 0 # system uncertainty in measurement space
+        self.K = 0 # kalman gain
+        self.y = zeros((dim_z, 1))
+        self.S = 0 # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
-        self._I = np.eye(dim_x)
+        self.I = np.eye(dim_x)
 
 
     def update(self, z, R=None):
@@ -132,18 +132,18 @@ class FadingKalmanFilter(object):
             return
 
         if R is None:
-            R = self._R
+            R = self.R
         elif np.isscalar(R):
             R = eye(self.dim_z) * R
 
         # rename for readability and a tiny extra bit of speed
-        H = self._H
-        P = self._P
-        x = self._x
+        H = self.H
+        P = self.P
+        x = self.x
 
         # y = z - Hx
         # error (residual) between measurement and prediction
-        self._y = z - dot(H, x)
+        self.y = z - dot(H, x)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -155,14 +155,14 @@ class FadingKalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x = x + dot(K, self._y)
+        self.x = x + dot(K, self.y)
 
         # P = (I-KH)P(I-KH)' + KRK'
-        I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        I_KH = self.I - dot(K, H)
+        self.P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
 
-        self._S = S
-        self._K = K
+        self.S = S
+        self.K = K
 
 
     def predict(self, u=0):
@@ -177,10 +177,10 @@ class FadingKalmanFilter(object):
         """
 
         # x = Fx + Bu
-        self._x = dot(self._F, self._x) + dot(self._B, u)
+        self.x = dot(self.F, self.x) + dot(self.B, u)
 
         # P = FPF' + Q
-        self._P = self.alpha_sq*dot3(self._F, self._P, self._F.T) + self._Q
+        self.P = self.alpha_sq * dot3(self.F, self.P, self.F.T) + self.Q
 
 
     def batch_filter(self, zs, Rs=None, update_first=False):
@@ -239,21 +239,21 @@ class FadingKalmanFilter(object):
         if update_first:
             for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.update(z,r)
-                means[i,:]         = self._x
-                covariances[i,:,:] = self._P
+                means[i,:]         = self.x
+                covariances[i,:,:] = self.P
 
                 self.predict()
-                means_p[i,:]         = self._x
-                covariances_p[i,:,:] = self._P
+                means_p[i,:]         = self.x
+                covariances_p[i,:,:] = self.P
         else:
             for i,(z,r) in enumerate(zip(zs,Rs)):
                 self.predict()
-                means_p[i,:]         = self._x
-                covariances_p[i,:,:] = self._P
+                means_p[i,:]         = self.x
+                covariances_p[i,:,:] = self.P
 
                 self.update(z,r)
-                means[i,:]         = self._x
-                covariances[i,:,:] = self._P
+                means[i,:]         = self.x
+                covariances[i,:,:] = self.P
 
         return (means, covariances, means_p, covariances_p)
 
@@ -275,8 +275,8 @@ class FadingKalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self._F, self._x) + dot(self._B, u)
-        P = self.alpha_sq*dot3(self._F, self._P, self._F.T) + self.Q
+        x = dot(self.F, self.x) + dot(self.B, u)
+        P = self.alpha_sq * dot3(self.F, self.P, self.F.T) + self.Q
         return (x, P)
 
 
@@ -284,7 +284,7 @@ class FadingKalmanFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._x)
+        return z - dot(self.H, self.x)
 
 
     def measurement_of_state(self, x):
@@ -302,93 +302,4 @@ class FadingKalmanFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-        return dot(self._H, x)
-
-
-    @property
-    def Q(self):
-        """ Process uncertainty"""
-        return self._Q
-
-
-    @Q.setter
-    def Q(self, value):
-        self._Q = setter_scalar(value, self.dim_x)
-
-    @property
-    def P(self):
-        """ covariance matrix"""
-        return self._P
-
-
-    @P.setter
-    def P(self, value):
-        self._P = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def R(self):
-        """ measurement uncertainty"""
-        return self._R
-
-
-    @R.setter
-    def R(self, value):
-        self._R = setter_scalar(value, self.dim_z)
-
-    @property
-    def H(self):
-        """ Measurement function"""
-        return self._H
-
-
-    @H.setter
-    def H(self, value):
-        self._H = setter(value, self.dim_z, self.dim_x)
-
-
-    @property
-    def F(self):
-        """ state transition matrix"""
-        return self._F
-
-
-    @F.setter
-    def F(self, value):
-        self._F = setter(value, self.dim_x, self.dim_x)
-
-    @property
-    def B(self):
-        """ control transition matrix"""
-        return self._B
-
-
-    @B.setter
-    def B(self, value):
-        """ control transition matrix"""
-        self._B = setter (value, self.dim_x, self.dim_u)
-
-
-    @property
-    def x(self):
-        """ state vector."""
-        assert False
-
-    @x.setter
-    def x(self, value):
-        assert False
-
-    @property
-    def K(self):
-        """ Kalman gain """
-        return self._K
-
-    @property
-    def y(self):
-        """ measurement residual (innovation) """
-        return self._y
-
-    @property
-    def S(self):
-        """ system uncertainy in measurement space """
-        return self._S
+        return dot(self.H, x)

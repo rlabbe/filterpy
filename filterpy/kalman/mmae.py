@@ -74,18 +74,9 @@ class MMAEFilterBank(object):
         self.filters = filters
         self.p = asarray(p)
         self.dim_x = dim_x
-        self._x = None
+        self.x = None
 
 
-    @property
-    def x(self):
-        """ The estimated state of the bank of filters."""
-        return self._x
-
-    @property
-    def P(self):
-        """ Estimated covariance of the bank of filters."""
-        return self._P
 
 
     def predict(self, u=0):
@@ -132,20 +123,20 @@ class MMAEFilterBank(object):
         self.p /= sum(self.p) # normalize
 
         # compute estimated state and covariance of the bank of filters.
-        self._P = zeros(self.filters[0].P.shape)
+        self.P = zeros(self.filters[0].P.shape)
 
         # state can be in form [x,y,z,...] or [[x, y, z,...]].T
         is_row_vector = (self.filters[0].x.ndim == 1)
         if is_row_vector:
-            self._x = zeros(self.dim_x)
+            self.x = zeros(self.dim_x)
             for f, p in zip(self.filters, self.p):
-                self._x += dot(f.x, p)
+                self.x += dot(f.x, p)
         else:
-            self._x = zeros((self.dim_x, 1))
+            self.x = zeros((self.dim_x, 1))
             for f, p in zip(self.filters, self.p):
-                self._x = zeros((self.dim_x, 1))
-                self._x += dot(f.x, p)
+                self.x = zeros((self.dim_x, 1))
+                self.x += dot(f.x, p)
 
-        for x, f, p in zip(self._x, self.filters, self.p):
+        for x, f, p in zip(self.x, self.filters, self.p):
             y = f.x - x
-            self._P += p*(outer(y, y) + f.P)
+            self.P += p*(outer(y, y) + f.P)

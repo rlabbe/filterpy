@@ -34,8 +34,8 @@ def test_noisy_1d():
 
     f.H = np.array([[1.,0.]])    # Measurement function
     f.P *= 1000.                  # covariance matrix
-    f.R = 5                       # state uncertainty
-    f.Q = 0.0001                 # process uncertainty
+    f.R *= 5                       # state uncertainty
+    f.Q *= 0.0001                 # process uncertainty
 
     fsq = SquareRootKalmanFilter (dim_x=2, dim_z=1)
 
@@ -96,7 +96,7 @@ def test_noisy_1d():
         p4, = plt.plot(m[:,0], 'm')
         p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
         plt.legend([p1,p2, p3, p4],
-                   ["noisy measurement", "KF output", "ideal", "batch"], 4)
+                   ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
 
 
         plt.show()

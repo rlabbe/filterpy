@@ -59,21 +59,21 @@ class InformationFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._x = zeros((dim_x,1)) # state
-        self._P_inv = eye(dim_x)   # uncertainty covariance
-        self._Q = eye(dim_x)       # process uncertainty
-        self._B = 0                # control transition matrix
+        self.x = zeros((dim_x, 1)) # state
+        self.P_inv = eye(dim_x)   # uncertainty covariance
+        self.Q = eye(dim_x)       # process uncertainty
+        self.B = 0                # control transition matrix
         self._F = 0                # state transition matrix
         self._F_inv = 0            # state transition matrix
-        self._H = 0                # Measurement function
-        self._R_inv = eye(dim_z)   # state uncertainty
+        self.H = 0                # Measurement function
+        self.R_inv = eye(dim_z)   # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self._K = 0 # kalman gain
-        self._y = zeros((dim_z, 1))
-        self._S = 0 # system uncertainty in measurement space
+        self.K = 0 # kalman gain
+        self.y = zeros((dim_z, 1))
+        self.S = 0 # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -100,33 +100,34 @@ class InformationFilter(object):
             return
 
         if R_inv is None:
-            R_inv = self._R_inv
+            R_inv = self.R_inv
         elif np.isscalar(R_inv):
             R_inv = eye(self.dim_z) * R_inv
 
         # rename for readability and a tiny extra bit of speed
-        H = self._H
+        H = self.H
         H_T = H.T
-        P_inv = self._P_inv
-        x = self._x
+        P_inv = self.P_inv
+        x = self.x
 
         if self._no_information:
-            self._x = dot(P_inv, x) + dot3(H_T, R_inv, z)
-            self._P_inv = P_inv + dot3(H_T, R_inv, H)
+            self.x = dot(P_inv, x) + dot3(H_T, R_inv, z)
+            self.P_inv = P_inv + dot3(H_T, R_inv, H)
 
-        else:       # y = z - Hx
+        else:
+            # y = z - Hx
             # error (residual) between measurement and prediction
-            self._y = z - dot(H, x)
+            self.y = z - dot(H, x)
 
             # S = HPH' + R
             # project system uncertainty into measurement space
-            self._S = P_inv + dot(H_T, R_inv).dot (H)
-            self._K = dot3(inv(self._S), H_T, R_inv)
+            self.S = P_inv + dot(H_T, R_inv).dot (H)
+            self.K = dot3(inv(self.S), H_T, R_inv)
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
-            self._x = x + dot(self._K, self._y)
-            self._P_inv = P_inv + dot3(H_T, R_inv, H)
+            self.x = x + dot(self.K, self.y)
+            self.P_inv = P_inv + dot3(H_T, R_inv, H)
 
 
     def predict(self, u=0):
@@ -142,31 +143,31 @@ class InformationFilter(object):
 
         # x = Fx + Bu
 
-        A = dot3(self._F_inv.T, self._P_inv, self._F_inv)
+        A = dot3(self._F_inv.T, self.P_inv, self._F_inv)
         try:
             AI = inv(A)
             invertable = True
             if self._no_information:
                 try:
-                    self._x = dot(inv(self._P_inv), self._x)
+                    self.x = dot(inv(self.P_inv), self.x)
                 except:
-                    self._x = dot(0, self._x)
+                    self.x = dot(0, self.x)
                 self._no_information = False
         except:
             invertable = False
             self._no_information  = True
 
         if invertable:
-            self._x = dot(self._F, self.x) + dot(self._B, u)
-            self._P_inv = inv(AI + self._Q)
+            self.x = dot(self._F, self.x) + dot(self.B, u)
+            self.P_inv = inv(AI + self.Q)
         else:
-            I_PF = self._I - dot(self._P_inv,self._F_inv)
+            I_PF = self._I - dot(self.P_inv,self._F_inv)
             FTI = inv(self._F.T)
-            FTIX = dot(FTI, self._x)
-            print('Q=', self._Q)
+            FTIX = dot(FTI, self.x)
+            print('Q=', self.Q)
             print('A=', A)
-            AQI = inv(A + self._Q)
-            self._x = dot(FTI, dot3(I_PF, AQI, FTIX))
+            AQI = inv(A + self.Q)
+            self.x = dot(FTI, dot3(I_PF, AQI, FTIX))
 
 
     def batch_filter(self, zs, Rs=None, update_first=False):
@@ -205,28 +206,28 @@ class InformationFilter(object):
         ''' this is a copy of the code from kalman_filter, it has not been
         turned into the information filter yet. DO NOT USE.'''
 
-        n = np.size(zs,0)
+        n = np.size(zs, 0)
         if Rs is None:
-            Rs = [None]*n
+            Rs = [None] * n
 
         # mean estimates from Kalman Filter
-        means = zeros((n,self.dim_x,1))
+        means = zeros((n, self.dim_x,1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x,self.dim_x))
+        covariances = zeros((n,self.dim_x, self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(zs,Rs)):
-                self.update(z,r)
-                means[i,:] = self._x
+            for i,(z,r) in enumerate(zip(zs, Rs)):
+                self.update(z, r)
+                means[i,:] = self.x
                 covariances[i,:,:] = self._P
                 self.predict()
         else:
-            for i,(z,r) in enumerate(zip(zs,Rs)):
+            for i,(z,r) in enumerate(zip(zs, Rs)):
                 self.predict()
-                self.update(z,r)
+                self.update(z, r)
 
-                means[i,:] = self._x
+                means[i,:] = self.x
                 covariances[i,:,:] = self._P
 
         return (means, covariances)
@@ -250,7 +251,7 @@ class InformationFilter(object):
         """
         raise "Not implemented yet"
 
-        x = dot(self._F, self._x) + dot(self._B, u)
+        x = dot(self._F, self.x) + dot(self.B, u)
         P = dot3(self._F, self._P, self._F.T) + self.Q
         return (x, P)
 
@@ -260,7 +261,7 @@ class InformationFilter(object):
         the state of the filter.
         """
         raise "Not implemented yet"
-        return z - dot(self._H, self._x)
+        return z - dot(self.H, self.x)
 
 
     def measurement_of_state(self, x):
@@ -279,49 +280,7 @@ class InformationFilter(object):
             measurement corresponding to the given state
         """
         raise "Not implemented yet"
-        return dot(self._H, x)
-
-
-    @property
-    def Q(self):
-        """Process uncertainty"""
-        return self._Q
-
-
-    @Q.setter
-    def Q(self, value):
-        self._Q = setter_scalar(value, self.dim_x)
-
-    @property
-    def P_inv(self):
-        """ inverse covariance matrix"""
-        return self._P_inv
-
-
-    @P_inv.setter
-    def P_inv(self, value):
-        self._P_inv = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def R_inv(self):
-        """inverse measurement uncertainty"""
-        return self._R_inv
-
-
-    @R_inv.setter
-    def R_inv(self, value):
-        self._R_inv = setter_scalar(value, self.dim_z)
-
-    @property
-    def H(self):
-        """Measurement function"""
-        return self._H
-
-
-    @H.setter
-    def H(self, value):
-        self._H = setter(value, self.dim_z, self.dim_x)
+        return dot(self.H, x)
 
 
     @property
@@ -334,43 +293,3 @@ class InformationFilter(object):
     def F(self, value):
         self._F = setter(value, self.dim_x, self.dim_x)
         self._F_inv = inv(self._F)
-
-    @property
-    def B(self):
-        """ control transition matrix"""
-        return self._B
-
-
-    @B.setter
-    def B(self, value):
-        """ control transition matrix"""
-        self._B = setter (value, self.dim_x, self.dim_u)
-
-
-    @property
-    def x(self):
-        """ State estimate vector """
-        return self._x
-
-
-    @x.setter
-    def x(self, value):
-        self._x = setter(value, self.dim_x, 1)
-
-    @property
-    def K(self):
-        """ Kalman gain """
-        return self._K
-
-    @property
-    def y(self):
-        """ measurement residual (innovation) """
-        return self._y
-
-    @property
-    def S(self):
-        """ system uncertainy in measurement space """
-        return self._S
-
-
-

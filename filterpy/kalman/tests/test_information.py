@@ -32,18 +32,19 @@ def test_1d_0P():
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
-    inf.x = f.x.copy()
     f.F = (np.array([[1.,1.],
                      [0.,1.]]))    # state transition matrix
 
-    inf.F = f.F.copy()
     f.H = np.array([[1.,0.]])    # Measurement function
+    f.R = np.array([[5.]])                 # state uncertainty
+    f.Q = np.eye(2)*0.0001                 # process uncertainty
+    f.P = np.diag([20., 20.])
+
+    inf.x = f.x.copy()
+    inf.F = f.F.copy()
     inf.H = np.array([[1.,0.]])    # Measurement function
-    f.R = 5.                 # state uncertainty
-    inf.R_inv = 1./5                 # state uncertainty
-    f.Q = 0.0001                 # process uncertainty
-    inf.Q = 0.0001
-    f.P *= 20
+    inf.R_inv *= 1./5                 # state uncertainty
+    inf.Q *= 0.0001
     inf.P_inv = 0
     #inf.P_inv = inv(f.P)
 
@@ -93,10 +94,11 @@ def test_1d():
     inf.F = f.F.copy()
     f.H = np.array([[1.,0.]])      # Measurement function
     inf.H = np.array([[1.,0.]])    # Measurement function
-    f.R = 5.                       # state uncertainty
-    inf.R_inv = 1./5               # state uncertainty
-    f.Q = 0.0001                   # process uncertainty
-    inf.Q = 0.0001
+    f.R *= 5                       # state uncertainty
+    inf.R_inv *= 1./5               # state uncertainty
+    f.Q *= 0.0001                  # process uncertainty
+    inf.Q *= 0.0001
+
 
     m = []
     r = []
