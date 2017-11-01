@@ -22,6 +22,7 @@ import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import scipy.linalg as linalg
+import sys
 
 
 class KalmanFilter(object):
@@ -120,12 +121,16 @@ class KalmanFilter(object):
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = 0 # kalman gain
+        self.K = np.zeros(self.x.shape) # kalman gain
         self.y = zeros((dim_z, 1))
         self.S = np.zeros((dim_z, dim_z)) # system uncertainty
 
         # identity matrix. Do not alter this.
         self.I = np.eye(dim_x)
+
+        # these will always be a copy of x,P after predict() is called
+        self.x_pred = zeros((dim_x,1))
+        self.P_pred = eye(dim_x)
 
 
     def update(self, z, R=None, H=None):
@@ -399,6 +404,9 @@ class KalmanFilter(object):
 
         # P = FPF' + Q
         self.P = self._alpha_sq * dot3(F, self.P, F.T) + Q
+
+        self.x_pred = self.x[:]
+        self.P_pred = self.P[:]
 
 
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None, Rs=None, Bs=None, us=None, update_first=False):
@@ -686,7 +694,9 @@ class KalmanFilter(object):
     @property
     def likelihood(self):
         """ likelihood of measurement"""
-        return math.exp(self.log_likelihood)
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+            return sys.float_info.min
 
 
     @alpha.setter
@@ -1063,3 +1073,50 @@ def rts_smoother(Xs, Ps, Fs, Qs):
         P[k] += dot3 (K[k], P[k+1] - P_pred, K[k].T)
 
     return (x, P, K)
+
+
+class Saver(object):
+    """ Helper class to save the states of the KalmanFilter class.
+    Each time you call save() the current states are appended to lists.
+    Generally you would do this once per epoch - predict/update.
+
+    Once you are done filtering you can optionally call to_array()
+    to convert all of the lists to numpy arrays. You cannot safely call
+    save() after calling to_array().
+    """
+
+    def __init__(self, kf, save_current=True):
+        """ Construct the save object, optionally saving the current
+        state of the filter"""
+
+        self.xs = []
+        self.Ps = []
+        self.Ks = []
+        self.ys = []
+        self.xs_pred = []
+        self.Ps_pred = []
+        self.kf = kf
+        if save_current:
+            self.save()
+
+    def save(self):
+        """ save the current state of the Kalman filter"""
+
+        kf = self.kf
+        self.xs.append(kf.x[:])
+        self.Ps.append(kf.P[:])
+        self.Ks.append(kf.K[:])
+        self.ys.append(kf.y[:])
+        self.xs_pred.append(kf.x_pred[:])
+        self.Ps_pred.append(kf.P_pred[:])
+
+
+    def to_array(self):
+        """ convert all of the lists into np.array"""
+
+        self.xs = np.array(self.xs)
+        self.Ps = np.array(self.Ps)
+        self.Ks = np.array(self.Ks)
+        self.ys = np.array(self.ys)
+        self.xs_pred = np.array(self.xs_pred)
+        self.Ps_pred = np.array(self.Ps_pred)
