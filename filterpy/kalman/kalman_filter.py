@@ -1083,6 +1083,25 @@ class Saver(object):
     Once you are done filtering you can optionally call to_array()
     to convert all of the lists to numpy arrays. You cannot safely call
     save() after calling to_array().
+
+    Examples
+    --------
+
+    .. code-block:: Python
+
+    kf = KalmanFilter(...whatever)
+    # initialize kf here
+
+    saver = Saver(kf) # save data for kf filter
+    for z in zs:
+        kf.predict()
+        kf.update(z)
+
+        saver.save()
+
+    saver.to_array()
+    # plot the 0th element of the state
+    plt.plot(saver.xs[:, 0, 0])
     """
 
     def __init__(self, kf, save_current=True):
