@@ -45,6 +45,12 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
 
     var : float, default=1.0
         variance in the noise
+
+    References
+    ----------
+
+    Bar-Shalom. "Estimation with Applications To Tracking and Navigation".
+    John Wiley & Sons, 2001. Page 274.
     """
 
     assert dim == 2 or dim == 3
