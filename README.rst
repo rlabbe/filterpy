@@ -22,7 +22,7 @@ example, I find it somewhat clearer to write a small set of equations
 using linear algebra, but numpy's overhead on small matrices makes it
 run slower than writing each equation out by hand. Furthermore, books
 such Zarchan present the written out form, not the linear algebra form.
-It ishard for me to choose which presentation is 'clearer' - it depends
+It is hard for me to choose which presentation is 'clearer' - it depends
 on the audience. In that case I usually opt for the faster implementation.
 
 I use NumPy and SciPy for all of the computations. I have experimented
@@ -109,16 +109,16 @@ Initialize the filter's matrices.
 
 .. code-block:: python
 
-    f.x = np.array([[2.],
+    my_filter.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
-    f.F = np.array([[1.,1.],
+    my_filter.F = np.array([[1.,1.],
                     [0.,1.]])    # state transition matrix
 
-    f.H = np.array([[1.,0.]])    # Measurement function
-    f.P *= 1000.                 # covariance matrix
-    f.R = 5                      # state uncertainty
-    f.Q = Q_discrete_white_noise(2, dt, .1) # process uncertainty
+    my_filter.H = np.array([[1.,0.]])    # Measurement function
+    my_filter.P *= 1000.                 # covariance matrix
+    my_filter.R = 5                      # state uncertainty
+    my_filter.Q = Q_discrete_white_noise(2, dt, .1) # process uncertainty
 
 
 Finally, run the filter.
