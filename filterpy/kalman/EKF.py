@@ -119,6 +119,7 @@ class ExtendedKalmanFilter(object):
         # update step
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
+        self._K = K
 
         self._x = x + dot(K, (z - Hx(x, *hx_args)))
 
@@ -190,9 +191,11 @@ class ExtendedKalmanFilter(object):
 
         S = dot3(H, P, H.T) + R
         K = dot3(P, H.T, linalg.inv (S))
+        self._K = K
 
         hx =  Hx(x, *hx_args)
         y = residual(z, hx)
+        self._y = y
         self._x = x + dot(K, y)
 
         I_KH = self._I - dot(K, H)
