@@ -131,6 +131,8 @@ class KalmanFilter(object):
         # these will always be a copy of x,P after predict() is called
         self.x_pred = zeros((dim_x,1))
         self.P_pred = eye(dim_x)
+        
+        self.log_likelihood = math.log(sys.float_info.min)
 
 
     def update(self, z, R=None, H=None):
@@ -694,9 +696,12 @@ class KalmanFilter(object):
     @property
     def likelihood(self):
         """ likelihood of measurement"""
+        
         lh = math.exp(self.log_likelihood)
         if lh == 0:
             return sys.float_info.min
+        else:
+            return lh
 
 
     @alpha.setter
