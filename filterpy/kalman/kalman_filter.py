@@ -62,8 +62,8 @@ class KalmanFilter(object):
 
     You may read the following attributes.
 
-    Attributes
-    ----------
+    Read Only Attributes
+    --------------------
     y : numpy.array
         Residual of the update step.
 
@@ -1093,8 +1093,8 @@ class Saver(object):
     to convert all of the lists to numpy arrays. You cannot safely call
     save() after calling to_array().
 
-    Examples
-    --------
+    Example
+    -------
 
     .. code-block:: Python
 

@@ -1,3 +1,18 @@
+Version 1.1.0
+=============
+* fixed bug in likelihood to never return 0, which can happen
+due to floating point underflow
+
+* Added a Saver class to save the state of the KalmanFilter
+in arrays. Makes it easy to save the intermediate values
+while performing filtering.
+
+* Fixed bug where likelihood() returned None
+
+* Altered RTS_smoother algorithm to also return the 
+predicted covariances
+
+
 Version 1.0.0
 =============
 

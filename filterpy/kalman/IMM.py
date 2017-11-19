@@ -39,6 +39,8 @@ class IMMEstimator(object):
 
     def __init__(self, filters, mu, M):
         """"
+        Create an IMM estimator from a list of filters.
+        
         Parameters
         ----------
 
@@ -53,6 +55,7 @@ class IMMEstimator(object):
         M : (N,N) ndarray of float
             Markov chain transition matrix. M[i,j] is the probability of
             switching from filter j to filter i.
+
         """
 
         assert len(filters) > 1
