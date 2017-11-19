@@ -180,8 +180,7 @@ while some_condition_is_true:
     do_something_with_estimate (f.x)
 
 
-Procedural Form
-===============
+**Procedural Form**
 
 This module also contains stand alone functions to peform Kalman filtering.
 Use these if you are not a fan of objects.

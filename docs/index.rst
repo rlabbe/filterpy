@@ -178,6 +178,7 @@ Implements various Kalman filters using the linear equations form of the filter.
     :maxdepth: 1
 
     kalman/KalmanFilter
+    kalman/Saver
     kalman/FixedLagSmoother
     kalman/SquareRootFilter
     kalman/InformationFilter
