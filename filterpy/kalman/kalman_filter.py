@@ -15,14 +15,14 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, unicode_literals)
-from filterpy.common import setter, setter_1d, setter_scalar, dot3
-from filterpy.stats import logpdf
+from __future__ import (absolute_import, division)
 import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import scipy.linalg as linalg
 import sys
+from filterpy.common import setter, setter_1d, setter_scalar
+from filterpy.stats import logpdf
 
 
 class KalmanFilter(object):
@@ -188,11 +188,11 @@ class KalmanFilter(object):
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        self.S = dot3(H, P, H.T) + R
+        self.S = dot(H, P).dot(H.T) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot3(P, H.T, linalg.inv(self.S))
+        self.K = dot(P, H.T).dot(linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -200,7 +200,7 @@ class KalmanFilter(object):
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self.I - dot(self.K, H)
-        self.P = dot3(I_KH, P, I_KH.T) + dot3(self.K, R, self.K.T)
+        self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
         self.log_likelihood = logpdf(z, dot(H, x), self.S)
 
@@ -254,7 +254,7 @@ class KalmanFilter(object):
         self.y = z - dot(H, x)
 
         # project system uncertainty into measurement space
-        self.S = dot3(H, P, H.T) + dot(H, M) + dot(M.T, H.T) + R
+        self.S = dot(H, P).dot(H.T) + dot(H, M) + dot(M.T, H.T) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
@@ -405,7 +405,7 @@ class KalmanFilter(object):
         self.x = dot(F, self.x) + dot(B, u)
 
         # P = FPF' + Q
-        self.P = self._alpha_sq * dot3(F, self.P, F.T) + Q
+        self.P = self._alpha_sq * dot(F, self.P).dot(F.T) + Q
 
         self.x_pred = self.x[:]
         self.P_pred = self.P[:]
@@ -620,11 +620,11 @@ class KalmanFilter(object):
         x, P, Pp = Xs.copy(), Ps.copy(), Ps.copy()
 
         for k in range(n-2,-1,-1):
-            Pp[k] = dot3(Fs[k+1], P[k], Fs[k+1].T) + Qs[k+1]
+            Pp[k] = dot(Fs[k+1], P[k]).dot(Fs[k+1].T) + Qs[k+1]
 
-            K[k]  = dot3(P[k], Fs[k+1].T, linalg.inv(Pp[k]))
+            K[k]  = dot(P[k], Fs[k+1].T).dot(linalg.inv(Pp[k]))
             x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
-            P[k] += dot3(K[k], P[k+1] - Pp[k], K[k].T)
+            P[k] += dot(K[k], P[k+1] - Pp[k]).dot(K[k].T)
 
         return (x, P, K, Pp)
 
@@ -647,7 +647,7 @@ class KalmanFilter(object):
         """
 
         x = dot(self.F, self.x) + dot(self.B, u)
-        P = self._alpha_sq * dot3(self.F, self.P, self.F.T) + self.Q
+        P = self._alpha_sq * dot(self.F, self.P).dot(self.F.T) + self.Q
         return (x, P)
 
 
@@ -798,14 +798,14 @@ def update(x, P, z, R, H=None, return_all=False):
     y = z - dot(H, x)
 
     # project system uncertainty into measurement space
-    S = dot3(H, P, H.T) + R
+    S = dot(H, P).dot(H.T) + R
 
 
     # map system uncertainty into kalman gain
     try:
-        K = dot3(P, H.T, linalg.inv(S))
+        K = dot(P, H.T).dot(linalg.inv(S))
     except:
-        K = dot3(P, H.T, 1/S)
+        K = dot(P, H.T).dot(1/S)
 
 
     # predict new x with residual scaled by the kalman gain
@@ -819,7 +819,7 @@ def update(x, P, z, R, H=None, return_all=False):
         I_KH = np.eye(KH.shape[0]) - KH
     except:
         I_KH = np.array(1 - KH)
-    P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+    P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
 
     if return_all:
@@ -878,7 +878,7 @@ def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
     if np.isscalar(F):
         F = np.array(F)
     x = dot(F, x) + dot(B, u)
-    P = (alpha * alpha) * dot3(F, P, F.T) + Q
+    P = (alpha * alpha) * dot(F, P).dot(F.T) + Q
 
     return x, P
 
@@ -1075,11 +1075,11 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     x, P, pP = Xs.copy(), Ps.copy(), Ps.copy()
 
     for k in range(n-2,-1,-1):
-        pP[k] = dot3(Fs[k], P[k], Fs[k].T) + Qs[k]
+        pP[k] = dot(Fs[k], P[k]).dot(Fs[k].T) + Qs[k]
 
-        K[k]  = dot3(P[k], Fs[k].T, linalg.inv(pP[k]))
-        x[k] += dot (K[k], x[k+1] - dot(Fs[k], x[k]))
-        P[k] += dot3 (K[k], P[k+1] - pP[k], K[k].T)
+        K[k]  = dot(P[k], Fs[k].T).dot(linalg.inv(pP[k]))
+        x[k] += dot(K[k], x[k+1] - dot(Fs[k], x[k]))
+        P[k] += dot(K[k], P[k+1] - pP[k]).dot(K[k].T)
 
     return (x, P, K, pP)
 

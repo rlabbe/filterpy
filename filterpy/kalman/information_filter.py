@@ -16,13 +16,11 @@ for more information.
 """
 
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division)
 import numpy as np
-from scipy.linalg import inv
 from numpy import dot, zeros, eye, asarray
-from filterpy.common import setter, setter_scalar, dot3
-
+from scipy.linalg import inv
+from filterpy.common import setter, setter_scalar
 
 
 class InformationFilter(object):
@@ -111,8 +109,8 @@ class InformationFilter(object):
         x = self.x
 
         if self._no_information:
-            self.x = dot(P_inv, x) + dot3(H_T, R_inv, z)
-            self.P_inv = P_inv + dot3(H_T, R_inv, H)
+            self.x = dot(P_inv, x) + dot(H_T, R_inv).dot(z)
+            self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
 
         else:
             # y = z - Hx
@@ -122,12 +120,12 @@ class InformationFilter(object):
             # S = HPH' + R
             # project system uncertainty into measurement space
             self.S = P_inv + dot(H_T, R_inv).dot (H)
-            self.K = dot3(inv(self.S), H_T, R_inv)
+            self.K = dot(inv(self.S), H_T).dot(R_inv)
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
             self.x = x + dot(self.K, self.y)
-            self.P_inv = P_inv + dot3(H_T, R_inv, H)
+            self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
 
 
     def predict(self, u=0):
@@ -143,7 +141,7 @@ class InformationFilter(object):
 
         # x = Fx + Bu
 
-        A = dot3(self._F_inv.T, self.P_inv, self._F_inv)
+        A = dot(self._F_inv.T, self.P_inv).dot(self._F_inv)
         try:
             AI = inv(A)
             invertable = True
@@ -164,10 +162,8 @@ class InformationFilter(object):
             I_PF = self._I - dot(self.P_inv,self._F_inv)
             FTI = inv(self._F.T)
             FTIX = dot(FTI, self.x)
-            print('Q=', self.Q)
-            print('A=', A)
             AQI = inv(A + self.Q)
-            self.x = dot(FTI, dot3(I_PF, AQI, FTIX))
+            self.x = dot(FTI, dot(I_PF, AQI).dot(FTIX))
 
 
     def batch_filter(self, zs, Rs=None, update_first=False):
@@ -252,7 +248,7 @@ class InformationFilter(object):
         raise "Not implemented yet"
 
         x = dot(self._F, self.x) + dot(self.B, u)
-        P = dot3(self._F, self._P, self._F.T) + self.Q
+        P = dot(self._F, self._P).dot(self._F.T) + self.Q
         return (x, P)
 
 

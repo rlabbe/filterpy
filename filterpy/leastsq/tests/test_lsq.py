@@ -19,21 +19,18 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-import numpy.random as random
+from math import sqrt
 import matplotlib.pyplot as plt
 import numpy as np
-from math import sqrt
 from numpy import dot
+import numpy.random as random
 from scipy.linalg import inv
-from filterpy.common import dot3
-from filterpy.leastsq import LeastSquaresFilter
 from filterpy.gh import GHFilter
-
+from filterpy.leastsq import LeastSquaresFilter
 
 
 def near_equal(x,y, e=1.e-14):
     return abs(x-y) < e
-
 
 
 class LSQ(object):
@@ -53,12 +50,10 @@ class LSQ(object):
         self.k += 1
         print('k=', self.k, 1/self.k, 1/(self.k+1))
 
-        S = dot3(self.H, self.P, self.H.T) + self.R
-        K1 = dot3(self.P, self.H.T, inv(S))
-        #K1 = dot3(self.P, self.H.T, inv(self.R))
+        S = dot(self.H, self.P).dot(self.H.T) + self.R
+        K1 = dot(self.P, self.H.T).dot(inv(S))
 
         print('K1=', K1[0,0])
-        #print(K)
 
         I_KH = self.I - dot(K1, self.H)
         y = Z - dot(self.H, self.x)
@@ -66,9 +61,6 @@ class LSQ(object):
         self.x = self.x + dot(K1, y)
         self.P = dot(I_KH, self.P)
         print(self.P)
-
-        #assert self.P[[0,0] - K
-
 
 
 class LeastSquaresFilterOriginal(object):

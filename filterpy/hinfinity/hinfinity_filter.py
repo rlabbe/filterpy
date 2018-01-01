@@ -14,12 +14,11 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division
 import numpy as np
-import scipy.linalg as linalg
 from numpy import dot, zeros, eye
-from filterpy.common import setter, setter_scalar, dot3
+import scipy.linalg as linalg
+from filterpy.common import setter, setter_scalar
 
 
 class HInfinityFilter(object):
@@ -102,19 +101,19 @@ class HInfinityFilter(object):
         # common subexpression H.T * V^-1
         HTVI = dot(H.T, V_inv)
 
-        L = linalg.inv(I - gamma*dot(Q, P) + dot3(HTVI, H, P))
+        L = linalg.inv(I - gamma*dot(Q, P) + dot(HTVI, H).dot(P))
 
         #common subexpression P*L
         PL = dot(P,L)
 
-        K = dot3(F, PL, HTVI)
+        K = dot(F, PL).dot(HTVI)
 
         self.residual = Z - dot(H, x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self._x = self._x + dot(K, self.residual)
-        self._P = dot3(F, PL, F.T) + W
+        self._P = dot(F, PL).dot(F.T) + W
 
         # force P to be symmetric
         self._P = (self._P + self._P.T) / 2

@@ -14,16 +14,14 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division)
 
-from filterpy.common import dot3
-from filterpy.kalman import unscented_transform
-from filterpy.stats import logpdf
 import math
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
+from filterpy.kalman import unscented_transform
+from filterpy.stats import logpdf
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -357,7 +355,7 @@ class UnscentedKalmanFilter(object):
         self.y = self.residual_z(z, zp)   # residual
 
         self.x = self.x + dot(self.K, self.y)
-        self.P = self.P - dot3(self.K, Pz, self.K.T)
+        self.P = self.P - dot(self.K, Pz).dot(self.K.T)
 
         self.log_likelihood = logpdf(self.y, np.zeros(len(self.y)), Pz)
 
@@ -538,8 +536,8 @@ class UnscentedKalmanFilter(object):
             K = dot(Pxb, inv(Pb))
 
             # update the smoothed estimates
-            xs[k] += dot (K, self.residual_x(xs[k+1], xb))
-            ps[k] += dot3(K, ps[k+1] - Pb, K.T)
+            xs[k] += dot(K, self.residual_x(xs[k+1], xb))
+            ps[k] += dot(K, ps[k+1] - Pb).dot(K.T)
             Ks[k] = K
 
         return (xs, ps, Ks)

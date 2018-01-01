@@ -14,17 +14,12 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+from __future__ import (absolute_import, division)
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-from filterpy.common import dot3
-import numpy as np
 from math import sqrt
+import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
-
-
 
 
 def spherical_radial_sigmas(x, P):
@@ -318,4 +313,4 @@ class CubatureKalmanFilter(object):
         self.y = self.residual_z(z, zp)   #residual
 
         self.x = self.x + dot(self.K, self.y)
-        self.P = self.P - dot3(self.K, Pz, self.K.T)
+        self.P = self.P - dot(self.K, Pz).dot(self.K.T)

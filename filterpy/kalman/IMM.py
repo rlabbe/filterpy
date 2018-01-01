@@ -16,7 +16,6 @@ for more information.
 """
 
 from __future__ import (absolute_import, division)
-from filterpy.common import dot3
 import numpy as np
 from numpy import dot, zeros
 
@@ -132,7 +131,7 @@ class IMMEstimator(object):
             f.x = dot(f.F, xs[i])
             if u is not None:
                 f.x += dot(f.B, u[i])
-            f.P = dot3(f.F, Ps[i], f.F.T) + f.Q
+            f.P = dot(f.F, Ps[i]).dot(f.F.T) + f.Q
 
 
         # compute mixed IMM state and covariance

@@ -15,12 +15,11 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division)
 import numpy as np
-from scipy.linalg import cholesky, qr, pinv
 from numpy import dot, zeros, eye
-from filterpy.common import setter, setter_scalar, dot3
+from scipy.linalg import cholesky, qr, pinv
+from filterpy.common import setter, setter_scalar
 
 
 class SquareRootKalmanFilter(object):
@@ -169,7 +168,7 @@ class SquareRootKalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x += dot3(self._K, pinv(N), self._y)
+        self._x += dot(self._K, pinv(N)).dot(self._y)
         self._P1_2 = S[dim_z:, dim_z:].T
 
 

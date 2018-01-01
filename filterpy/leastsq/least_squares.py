@@ -14,10 +14,9 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-import numpy as np
+from __future__ import absolute_import, division
 from math import sqrt
+import numpy as np
 
 
 class LeastSquaresFilter(object):

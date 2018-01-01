@@ -19,9 +19,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import numpy as np
-from scipy.linalg import inv
 from numpy import dot, zeros, eye
-from filterpy.common import dot3, dot4, dotn
+from scipy.linalg import inv
 
 
 class FixedLagSmoother(object):
@@ -174,20 +173,20 @@ class FixedLagSmoother(object):
         if u is not None:
             x_pre += dot(B,u)
 
-        P = dot3(F, P, F.T) + Q
+        P = dot(F, P).dot(F.T) + Q
 
         # update step of normal Kalman filter
         y = z - dot(H, x_pre)
 
-        S = dot3(H, P, H.T) + R
+        S = dot(H, P).dot(H.T) + R
         SI = inv(S)
 
-        K = dot3(P, H.T, SI)
+        K = dot(P, H.T).dot(SI)
 
         x = x_pre + dot(K, y)
 
         I_KH = self._I - dot(K, H)
-        P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
         self.xSmooth.append(x_pre.copy())
 
@@ -274,20 +273,20 @@ class FixedLagSmoother(object):
             if us is not None:
                 x_pre += dot(B,us[k])
 
-            P = dot3(F, P, F.T) + Q
+            P = dot(F, P).dot(F.T) + Q
 
             # update step of normal Kalman filter
             y = z - dot(H, x_pre)
 
-            S = dot3(H, P, H.T) + R
+            S = dot(H, P).dot(H.T) + R
             SI = inv(S)
 
-            K = dot3(P, H.T, SI)
+            K = dot(P, H.T).dot(SI)
 
             x = x_pre + dot(K, y)
 
             I_KH = self._I - dot(K, H)
-            P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+            P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
             xhat[k]    = x.copy()
             xSmooth[k] = x_pre.copy()

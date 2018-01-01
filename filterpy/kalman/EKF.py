@@ -18,9 +18,9 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-import scipy.linalg as linalg
 from numpy import dot, zeros, eye
-from filterpy.common import setter, setter_1d, setter_scalar, dot3
+import scipy.linalg as linalg
+from filterpy.common import setter, setter_1d, setter_scalar
 
 
 class ExtendedKalmanFilter(object):
@@ -114,17 +114,17 @@ class ExtendedKalmanFilter(object):
 
         # predict step
         x = dot(F, x) + dot(B, u)
-        P = dot3(F, P, F.T) + Q
+        P = dot(F, P).dot(F.T) + Q
 
         # update step
-        S = dot3(H, P, H.T) + R
-        K = dot3(P, H.T, linalg.inv (S))
+        S = dot(H, P).dot(H.T) + R
+        K = dot(P, H.T).dot(linalg.inv (S))
         self._K = K
 
         self._x = x + dot(K, (z - Hx(x, *hx_args)))
 
         I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
 
     def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
@@ -189,8 +189,8 @@ class ExtendedKalmanFilter(object):
 
         H = HJacobian(x, *args)
 
-        S = dot3(H, P, H.T) + R
-        K = dot3(P, H.T, linalg.inv (S))
+        S = dot(H, P).dot(H.T) + R
+        K = dot(P, H.T).dot(linalg.inv (S))
         self._K = K
 
         hx =  Hx(x, *hx_args)
@@ -199,7 +199,7 @@ class ExtendedKalmanFilter(object):
         self._x = x + dot(K, y)
 
         I_KH = self._I - dot(K, H)
-        self._P = dot3(I_KH, P, I_KH.T) + dot3(K, R, K.T)
+        self._P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
 
     def predict_x(self, u=0):
@@ -223,7 +223,7 @@ class ExtendedKalmanFilter(object):
         """
 
         self.predict_x(u)
-        self._P = dot3(self._F, self._P, self._F.T) + self._Q
+        self._P = dot(self._F, self._P).dot(self._F.T) + self._Q
 
 
     @property

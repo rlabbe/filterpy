@@ -20,20 +20,6 @@ from numpy import array, asarray, isscalar, eye, dot
 from functools import reduce
 
 
-def dot3(A,B,C):
-    """ Returns the matrix multiplication of A*B*C"""
-    return dot(A, dot(B,C))
-
-def dot4(A,B,C,D):
-    """ Returns the matrix multiplication of A*B*C*D"""
-    return dot(A, dot(B, dot(C,D)))
-
-
-def dotn(*args):
-    """ Returns the matrix multiplication of 2 or more matrices"""
-    return reduce(dot, args)
-
-
 def runge_kutta4(y, x, dx, f):
     """computes 4th order Runge-Kutta for dy/dx.
 

@@ -19,10 +19,9 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from scipy.linalg import inv
 from numpy import dot, zeros, eye, outer
 from numpy.random import multivariate_normal
-from filterpy.common import dot3
+from scipy.linalg import inv
 
 
 class EnsembleKalmanFilter(object):
@@ -195,7 +194,7 @@ class EnsembleKalmanFilter(object):
             self.sigmas[i] += dot(K, z + e_r[i] - sigmas_h[i])
 
         self.x = np.mean(self.sigmas, axis=0)
-        self.P = self.P - dot3(K, P_zz, K.T)
+        self.P = self.P - dot(K, P_zz).dot(K.T)
 
 
     def predict(self):
