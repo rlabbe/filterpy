@@ -847,18 +847,18 @@ def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
     F : numpy.array()
         State Transition matrix
 
-    Q : numpy.array
+    Q : numpy.array, Optional
         Process noise matrix
 
 
-    u : numpy.array, default 0.
+    u : numpy.array, Optional, default 0.
         Control vector. If non-zero, it is multiplied by B
         to create the control input into the system.
 
-    B : numpy.array, default 0.
-        Optional control transition matrix.
+    B : numpy.array, optional, default 0.
+        Control transition matrix.
 
-    alpha : float, default=1.0
+    alpha : float, Optional, default=1.0
         Fading memory setting. 1.0 gives the normal Kalman filter, and
         values slightly larger than 1.0 (such as 1.02) give a fading
         memory effect - previous measurements have less influence on the
@@ -895,24 +895,18 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
         represented by 'None'.
 
     Fs : list-like
-        list of values to use for the state transition matrix matrix;
-        a value of None in any position will cause the filter
-        to use `self.F` for that time step.
+        list of values to use for the state transition matrix matrix.
 
-    Qs : list-like,
+    Qs : list-like
         list of values to use for the process error
-        covariance; a value of None in any position will cause the filter
-        to use `self.Q` for that time step.
+        covariance.
 
-    Hs : list-like, optional
-        list of values to use for the measurement matrix;
-        a value of None in any position will cause the filter
-        to use `self.H` for that time step.
+    Hs : list-like
+        list of values to use for the measurement matrix.
 
-    Rs : list-like, optional
+    Rs : list-like
         list of values to use for the measurement error
-        covariance; a value of None in any position will cause the filter
-        to use `self.R` for that time step.
+        covariance.
 
     Bs : list-like, optional
         list of values to use for the control transition matrix;
@@ -924,7 +918,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
         a value of None in any position will cause the filter to use
         0 for that time step.
 
-    update_first : bool, optional,
+    update_first : bool, optional
         controls whether the order of operations is update followed by
         predict, or predict followed by update. Default is predict->update.
 
@@ -1034,11 +1028,9 @@ def rts_smoother(Xs, Ps, Fs, Qs):
 
     Fs : list-like collection of numpy.array
         State transition matrix of the Kalman filter at each time step.
-        Optional, if not provided the filter's self.F will be used
 
     Qs : list-like collection of numpy.array, optional
-        Process noise of the Kalman filter at each time step. Optional,
-        if not provided the filter's self.Q will be used
+        Process noise of the Kalman filter at each time step.
 
     Returns
     -------
