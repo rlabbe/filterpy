@@ -39,7 +39,7 @@ class IMMEstimator(object):
     def __init__(self, filters, mu, M):
         """"
         Create an IMM estimator from a list of filters.
-        
+
         Parameters
         ----------
 
@@ -95,16 +95,16 @@ class IMMEstimator(object):
         L = zeros(len(self.filters))
         for i, f in enumerate(self.filters):
             f.update(z)
-            L[i] = f.likelihood
+            L[i] = f.likelihood(z)
 
         # initial condition IMM state, covariance
         xs, Ps = [], []
         # each element j = sum M_ij * mu_i
-        
-        # cbar is the total probability, after interaction, 
+
+        # cbar is the total probability, after interaction,
         # that the target is in state j. We use it as the
         # normalization constant.
-        self.cbar = dot(self.mu, self.M) 
+        self.cbar = dot(self.mu, self.M)
 
         # compute mixing probabilities
         omega = np.zeros((self.N, self.N))

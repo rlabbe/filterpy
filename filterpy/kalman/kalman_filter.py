@@ -131,8 +131,6 @@ class KalmanFilter(object):
         # these will always be a copy of x,P after predict() is called
         self.x_pred = zeros((dim_x,1))
         self.P_pred = eye(dim_x)
-        
-        self.log_likelihood = math.log(sys.float_info.min)
 
 
     def update(self, z, R=None, H=None):
@@ -202,8 +200,6 @@ class KalmanFilter(object):
         I_KH = self.I - dot(self.K, H)
         self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-        self.log_likelihood = logpdf(z, dot(H, x), self.S)
-
 
     def update_correlated(self, z, R=None, H=None):
         """ Add a new measurement (z) to the Kalman filter assuming that
@@ -264,9 +260,6 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = x + dot(self.K, self.y)
         self.P = P - dot(self.K, dot(H, P) + M.T)
-
-        # compute log likelihood
-        self.log_likelihood = logpdf(z, dot(H, x), self.S)
 
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
@@ -588,9 +581,9 @@ class KalmanFilter(object):
 
         'K' : numpy.ndarray
             smoother gain at each step
-            
+
         'Pp' : numpy.ndarray
-           Predicted state covariances            
+           Predicted state covariances
 
         Examples
         --------
@@ -695,11 +688,29 @@ class KalmanFilter(object):
         return self._alpha_sq**.5
 
 
-    @property
-    def likelihood(self):
-        """ likelihood of measurement"""
-        
-        lh = math.exp(self.log_likelihood)
+    def log_likelihood(self, z):
+        """ log likelihood of the measurement `z`. """
+
+        if z is None:
+            return math.log(sys.float_info.min)
+        else:
+            return logpdf(z, dot(self.H, self.x), self.S)
+
+
+    def likelihood(self, z, allow_zero=False):
+        """ likelihood of measurement `z`.
+
+        Computed from the log-likelihood. the log-likelihood can be very small,
+        meaning a large negative value such as -28000. Taking the exp() of that
+        results in 0.0, which can break typical algorithms which multiply
+        by this value, so by default we always return a
+        number >= sys.float_info.min. If you want to allow zero, set allow_zero
+        to True.
+
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
+
+        lh = math.exp(self.log_likelihood(z))
         if lh == 0:
             return sys.float_info.min
         else:

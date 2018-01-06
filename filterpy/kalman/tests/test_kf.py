@@ -44,17 +44,17 @@ class PosSensor1(object):
 
 def const_vel_filter(dt, x0=0, x_ndim=1, P_diag=(1., 1.), R_std=1., Q_var=0.0001):
     """ helper, constructs 1d, constant velocity filter"""
-    f = KalmanFilter (dim_x=2, dim_z=1)
+    f = KalmanFilter(dim_x=2, dim_z=1)
 
     if x_ndim == 1:
-        f.x = np.array([x0, 0])
+        f.x = np.array([x0, 0.])
     else:
-        f.x = np.array([[x0, 0]]).T
+        f.x = np.array([[x0, 0.]]).T
 
     f.F = np.array([[1., dt],
                     [0., 1.]])
 
-    f.H = np.array([[1.,0.]])
+    f.H = np.array([[1., 0.]])
     f.P = np.diag(P_diag)
     f.R = np.eye(1) * (R_std**2)
     f.Q = Q_discrete_white_noise(2, dt, Q_var)
@@ -66,16 +66,16 @@ def const_vel_filter(dt, x0=0, x_ndim=1, P_diag=(1., 1.), R_std=1., Q_var=0.0001
 def const_vel_filter_2d(dt, x_ndim=1, P_diag=(1., 1, 1, 1), R_std=1., Q_var=0.0001):
     """ helper, constructs 1d, constant velocity filter"""
 
-    kf = KalmanFilter (dim_x=4, dim_z=2)
+    kf = KalmanFilter(dim_x=4, dim_z=2)
 
-    kf.x = np.array([[0., 0.0, 0., 0.]]).T
+    kf.x = np.array([[0., 0., 0., 0.]]).T
     kf.P *=  np.diag(P_diag)
-    kf.F = np.array([[1, dt, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, 1, dt],
-                     [0, 0, 0, 1]])
+    kf.F = np.array([[1., dt, 0., 0.],
+                     [0., 1., 0., 0.],
+                     [0., 0., 1., dt],
+                     [0., 0., 0., 1.]])
 
-    kf.H = np.array([[1., 0, 0,  0],
+    kf.H = np.array([[1., 0, 0, 0],
                      [0., 0, 1, 0]])
 
     kf.R *= np.eye(2) * (R_std**2)
@@ -86,18 +86,18 @@ def const_vel_filter_2d(dt, x_ndim=1, P_diag=(1., 1, 1, 1), R_std=1., Q_var=0.00
 
 
 def test_noisy_1d():
-    f = KalmanFilter (dim_x=2, dim_z=1)
+    f = KalmanFilter(dim_x=2, dim_z=1)
 
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
 
-    f.F = np.array([[1.,1.],
-                    [0.,1.]])    # state transition matrix
+    f.F = np.array([[1., 1.],
+                    [0., 1.]])    # state transition matrix
 
-    f.H = np.array([[1.,0.]])    # Measurement function
+    f.H = np.array([[1., 0.]])    # Measurement function
     f.P *= 1000.                  # covariance matrix
     f.R = 5                       # state uncertainty
-    f.Q = 0.0001                 # process uncertainty
+    f.Q = 0.0001                  # process uncertainty
 
     measurements = []
     results = []
@@ -540,7 +540,7 @@ def test_z_dim():
 if __name__ == "__main__":
     DO_PLOT = True
     test_z_dim()
-    #test_batch_filter()
+    test_batch_filter()
 
     #test_univariate()
     #test_noisy_11d()
