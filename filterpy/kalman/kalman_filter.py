@@ -21,7 +21,6 @@ import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import scipy.linalg as linalg
 import sys
-from filterpy.common import setter, setter_1d, setter_scalar
 from filterpy.stats import logpdf
 
 

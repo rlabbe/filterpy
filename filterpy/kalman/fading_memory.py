@@ -21,7 +21,6 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from numpy import dot, zeros, eye, asarray
 import scipy.linalg as linalg
-from filterpy.common import setter, setter_scalar
 
 
 class FadingKalmanFilter(object):

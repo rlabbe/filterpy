@@ -18,9 +18,8 @@ for more information.
 
 from __future__ import (absolute_import, division)
 import numpy as np
-from numpy import dot, zeros, eye, asarray
+from numpy import dot, zeros, eye
 from scipy.linalg import inv
-from filterpy.common import setter, setter_scalar
 
 
 class InformationFilter(object):
@@ -287,5 +286,5 @@ class InformationFilter(object):
 
     @F.setter
     def F(self, value):
-        self._F = setter(value, self.dim_x, self.dim_x)
+        self._F = value
         self._F_inv = inv(self._F)

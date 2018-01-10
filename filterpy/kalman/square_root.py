@@ -19,7 +19,6 @@ from __future__ import (absolute_import, division)
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import cholesky, qr, pinv
-from filterpy.common import setter, setter_scalar
 
 
 class SquareRootKalmanFilter(object):
@@ -104,25 +103,25 @@ class SquareRootKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._x = zeros((dim_x,1)) # state
+        self.x = zeros((dim_x,1)) # state
         self._P = eye(dim_x)      # uncertainty covariance
         self._P1_2 = eye(dim_x)      # sqrt uncertainty covariance
         self._Q = eye(dim_x)      # sqrt process uncertainty
         self._Q1_2 = eye(dim_x)      # sqrt process uncertainty
-        self._B = 0                # control transition matrix
-        self._F = 0                # state transition matrix
-        self._H = 0                # Measurement function
+        self.B = 0                # control transition matrix
+        self.F = 0                # state transition matrix
+        self.H = 0                # Measurement function
         self._R1_2 = eye(dim_z)      # sqrt state uncertainty
 
         # Residual is computed during the innovation (update) step. We
         # save it so that in case you want to inspect it for various
         # purposes
-        self._y = zeros((dim_z, 1))
+        self.y = zeros((dim_z, 1))
 
         # identity matrix.
         self._I = np.eye(dim_x)
 
-        self._M = np.zeros((dim_z + dim_x, dim_z + dim_x))
+        self.M = np.zeros((dim_z + dim_x, dim_z + dim_x))
 
 
     def update(self, z, R2=None):
@@ -152,25 +151,24 @@ class SquareRootKalmanFilter(object):
 
         # rename for convienance
         dim_z = self.dim_z
-        M = self._M
+        M = self.M
 
         M[0:dim_z, 0:dim_z] = R2.T
-        M[dim_z:, 0:dim_z] = dot(self._H, self._P1_2).T
+        M[dim_z:, 0:dim_z] = dot(self.H, self._P1_2).T
         M[dim_z:, dim_z:] = self._P1_2.T
 
         _, S = qr(M)
-        self._K = S[0:dim_z,  dim_z:].T
+        self.K = S[0:dim_z,  dim_z:].T
         N = S[0:dim_z, 0:dim_z].T
 
         # y = z - Hx
         # error (residual) between measurement and prediction
-        self._y = z - dot(self._H, self._x)
+        self.y = z - dot(self.H, self.x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x += dot(self._K, pinv(N)).dot(self._y)
+        self.x += dot(self.K, pinv(N)).dot(self.y)
         self._P1_2 = S[dim_z:, dim_z:].T
-
 
 
     def predict(self, u=0):
@@ -185,10 +183,10 @@ class SquareRootKalmanFilter(object):
         """
 
         # x = Fx + Bu
-        self._x = dot(self._F, self.x) + dot(self._B, u)
+        self.x = dot(self.F, self.x) + dot(self.B, u)
 
         # P = FPF' + Q
-        T,P2 = qr(np.hstack([dot(self._F, self._P1_2), self._Q1_2]).T)
+        T, P2 = qr(np.hstack([dot(self.F, self._P1_2), self._Q1_2]).T)
         self._P1_2 = P2[:self.dim_x, :self.dim_x].T
 
 
@@ -197,7 +195,7 @@ class SquareRootKalmanFilter(object):
         the state of the filter.
         """
 
-        return z - dot(self._H, self._x)
+        return z - dot(self.H, self.x)
 
 
     def measurement_of_state(self, x):
@@ -215,7 +213,7 @@ class SquareRootKalmanFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-        return dot(self._H, x)
+        return dot(self.H, x)
 
 
     @property
@@ -233,7 +231,7 @@ class SquareRootKalmanFilter(object):
     @Q.setter
     def Q(self, value):
         """ Process uncertainty"""
-        self._Q = setter_scalar(value, self.dim_x)
+        self._Q = value
         self._Q1_2 = cholesky (self._Q, lower=True)
 
     @property
@@ -251,7 +249,7 @@ class SquareRootKalmanFilter(object):
     @P.setter
     def P(self, value):
         """ covariance matrix"""
-        self._P = setter_scalar(value, self.dim_x)
+        self._P = value
         self._P1_2 = cholesky(self._P, lower=True)
 
 
@@ -269,61 +267,5 @@ class SquareRootKalmanFilter(object):
     @R.setter
     def R(self, value):
         """ measurement uncertainty"""
-        self._R = setter_scalar(value, self.dim_z)
+        self._R = value
         self._R1_2 = cholesky (self._R, lower=True)
-
-    @property
-    def H(self):
-        """Measurement function"""
-        return self._H
-
-
-    @H.setter
-    def H(self, value):
-        """Measurement function"""
-        self._H = setter(value, self.dim_z, self.dim_x)
-
-
-    @property
-    def F(self):
-        """ state transition matrix"""
-        return self._F
-
-
-    @F.setter
-    def F(self, value):
-        """ state transition matrix"""
-        self._F = setter(value, self.dim_x, self.dim_x)
-
-    @property
-    def B(self):
-        """ control transition matrix"""
-        return self._B
-
-
-    @B.setter
-    def B(self, value):
-        """ control transition matrix"""
-        self._B = setter (value, self.dim_x, self.dim_u)
-
-
-    @property
-    def x(self):
-        """ filter state vector."""
-        return self._x
-
-
-    @x.setter
-    def x(self, value):
-        """ filter state vector."""
-        self._x = setter(value, self.dim_x, 1)
-
-    @property
-    def K(self):
-        """ Kalman gain """
-        return self._K
-
-    @property
-    def y(self):
-        """ measurement residual (innovation) """
-        return self._y

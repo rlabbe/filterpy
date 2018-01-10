@@ -18,7 +18,6 @@ from __future__ import absolute_import, division
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
-from filterpy.common import setter, setter_scalar
 
 
 class HInfinityFilter(object):
@@ -53,14 +52,14 @@ class HInfinityFilter(object):
 
         self.x = zeros((dim_x,1)) # state
 
-        self._G = 0                # control transistion matrx
-        self._F = 0                # state transition matrix
-        self._H = 0                # Measurement function
+        self.G = 0                # control transistion matrx
+        self.F = 0                # state transition matrix
+        self.H = 0                # Measurement function
 
-        self._P = eye(dim_x)       # uncertainty covariance
+        self.P = eye(dim_x)       # uncertainty covariance
         self._V_inv = zeros((dim_z, dim_z))
-        self._W = zeros((dim_x, dim_x))
-        self._Q = eye(dim_x)       # process uncertainty
+        self.W = zeros((dim_x, dim_x))
+        self.Q = eye(dim_x)       # process uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -90,21 +89,21 @@ class HInfinityFilter(object):
         # rename for readability and a tiny extra bit of speed
         I = self._I
         gamma = self.gamma
-        Q = self._Q
-        H = self._H
-        P = self._P
-        x = self._x
+        Q = self.Q
+        H = self.H
+        P = self.P
+        x = self.x
         V_inv = self._V_inv
-        F = self._F
-        W = self._W
+        F = self.F
+        W = self.W
 
         # common subexpression H.T * V^-1
         HTVI = dot(H.T, V_inv)
 
-        L = linalg.inv(I - gamma*dot(Q, P) + dot(HTVI, H).dot(P))
+        L = linalg.inv(I - gamma * dot(Q, P) + dot(HTVI, H).dot(P))
 
         #common subexpression P*L
-        PL = dot(P,L)
+        PL = dot(P, L)
 
         K = dot(F, PL).dot(HTVI)
 
@@ -112,11 +111,11 @@ class HInfinityFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self._x = self._x + dot(K, self.residual)
-        self._P = dot(F, PL).dot(F.T) + W
+        self.x = self.x + dot(K, self.residual)
+        self.P = dot(F, PL).dot(F.T) + W
 
         # force P to be symmetric
-        self._P = (self._P + self._P.T) / 2
+        self.P = (self.P + self.P.T) / 2
 
 
     '''def update_safe(self, Z):
@@ -140,7 +139,7 @@ class HInfinityFilter(object):
         """
 
         # x = Fx + Gu
-        self._x = dot(self._F, self._x) + dot(self._G, u)
+        self.x = dot(self.F, self.x) + dot(self.G, u)
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -218,7 +217,7 @@ class HInfinityFilter(object):
             State vecto of the prediction.
         """
 
-        x = dot(self._F, self._x) + dot(self._G, u)
+        x = dot(self.F, self.x) + dot(self.G, u)
         return x
 
 
@@ -226,7 +225,7 @@ class HInfinityFilter(object):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self._H, self._x)
+        return z - dot(self.H, self.x)
 
 
     def measurement_of_state(self, x):
@@ -244,70 +243,7 @@ class HInfinityFilter(object):
         z : np.array
             measurement corresponding to the given state
         """
-        return dot(self._H, x)
-
-
-    @property
-    def x(self):
-        """ state vector"""
-        return self._x
-
-
-    @x.setter
-    def x(self, value):
-        self._x = setter(value, self.dim_x, 1)
-
-
-    @property
-    def G(self):
-        return self._G
-
-
-    @G.setter
-    def G(self, value):
-        self._G = setter(self.dim_x, 1)
-
-
-    @property
-    def P(self):
-        """ covariance matrix"""
-        return self._P
-
-
-    @P.setter
-    def P(self, value):
-        self._P = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def F(self):
-        """ State transition matrix"""
-        return self._F
-
-
-    @F.setter
-    def F(self, value):
-        self._F = setter(value, self.dim_x, self.dim_x)
-
-
-    @property
-    def G(self):
-        return self._G
-
-
-    @G.setter
-    def G(self, value):
-        self._G = setter(value, self.dim_x, self.dim_u)
-
-
-    @property
-    def H(self):
-        return self._H
-
-
-    @H.setter
-    def H(self, value):
-        self._H = setter(value, self.dim_z, self.dim_x)
+        return dot(self.H, x)
 
 
     @property
@@ -317,24 +253,9 @@ class HInfinityFilter(object):
 
     @V.setter
     def V(self, value):
-        self._V = setter_scalar(value, self.dim_z)
-        self._V_inv = linalg.inv(self.V)
+        if np.isscalar(value):
+            self._V = np.array([[value]], dtype=float)
+        else:
+            self._V = value
+        self._V_inv = linalg.inv(self._V)
 
-
-    @property
-    def W(self):
-        return self._W
-
-
-    @W.setter
-    def W(self, value):
-        self._W = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def Q(self):
-        return self._Q
-
-    @Q.setter
-    def Q(self, value):
-        self._Q = setter_scalar(value, self.dim_x)

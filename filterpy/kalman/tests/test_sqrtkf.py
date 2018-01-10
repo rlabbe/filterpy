@@ -47,8 +47,8 @@ def test_noisy_1d():
 
     fsq.H = np.array([[1.,0.]])  # Measurement function
     fsq.P = np.eye(2) * 1000.    # covariance matrix
-    fsq.R = 5                    # state uncertainty
-    fsq.Q = 0.0001               # process uncertainty
+    fsq.R *= 5                    # state uncertainty
+    fsq.Q *= 0.0001               # process uncertainty
 
     measurements = []
     results = []

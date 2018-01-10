@@ -15,12 +15,10 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division, unicode_literals)
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
-from filterpy.common import setter, setter_1d, setter_scalar
 
 
 class ExtendedKalmanFilter(object):
@@ -49,13 +47,13 @@ class ExtendedKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self._x = zeros((dim_x,1)) # state
-        self._P = eye(dim_x)       # uncertainty covariance
-        self._B = 0                # control transition matrix
-        self._F = 0                # state transition matrix
-        self._R = eye(dim_z)       # state uncertainty
-        self._Q = eye(dim_x)       # process uncertainty
-        self._y = zeros((dim_z, 1))
+        self.x = zeros((dim_x,1)) # state
+        self.P = eye(dim_x)       # uncertainty covariance
+        self.B = 0                # control transition matrix
+        self.F = 0                # state transition matrix
+        self.R = eye(dim_z)       # state uncertainty
+        self.Q = eye(dim_x)       # process uncertainty
+        self.y = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -103,12 +101,12 @@ class ExtendedKalmanFilter(object):
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
-        F = self._F
-        B = self._B
-        P = self._P
-        Q = self._Q
-        R = self._R
-        x = self._x
+        F = self.F
+        B = self.B
+        P = self.P
+        Q = self.Q
+        R = self.R
+        x = self.x
 
         H = HJacobian(x, *args)
 
@@ -118,14 +116,14 @@ class ExtendedKalmanFilter(object):
 
         # update step
         PHT = dot(P, H.T)
-        S = dot(H, PHT) + R
-        K = PHT.dot(linalg.inv (S))
-        self._K = K
+        self.S = dot(H, PHT) + R
+        self.K = PHT.dot(linalg.inv (self.S))
 
-        self._x = x + dot(K, (z - Hx(x, *hx_args)))
+        self.y = z - Hx(x, *hx_args)
+        self.x = x + dot(self.K, self.y)
 
-        I_KH = self._I - dot(K, H)
-        self._P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
+        I_KH = self._I - dot(self.K, H)
+        self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
 
     def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
@@ -177,31 +175,29 @@ class ExtendedKalmanFilter(object):
         if not isinstance(hx_args, tuple):
             hx_args = (hx_args,)
 
-        P = self._P
+        P = self.P
         if R is None:
-            R = self._R
+            R = self.R
         elif np.isscalar(R):
             R = eye(self.dim_z) * R
 
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
-        x = self._x
+        x = self.x
 
         H = HJacobian(x, *args)
 
         PHT = dot(P, H.T)
         S = dot(H, PHT) + R
-        K = PHT.dot(linalg.inv (S))
-        self._K = K
+        self.K = PHT.dot(linalg.inv (S))
 
         hx =  Hx(x, *hx_args)
-        y = residual(z, hx)
-        self._y = y
-        self._x = x + dot(K, y)
+        self.y = residual(z, hx)
+        self.x = x + dot(self.K, self.y)
 
-        I_KH = self._I - dot(K, H)
-        self._P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
+        I_KH = self._I - dot(self.K, H)
+        self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
 
     def predict_x(self, u=0):
@@ -210,7 +206,7 @@ class ExtendedKalmanFilter(object):
         need to do this, for example, if the usual Taylor expansion to
         generate F is not providing accurate results for you. """
 
-        self._x = dot(self._F, self._x) + dot(self._B, u)
+        self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
     def predict(self, u=0):
@@ -225,92 +221,5 @@ class ExtendedKalmanFilter(object):
         """
 
         self.predict_x(u)
-        self._P = dot(self._F, self._P).dot(self._F.T) + self._Q
-
-
-    @property
-    def Q(self):
-        """ Process uncertainty matrix"""
-        return self._Q
-
-
-    @Q.setter
-    def Q(self, value):
-        """ Process uncertainty matrix"""
-        self._Q = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def P(self):
-        """ state covariance matrix"""
-        return self._P
-
-
-    @P.setter
-    def P(self, value):
-        """ state covariance matrix"""
-        self._P = setter_scalar(value, self.dim_x)
-
-
-    @property
-    def R(self):
-        """ measurement uncertainty"""
-        return self._R
-
-
-    @R.setter
-    def R(self, value):
-        """ measurement uncertainty"""
-        self._R = setter_scalar(value, self.dim_z)
-
-
-    @property
-    def F(self):
-        """State Transition matrix"""
-        return self._F
-
-
-    @F.setter
-    def F(self, value):
-        """State Transition matrix"""
-        self._F = setter(value, self.dim_x, self.dim_x)
-
-
-    @property
-    def B(self):
-        """ control transition matrix"""
-        return self._B
-
-
-    @B.setter
-    def B(self, value):
-        """ control transition matrix"""
-        self._B = setter(value, self.dim_x, self.dim_u)
-
-
-    @property
-    def x(self):
-        """ state estimate vector """
-        return self._x
-
-    @x.setter
-    def x(self, value):
-        """ state estimate vector """
-        self._x = setter_1d(value, self.dim_x)
-
-    @property
-    def K(self):
-        """ Kalman gain """
-        return self._K
-
-    @property
-    def y(self):
-        """ measurement residual (innovation) """
-        return self._y
-
-    @property
-    def S(self):
-        """ system uncertainty in measurement space """
-        return self._S
-
+        self.P = dot(self.F, self.P).dot(self.F.T) + self.Q
 
