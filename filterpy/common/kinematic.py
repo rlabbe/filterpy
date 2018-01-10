@@ -53,7 +53,7 @@ def kinematic_state_transition(order, dt):
     return F
 
 
-def kinematic_kf(dim, order, dim_z=1, dt=1.):
+def kinematic_kf(dim, order, dt=1.):
     """ Returns a KalmanFilter using newtonian kinematics for an arbitrary
     number of dimensions and order. So, for example, a constant velocity
     filter in 3D space would be created with
@@ -75,8 +75,11 @@ def kinematic_kf(dim, order, dim_z=1, dt=1.):
 
     P, Q, R are all set to the Identity matrix.
 
+    H is assigned assuming the measurement is position, one per dimension `dim`.
+
     Parameters
     ----------
+
     dim : int
         number of dimensions
 
@@ -88,19 +91,25 @@ def kinematic_kf(dim, order, dim_z=1, dt=1.):
 
     dt : float, default 1.0
         Time step. Used to create the state transition matrix
+
+
     """
 
-    assert order > 0 and int(order) == order , "order be an integer 1 or larger"
-
-    kf = KalmanFilter(dim*order, dim_z)
+    kf = KalmanFilter(dim*order, dim)
 
     F = kinematic_state_transition(order, dt)
     diag = [F] * dim
     kf.F = sp.linalg.block_diag(*diag)
 
-    kf.H = np.zeros((dim_z, dim_z * order))
-    for i in range(dim_z):
+    kf.H = np.zeros((dim, dim*order))
+    for i in range(dim):
         kf.H[i, i * order] = 1.
 
     return kf
+
+kf = kinematic_kf(3,2)
+print(kf.H)
+
+
+
 
