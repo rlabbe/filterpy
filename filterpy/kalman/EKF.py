@@ -117,8 +117,9 @@ class ExtendedKalmanFilter(object):
         P = dot(F, P).dot(F.T) + Q
 
         # update step
-        S = dot(H, P).dot(H.T) + R
-        K = dot(P, H.T).dot(linalg.inv (S))
+        PHT = dot(P, H.T)
+        S = dot(H, PHT) + R
+        K = PHT.dot(linalg.inv (S))
         self._K = K
 
         self._x = x + dot(K, (z - Hx(x, *hx_args)))
@@ -189,8 +190,9 @@ class ExtendedKalmanFilter(object):
 
         H = HJacobian(x, *args)
 
-        S = dot(H, P).dot(H.T) + R
-        K = dot(P, H.T).dot(linalg.inv (S))
+        PHT = dot(P, H.T)
+        S = dot(H, PHT) + R
+        K = PHT.dot(linalg.inv (S))
         self._K = K
 
         hx =  Hx(x, *hx_args)

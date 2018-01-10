@@ -144,13 +144,15 @@ class FadingKalmanFilter(object):
         # error (residual) between measurement and prediction
         self.y = z - dot(H, x)
 
+        PHT = dot(P, H.T)
+
         # S = HPH' + R
         # project system uncertainty into measurement space
-        S = dot(H, P).dot(H.T) + R
+        S = dot(H, PHT) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        K = dot(P, H.T).dot(linalg.inv(S))
+        K = PHT.dot(linalg.inv(S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain

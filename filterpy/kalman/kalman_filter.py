@@ -177,20 +177,18 @@ class KalmanFilter(object):
 
         # y = z - Hx
         # error (residual) between measurement and prediction
-        Hx = dot(H, x)
+        self.y = z - dot(H, x)
 
-        assert shape(Hx) == shape(z) or (shape(Hx) == (1,1) and shape(z) == (1,)), \
-               'shape of z should be {}, but it is {}'.format(
-               shape(Hx), shape(z))
-        self.y = z - Hx
+        # common subexpression for speed
+        PHT = dot(P, H.T)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        self.S = dot(H, P).dot(H.T) + R
+        self.S = dot(H, PHT) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot(P, H.T).dot(linalg.inv(self.S))
+        self.K = PHT.dot(linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -249,12 +247,15 @@ class KalmanFilter(object):
         # error (residual) between measurement and prediction
         self.y = z - dot(H, x)
 
+        # common subexpression for speed
+        PHT = dot(P, H.T)
+
         # project system uncertainty into measurement space
-        self.S = dot(H, P).dot(H.T) + dot(H, M) + dot(M.T, H.T) + R
+        self.S = dot(H, PHT) + dot(H, M) + dot(M.T, H.T) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot(dot(P, H.T) + M, linalg.inv(self.S))
+        self.K = dot(PHT + M, linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
