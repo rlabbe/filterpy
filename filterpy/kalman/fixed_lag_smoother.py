@@ -64,6 +64,11 @@ class FixedLagSmoother(object):
         zs = [...some measurements...]
         xhatsmooth, xhat = fls.smooth_batch(zs, N=4)
 
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+
     References
     ----------
 
@@ -74,7 +79,6 @@ class FixedLagSmoother(object):
     |
     |
 
-    **Methods**
     """
 
 

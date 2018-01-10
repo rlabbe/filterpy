@@ -28,6 +28,12 @@ class ExtendedKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
+        Examples
+        --------
+
+        See the EKF chapter in my book Kalman and Bayesian Filters in Python
+        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/11-Extended-Kalman-Filters.ipynb
+
         Parameters
         ----------
 

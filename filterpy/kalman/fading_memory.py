@@ -78,6 +78,13 @@ class FadingKalmanFilter(object):
 
         B : ndarray (dim_x, dim_u), default 0
             control transition matrix
+
+
+        Examples
+        --------
+
+        See my book Kalman and Bayesian Filters in Python
+        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
         """
 
         assert alpha >= 1

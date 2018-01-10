@@ -22,8 +22,9 @@ class MerweScaledSigmaPoints(object):
 
     def __init__(self, n, alpha, beta, kappa, sqrt_method=None, subtract=None):
         """ Generates sigma points and weights according to Van der Merwe's
-        2004 dissertation[1]. It parametizes the sigma points using
-        alpha, beta, kappa terms, and is the version seen in most publications.
+        2004 dissertation[1] for the UnscentedKalmanFilter class.. It
+        parametizes the sigma points using alpha, beta, kappa terms, and
+        is the version seen in most publications.
 
         Unless you know better, this should be your default choice.
 
@@ -67,12 +68,19 @@ class MerweScaledSigmaPoints(object):
             subtraction, such as angles (359-1 degreees is 2, not 358). x and y
             are state vectors, not scalars.
 
+        Examples
+        --------
+
+        See my book Kalman and Bayesian Filters in Python
+        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+
         References
         ----------
 
         .. [1] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
                Inference in Dynamic State-Space Models" (Doctoral dissertation)
-               
+
         """
 
         self.n = n
@@ -278,7 +286,7 @@ class JulierSigmaPoints(object):
                   \chi[1..n] = &x + [\sqrt{(n+\kappa)P}]_k \\
                   \chi[n+1..2n] = &x - [\sqrt{(n+\kappa)P}]_k
                 \end{eqnarray}
-                
+
         """
 
         assert self.n == np.size(x)
@@ -318,7 +326,7 @@ class JulierSigmaPoints(object):
         Wc : ndarray[2n+1]
             weights for the covariances
         """
-        
+
         n = self.n
         k = self.kappa
 
@@ -330,7 +338,7 @@ class JulierSigmaPoints(object):
 class SimplexSigmaPoints(object):
 
     def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
-        """ Generates sigma points and weights according to the simplex 
+        """ Generates sigma points and weights according to the simplex
         method presented in [1] DOI: 10.1051/cocv/2010006
 
         Parameters

@@ -72,12 +72,14 @@ class KalmanFilter(object):
     S :  numpy.array
         Systen uncertaintly projected to measurement space
 
-    likelihood : scalar
-        Likelihood of last measurement update.
 
-    log_likelihood : scalar
-        Log likelihood of last measurement update.
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
+
 
     def __init__(self, dim_x, dim_z, dim_u=0):
         """ Create a Kalman filter. You are responsible for setting the

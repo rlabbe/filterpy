@@ -46,6 +46,12 @@ class InformationFilter(object):
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
+
+        Examples
+        --------
+
+        See my book Kalman and Bayesian Filters in Python
+        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
         """
 
         assert dim_x > 0

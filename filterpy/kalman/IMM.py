@@ -23,6 +23,13 @@ from numpy import dot, zeros
 class IMMEstimator(object):
     """ Implements an Interacting Multiple-Model (IMM) estimator.
 
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+
     References
     ----------
 

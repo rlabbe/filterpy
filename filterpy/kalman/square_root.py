@@ -47,6 +47,12 @@ class SquareRootKalmanFilter(object):
 
     B : ndarray (dim_x, dim_u), default 0
         control transition matrix
+
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
     def __init__(self, dim_x, dim_z, dim_u=0):

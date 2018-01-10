@@ -36,6 +36,12 @@ class EnsembleKalmanFilter(object):
     due to Crassidis and Junkins [1]. It works with both linear and nonlinear
     systems.
 
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
     References
     ----------
 

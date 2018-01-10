@@ -362,10 +362,10 @@ def test_procedural_batch_filter():
     mp, cp, _, _ = batch_filter(x, P, zs, F, Q, [H]*n, R)
 
     for x1, x2 in zip(m, mp):
-        assert abs(sum(sum(x1))) - abs(sum(sum(x2))) < 1.e-12
+        assert np.allclose(x1, x2)
 
     for p1, p2 in zip(c, cp):
-        assert abs(sum(sum(p1))) - abs(sum(sum(p2))) < 1.e-12
+        assert np.allclose(p1, p2)
 
 
 def proc_form():
@@ -539,8 +539,9 @@ def test_z_dim():
 
 if __name__ == "__main__":
     DO_PLOT = True
-    test_z_dim()
-    test_batch_filter()
+    #test_z_dim()
+    #test_batch_filter()
+    test_procedural_batch_filter()
 
     #test_univariate()
     #test_noisy_11d()

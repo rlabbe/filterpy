@@ -75,6 +75,13 @@ class UnscentedKalmanFilter(object):
         Log likelihood of last measurement update.
 
 
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+
     References
     ----------
 

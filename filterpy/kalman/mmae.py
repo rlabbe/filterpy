@@ -15,7 +15,7 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from numpy import array, asarray, dot, ones, outer, sum, zeros
+import numpy as np
 
 class MMAEFilterBank(object):
     """ Implements the fixed Multiple Model Adaptive Estimator (MMAE). This
@@ -39,6 +39,9 @@ class MMAEFilterBank(object):
         for z in zs:
             bank.predict()
             bank.update(z)
+
+    Also, see my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
     References
     ----------
@@ -72,11 +75,9 @@ class MMAEFilterBank(object):
         assert dim_x > 0
 
         self.filters = filters
-        self.p = asarray(p)
+        self.p = np.asarray(p)
         self.dim_x = dim_x
         self.x = None
-
-
 
 
     def predict(self, u=0):
@@ -123,20 +124,20 @@ class MMAEFilterBank(object):
         self.p /= sum(self.p) # normalize
 
         # compute estimated state and covariance of the bank of filters.
-        self.P = zeros(self.filters[0].P.shape)
+        self.P = np.zeros(self.filters[0].P.shape)
 
         # state can be in form [x,y,z,...] or [[x, y, z,...]].T
         is_row_vector = (self.filters[0].x.ndim == 1)
         if is_row_vector:
-            self.x = zeros(self.dim_x)
+            self.x = np.zeros(self.dim_x)
             for f, p in zip(self.filters, self.p):
-                self.x += dot(f.x, p)
+                self.x += np.dot(f.x, p)
         else:
-            self.x = zeros((self.dim_x, 1))
+            self.x = np.zeros((self.dim_x, 1))
             for f, p in zip(self.filters, self.p):
-                self.x = zeros((self.dim_x, 1))
-                self.x += dot(f.x, p)
+                self.x = np.zeros((self.dim_x, 1))
+                self.x += np.dot(f.x, p)
 
         for x, f, p in zip(self.x, self.filters, self.p):
             y = f.x - x
-            self.P += p*(outer(y, y) + f.P)
+            self.P += p*(np.outer(y, y) + f.P)
