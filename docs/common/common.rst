@@ -23,20 +23,15 @@ will find useful when you build your filters.
 
 .. autofunction:: linear_ode_discretation
 
+-----
+
+.. autofunction:: kinematic_kf
+
+-----
+
+.. autofunction:: kinematic_state_transition
 
 -----
 
 .. autofunction:: runge_kutta4
-
------
-
-.. autofunction:: dot3
-
------
-
-.. autofunction:: dot4
-
------
-
-.. autofunction:: dotn
 

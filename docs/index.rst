@@ -215,8 +215,8 @@ Ensemble Kalman Filter
 filterpy.common
 ---------------
 
-Contains various useful functions that are not filters, but support the
-filtering classes and functions.
+Contains various useful functions that support the filtering classes 
+and functions.
 
 .. toctree::
     :maxdepth: 1
