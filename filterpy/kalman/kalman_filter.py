@@ -189,7 +189,7 @@ class KalmanFilter(object):
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = PHT.dot(linalg.inv(self.S))
+        self.K = dot(PHT, linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -400,7 +400,7 @@ class KalmanFilter(object):
         self.x = dot(F, self.x) + dot(B, u)
 
         # P = FPF' + Q
-        self.P = self._alpha_sq * dot(F, self.P).dot(F.T) + Q
+        self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
 
         self.x_pred = self.x[:]
         self.P_pred = self.P[:]
@@ -816,9 +816,9 @@ def update(x, P, z, R, H=None, return_all=False):
 
     # map system uncertainty into kalman gain
     try:
-        K = dot(P, H.T).dot(linalg.inv(S))
+        K = dot(dot(P, H.T), linalg.inv(S))
     except:
-        K = dot(P, H.T).dot(1/S)
+        K = dot(dot(P, H.T), 1./S)
 
 
     # predict new x with residual scaled by the kalman gain
@@ -831,8 +831,8 @@ def update(x, P, z, R, H=None, return_all=False):
     try:
         I_KH = np.eye(KH.shape[0]) - KH
     except:
-        I_KH = np.array(1 - KH)
-    P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
+        I_KH = np.array([1 - KH])
+    P = dot(I_KH, P).dot(I_KH.T) + dot(dot(K, R), K.T)
 
 
     if return_all:
@@ -891,7 +891,7 @@ def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
     if np.isscalar(F):
         F = np.array(F)
     x = dot(F, x) + dot(B, u)
-    P = (alpha * alpha) * dot(F, P).dot(F.T) + Q
+    P = (alpha * alpha) * dot(dot(F, P), F.T) + Q
 
     return x, P
 
