@@ -107,8 +107,9 @@ def kinematic_kf(dim, order, dt=1.):
 
     return kf
 
-kf = kinematic_kf(3,2)
-print(kf.H)
+if __name__ == "__main__":
+    kf = kinematic_kf(3,2)
+    print(kf.H)
 
 
 
