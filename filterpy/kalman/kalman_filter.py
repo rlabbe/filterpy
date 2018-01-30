@@ -109,15 +109,15 @@ class KalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.Q = eye(dim_x)       # process uncertainty
-        self.B = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.H = 0                 # Measurement function
+        self.x = zeros((dim_x, 1)) # state
+        self.P = eye(dim_x)        # uncertainty covariance
+        self.Q = eye(dim_x)        # process uncertainty
+        self.B = 0.                # control transition matrix
+        self.F = 0.                # state transition matrix
+        self.H = 0.                # Measurement function
         self.R = eye(dim_z)        # state uncertainty
         self._alpha_sq = 1.        # fading memory control
-        self.M = 0                 # process-measurement cross correlation
+        self.M = 0.                # process-measurement cross correlation
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -130,7 +130,7 @@ class KalmanFilter(object):
         self.I = np.eye(dim_x)
 
         # these will always be a copy of x,P after predict() is called
-        self.x_pred = zeros((dim_x,1))
+        self.x_pred = zeros((dim_x, 1))
         self.P_pred = eye(dim_x)
 
 
@@ -170,7 +170,7 @@ class KalmanFilter(object):
 
         # handle special case: if z is in form [[z]] but x is not a column
         # vector dimensions will not match
-        if x.ndim==1 and shape(z) == (1,1):
+        if x.ndim == 1 and shape(z) == (1, 1):
             z = z[0]
 
         if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
@@ -197,7 +197,7 @@ class KalmanFilter(object):
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self.I - dot(self.K, H)
-        self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
+        self.P = dot(dot(I_KH, P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
 
     def update_correlated(self, z, R=None, H=None):
@@ -238,7 +238,7 @@ class KalmanFilter(object):
 
         # handle special case: if z is in form [[z]] but x is not a column
         # vector dimensions will not match
-        if x.ndim==1 and shape(z) == (1,1):
+        if x.ndim == 1 and shape(z) == (1, 1):
             z = z[0]
 
         if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
@@ -406,7 +406,8 @@ class KalmanFilter(object):
         self.P_pred = self.P[:]
 
 
-    def batch_filter(self, zs, Fs=None, Qs=None, Hs=None, Rs=None, Bs=None, us=None, update_first=False):
+    def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
+                     Rs=None, Bs=None, us=None, update_first=False):
         """ Batch processes a sequences of measurements.
 
         Parameters
@@ -529,22 +530,22 @@ class KalmanFilter(object):
             for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
                 self.update(z, R=R, H=H)
-                means[i,:]         = self.x
-                covariances[i,:,:] = self.P
+                means[i, :]          = self.x
+                covariances[i, :, :] = self.P
 
                 self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i,:]         = self.x
-                covariances_p[i,:,:] = self.P
+                means_p[i, :]          = self.x
+                covariances_p[i, :, :] = self.P
         else:
             for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
                 self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i,:]         = self.x
-                covariances_p[i,:,:] = self.P
+                means_p[i, :]          = self.x
+                covariances_p[i, :, :] = self.P
 
                 self.update(z, R=R, H=H)
-                means[i,:]         = self.x
-                covariances[i,:,:] = self.P
+                means[i, :]          = self.x
+                covariances[i, :, :] = self.P
 
         return (means, covariances, means_p, covariances_p)
 
@@ -610,16 +611,16 @@ class KalmanFilter(object):
             Qs = [self.Q] * n
 
         # smoother gain
-        K = zeros((n,dim_x,dim_x))
+        K = zeros((n,dim_x, dim_x))
 
         x, P, Pp = Xs.copy(), Ps.copy(), Ps.copy()
 
         for k in range(n-2,-1,-1):
-            Pp[k] = dot(Fs[k+1], P[k]).dot(Fs[k+1].T) + Qs[k+1]
+            Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
-            K[k]  = dot(P[k], Fs[k+1].T).dot(linalg.inv(Pp[k]))
+            K[k]  = dot(dot(P[k], Fs[k+1].T), linalg.inv(Pp[k]))
             x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
-            P[k] += dot(K[k], P[k+1] - Pp[k]).dot(K[k].T)
+            P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
 
         return (x, P, K, Pp)
 
@@ -642,7 +643,7 @@ class KalmanFilter(object):
         """
 
         x = dot(self.F, self.x) + dot(self.B, u)
-        P = self._alpha_sq * dot(self.F, self.P).dot(self.F.T) + self.Q
+        P = self._alpha_sq * dot(dot(self.F, self.P), self.F.T) + self.Q
         return (x, P)
 
 
@@ -722,7 +723,7 @@ class KalmanFilter(object):
     @alpha.setter
     def alpha(self, value):
         assert np.isscalar(value)
-        assert value > 0
+        assert value > 0.
 
         self._alpha_sq = value**2
 
@@ -801,7 +802,7 @@ def update(x, P, z, R, H=None, return_all=False):
     if not np.isscalar(x):
         # handle special case: if z is in form [[z]] but x is not a column
         # vector dimensions will not match
-        if x.ndim==1 and shape(z) == (1,1):
+        if x.ndim == 1 and shape(z) == (1,1):
             z = z[0]
 
         if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
@@ -811,7 +812,7 @@ def update(x, P, z, R, H=None, return_all=False):
     y = z - dot(H, x)
 
     # project system uncertainty into measurement space
-    S = dot(H, P).dot(H.T) + R
+    S = dot(dot(H, P), H.T) + R
 
 
     # map system uncertainty into kalman gain
@@ -832,7 +833,7 @@ def update(x, P, z, R, H=None, return_all=False):
         I_KH = np.eye(KH.shape[0]) - KH
     except:
         I_KH = np.array([1 - KH])
-    P = dot(I_KH, P).dot(I_KH.T) + dot(dot(K, R), K.T)
+    P = dot(dot(I_KH, P), I_KH.T) + dot(dot(K, R), K.T)
 
 
     if return_all:
@@ -1003,22 +1004,22 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
             x, P = update(x, P, z, R=R, H=H)
-            means[i,:]         = x
-            covariances[i,:,:] = P
+            means[i, :]          = x
+            covariances[i, :, :] = P
 
             x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
-            means_p[i,:]         = x
-            covariances_p[i,:,:] = P
+            means_p[i, :]          = x
+            covariances_p[i, :, :] = P
     else:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
             x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
-            means_p[i,:]         = x
-            covariances_p[i,:,:] = P
+            means_p[i, :]          = x
+            covariances_p[i, :, :] = P
 
             x, P  = update(x, P, z, R=R, H=H)
-            means[i,:]         = x
-            covariances[i,:,:] = P
+            means[i, :]          = x
+            covariances[i, :, :] = P
 
     return (means, covariances, means_p, covariances_p)
 
@@ -1079,12 +1080,12 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     K = zeros((n,dim_x,dim_x))
     x, P, pP = Xs.copy(), Ps.copy(), Ps.copy()
 
-    for k in range(n-2,-1,-1):
-        pP[k] = dot(Fs[k], P[k]).dot(Fs[k].T) + Qs[k]
+    for k in range(n-2, -1, -1):
+        pP[k] = dot(dot(Fs[k], P[k]), Fs[k].T) + Qs[k]
 
-        K[k]  = dot(P[k], Fs[k].T).dot(linalg.inv(pP[k]))
+        K[k]  = dot(dot(P[k], Fs[k].T), linalg.inv(pP[k]))
         x[k] += dot(K[k], x[k+1] - dot(Fs[k], x[k]))
-        P[k] += dot(K[k], P[k+1] - pP[k]).dot(K[k].T)
+        P[k] += dot(dot(K[k], P[k+1] - pP[k]), K[k].T)
 
     return (x, P, K, pP)
 
