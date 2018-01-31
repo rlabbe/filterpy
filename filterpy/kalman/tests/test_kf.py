@@ -537,11 +537,18 @@ def test_z_dim():
         f.x = np.array([[1,2,3,4.]]).T
 
 
+def test_default_dims():
+    kf = KalmanFilter(dim_x=3, dim_z=1)
+    kf.predict()
+    kf.update(np.array([[1.]]).T)
+
+
 if __name__ == "__main__":
     DO_PLOT = True
+    test_default_dims()
     #test_z_dim()
     #test_batch_filter()
-    test_procedural_batch_filter()
+    #test_procedural_batch_filter()
 
     #test_univariate()
     #test_noisy_11d()
