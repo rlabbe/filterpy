@@ -18,7 +18,7 @@ for more information.
 import math
 import numpy as np
 import scipy as sp
-from ..kalman import KalmanFilter
+from kalman import KalmanFilter
 
 
 def kinematic_state_transition(order, dt):
@@ -53,7 +53,7 @@ def kinematic_state_transition(order, dt):
     return F
 
 
-def kinematic_kf(dim, order, dt=1.):
+def kinematic_kf(dim, order, dt=1., order_by_dim=True):
     """ Returns a KalmanFilter using newtonian kinematics for an arbitrary
     number of dimensions and order. So, for example, a constant velocity
     filter in 3D space would be created with
@@ -64,6 +64,10 @@ def kinematic_kf(dim, order, dt=1.):
     which will set the state `x` to be interpreted as
 
     [x, x', y, y', z, z'].T
+
+    If you set `order_by_dim` to False, then `x` is assumed to be
+
+    [x y z x' y' z'].T
 
     As another example, a 2D constant jerk is created with
 
@@ -95,20 +99,25 @@ def kinematic_kf(dim, order, dt=1.):
 
     """
 
-    kf = KalmanFilter(dim*order, dim)
+    dim_x = order + 1
+
+    kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
 
     F = kinematic_state_transition(order, dt)
     diag = [F] * dim
     kf.F = sp.linalg.block_diag(*diag)
 
-    kf.H = np.zeros((dim, dim*order))
-    for i in range(dim):
-        kf.H[i, i * order] = 1.
+    if order_by_dim:
+        for i in range(dim):
+            kf.H[i, i * dim_x] = 1.
+    else:
+        for i in range(dim):
+            kf.H[i, i] = 1.
 
     return kf
 
 if __name__ == "__main__":
-    kf = kinematic_kf(3,2)
+    kf = kinematic_kf(3, 2, order_by_dim=False)
     print(kf.H)
 
 
