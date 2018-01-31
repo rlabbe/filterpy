@@ -69,3 +69,6 @@ to Bayesian filters.
 
 .. autofunction:: NESS
 
+-----
+
+.. autofunction:: mahalanobis
