@@ -113,8 +113,8 @@ class KalmanFilter(object):
         self.P = eye(dim_x)        # uncertainty covariance
         self.Q = eye(dim_x)        # process uncertainty
         self.B = 0.                # control transition matrix
-        self.F = 0.                # state transition matrix
-        self.H = 0.                # Measurement function
+        self.F = eye(dim_x)        # state transition matrix
+        self.H = zeros((dim_z, dim_x)) # Measurement function
         self.R = eye(dim_z)        # state uncertainty
         self._alpha_sq = 1.        # fading memory control
         self.M = 0.                # process-measurement cross correlation
