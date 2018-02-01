@@ -102,10 +102,18 @@ def kinematic_kf(dim, order, dt=1., order_by_dim=True):
     dim_x = order + 1
 
     kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
-
     F = kinematic_state_transition(order, dt)
-    diag = [F] * dim
-    kf.F = sp.linalg.block_diag(*diag)
+    if order_by_dim:
+        diag = [F] * dim
+        kf.F = sp.linalg.block_diag(*diag)
+
+    else:
+        kf.F.fill(0.0)
+        for i, x in enumerate(F.ravel()):
+            f = np.eye(dim) * x
+
+            ix, iy = (i // dim_x) * dim,  (i % dim_x) * dim
+            kf.F[ix:ix+dim, iy:iy+dim] = f
 
     if order_by_dim:
         for i in range(dim):
@@ -117,8 +125,11 @@ def kinematic_kf(dim, order, dt=1., order_by_dim=True):
     return kf
 
 if __name__ == "__main__":
-    kf = kinematic_kf(3, 2, order_by_dim=False)
-    print(kf.H)
+    kf = kinematic_kf(2, 1, dt = 3, order_by_dim=False)
+    print(kf.F)
+    print('\n\n')
+    kf = kinematic_kf(3, 1, dt = 3, order_by_dim=False)
+    print(kf.F)
 
 
 
