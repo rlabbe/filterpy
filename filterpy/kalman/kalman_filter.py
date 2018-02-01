@@ -141,9 +141,9 @@ class KalmanFilter(object):
 
         Parameters
         ----------
-        z : np.array
+        z : (dim_z, 1): array_like
             measurement for this update. z can be a scalar if dim_z is 1,
-            otherwise it must be a column vector.
+            otherwise it must be convertible to a column vector.
 
         R : np.array, scalar, or None
             Optionally provide R to override the measurement noise for this
@@ -157,6 +157,8 @@ class KalmanFilter(object):
         if z is None:
             return
 
+        z = _reshape_z(z, self.dim_z, self.x.ndim)
+
         if R is None:
             R = self.R
         elif isscalar(R):
@@ -167,14 +169,6 @@ class KalmanFilter(object):
             H = self.H
         P = self.P
         x = self.x
-
-        # handle special case: if z is in form [[z]] but x is not a column
-        # vector dimensions will not match
-        if x.ndim == 1 and shape(z) == (1, 1):
-            z = z[0]
-
-        if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
-            z = np.asarray([z])
 
         # y = z - Hx
         # error (residual) between measurement and prediction
@@ -195,6 +189,9 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = x + dot(self.K, self.y)
 
+        if self.x.ndim == 2:
+            assert self.x.shape[0] == self.dim_x and self.x.shape[1] == 1
+
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self.I - dot(self.K, H)
         self.P = dot(dot(I_KH, P), I_KH.T) + dot(dot(self.K, R), self.K.T)
@@ -209,8 +206,9 @@ class KalmanFilter(object):
 
         Parameters
         ----------
-        z : np.array
-            measurement for this update.
+        z : (dim_z, 1): array_like
+            measurement for this update. z can be a scalar if dim_z is 1,
+            otherwise it must be convertible to a column vector.
 
         R : np.array, scalar, or None
             Optionally provide R to override the measurement noise for this
@@ -223,6 +221,8 @@ class KalmanFilter(object):
 
         if z is None:
             return
+
+        z = _reshape_z(z, self.dim_z)
 
         if R is None:
             R = self.R
@@ -647,11 +647,61 @@ class KalmanFilter(object):
         return (x, P)
 
 
+    def get_update(self, z=None):
+        """ Computes the new estimate based on measurement ``z`. Does not
+        alter the state of the filter.
+
+        Parameters
+        ----------
+
+        z : (dim_z, 1): array_like
+            measurement for this update. z can be a scalar if dim_z is 1,
+            otherwise it must be convertible to a column vector.
+
+        Returns
+        -------
+
+        (x, P) : tuple
+            State vector and covariance array of the update.
+
+       """
+
+        if z is None:
+            return self.x, self.P
+        z = _reshape_z(z, self.dim_z)
+
+        R = self.R
+        H = self.H
+        P = self.P
+        x = self.x
+
+        # error (residual) between measurement and prediction
+        y = z - dot(H, x)
+
+        # common subexpression for speed
+        PHT = dot(P, H.T)
+
+        # project system uncertainty into measurement space
+        S = dot(H, PHT) + R
+
+        # map system uncertainty into kalman gain
+        K = dot(PHT, linalg.inv(S))
+
+        # predict new x with residual scaled by the kalman gain
+        x = x + dot(K, y)
+
+        # P = (I-KH)P(I-KH)' + KRK'
+        I_KH = self.I - dot(K, H)
+        P = dot(dot(I_KH, P), I_KH.T) + dot(dot(K, R), K.T)
+
+        return x, P
+
+
     def residual_of(self, z):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
-        return z - dot(self.H, self.x)
+        return z - dot(self.H, self.x_pred)
 
 
     def measurement_of_state(self, x):
@@ -666,8 +716,9 @@ class KalmanFilter(object):
         Returns
         -------
 
-        z : np.array
-            measurement corresponding to the given state
+        z : (dim_z, 1): array_like
+            measurement for this update. z can be a scalar if dim_z is 1,
+            otherwise it must be convertible to a column vector.
         """
 
         return dot(self.H, x)
@@ -751,8 +802,9 @@ def update(x, P, z, R, H=None, return_all=False):
     P : numpy.array(dim_x, dim_x), or float
         Covariance matrix
 
-    z : numpy.array(dim_z, 1), or float
-        measurement for this update.
+    z : (dim_z, 1): array_like
+        measurement for this update. z can be a scalar if dim_z is 1,
+        otherwise it must be convertible to a column vector.
 
     R : numpy.array(dim_z, dim_z), or float
         Measurement noise matrix
@@ -799,17 +851,11 @@ def update(x, P, z, R, H=None, return_all=False):
     if np.isscalar(H):
         H = np.array([H])
 
-    if not np.isscalar(x):
-        # handle special case: if z is in form [[z]] but x is not a column
-        # vector dimensions will not match
-        if x.ndim == 1 and shape(z) == (1,1):
-            z = z[0]
-
-        if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
-            z = np.asarray([z])
+    Hx = np.atleast_1d(dot(H, x))
+    z = _reshape_z(z, Hx.shape[0], x.ndim)
 
     # error (residual) between measurement and prediction
-    y = z - dot(H, x)
+    y = z - Hx
 
     # project system uncertainty into measurement space
     S = dot(dot(H, P), H.T) + R
@@ -1154,3 +1200,24 @@ class Saver(object):
         self.ys = np.array(self.ys)
         self.xs_pred = np.array(self.xs_pred)
         self.Ps_pred = np.array(self.Ps_pred)
+
+
+
+def _reshape_z(z, dim_z, ndim):
+    """ ensure z is a (dim_z, 1) shaped vector"""
+
+    z = np.atleast_2d(z)
+    if z.shape[1] == dim_z:
+        z = z.T
+
+    if z.shape != (dim_z, 1):
+        raise ValueError('z must be convertible to shape ({}, 1)'.format(dim_z))
+
+    if ndim == 1:
+        z = z[:,0]
+
+    if ndim == 0:
+        z = z[0,0]
+
+    return z
+
