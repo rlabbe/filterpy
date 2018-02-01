@@ -1,3 +1,16 @@
+Version 1.2.0
+=============
+
+* Added computation of mahalanobis distance in stats
+* Added better default values for F and H in KalmanFilter
+* Fixed bugs due to calling .dot on float64 values
+* Removed all of the getter/setters as unpythonic
+* added function to create kinematic filters
+* changed log likelihood and likelihood to methods to avoid the
+  slow computation it requires.
+* Improved documentation of method parameters
+
+
 Version 1.1.0
 =============
 * fixed bug in likelihood to never return 0, which can happen
