@@ -18,7 +18,7 @@ for more information.
 import math
 import numpy as np
 import scipy as sp
-from kalman import KalmanFilter
+from filterpy.kalman import KalmanFilter
 
 
 def kinematic_state_transition(order, dt):
