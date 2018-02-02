@@ -128,7 +128,7 @@ Define the measurement function:
     f.H = np.array([[1.,0.]])
 
 Define the covariance matrix. Here I take advantage of the fact that
-P already contains np.eye(dim_x), and just multipy by the uncertainty:
+P already contains np.eye(dim_x), and just multiply by the uncertainty:
 
 .. code::
 
@@ -182,7 +182,7 @@ while some_condition_is_true:
 
 **Procedural Form**
 
-This module also contains stand alone functions to peform Kalman filtering.
+This module also contains stand alone functions to perform Kalman filtering.
 Use these if you are not a fan of objects.
 
 **Example**
