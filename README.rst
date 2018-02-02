@@ -35,10 +35,37 @@ Generation is triggered by git when I do a check in, so this will always
 be bleeding edge development version - it will often be ahead of the
 released version. 
 
-You can also find the documentation at https://pythonhosted.org/filterpy/
-but that currently requires me to manually upload the documentation, so 
-it is possible that it will be out of date. It will never be of a development
-version, however.
+
+Plan for dropping Python 2.7 support
+------------------------------------
+
+I haven't finalized my decision on this, but NumPy is dropping
+Python 2.7 support in December 2018. I will certainly drop Python
+2.7 support by then; I will probably do it much sooner.
+
+At the moment FilterPy is on version 1.x. I plan to fork the project
+to version 2.0, and support only Python 3.5+. The 1.x version 
+will still be available, but I will not support it. If I add something
+amazing to 2.0 and someone really begs, I might backport it; more
+likely I would accept a pull request with the feature backported
+to 1.x. But to be honest I don't forsee this happening.
+
+Why 3.5+, and not 3.3+? 3.5 introduced the matrix multiply symbol,
+and I want my code to take advantage of it. Plus, to be honest,
+I'm being selfish. I don't want to spend my life supporting this
+package, and moving as far into the present as possible means
+a few extra years before the Python version I choose becomes
+hopelessly dated and a liability. I recognize this makes people
+running the default Python in their linux distribution more
+painful. All I can say is I did not decide to do the Python
+3 fork, and I don't have the time to support the bifurcation
+any longer.
+
+I am making edits to the package now in support of my book;
+once those are done I'll probably create the 2.0 branch. 
+I'm contemplating a SLAM addition to the book, and am not
+sure if I will do this in 3.5+ only or not.
+
 
 Installation
 ------------
@@ -153,22 +180,13 @@ Requirements
 This library uses NumPy, SciPy, Matplotlib, and Python. 
 
 I haven't extensively tested backwards compatibility - I use the
-Anaconda distribution, and so I am on Python 3.4 and 2.7.5, along with
-whatever version of numpy, scipy, and matplotlib they provide. But I am
+Anaconda distribution, and so I am on Python 3.6 and 2.7.14, along with
+whatever version of NumPy, SciPy, and matplotlib they provide. But I am
 using pretty basic Python - numpy.array, maybe a list comprehension in
 my tests.
 
 I import from **__future__** to ensure the code works in Python 2 and 3.
 
-The matplotlib library is required because, *for now*, 'tests' are very
-visual. Meaning I generate some data, plot the data against the filtered
-results, and eyeball it. That is great for my personal development, and
-terrible as a foundation for regression testing. If you don't have
-matplotlib installed you won't be able to run the tests, but I'm not
-sure the tests will have a lot of meaning to you anyway.
-
-There is one import from the code from my book to plot ellipses. That
-dependency needs to be removed. This only affects the tests.
 
 Testing
 -------
@@ -214,31 +232,6 @@ you have that experience, this book is a gem. Every sentence is crystal
 clear, his language is precise, but each abstract mathematical statement
 is followed with something like "and this means...".
 
-
-Last Changelog Entry
---------------------
-
-Version 0.1.0
-
-Move to minor version numbering doesn't mean anything other than
-it got absurd to be using 3 digits for version numbers. We are
-far past alpha here. I will be moving to 1.0.0 soon, probably after
-I finish the book and flesh out a few points.
-
-* Implemented a fixed-point smoother, but it is not working all that well.
-
-Color on this: There are various recusive equations for the fixed point
-filter that I have found in various book - Simon, Crassidis, and Grewal.
-None seem to work very well. I have code that works pretty good when R 
-is < 0.5 or so, but then the filter diverges when R is larger. I'm not seeing
-much in the literature that explains this very well, nor any evidence of
-this smoother actually being used in practice. I will give this a bit
-more effort, and if I can't get something reliable I'll put it in a branch
-and remove from trunk. Someone will have to tackle this on a rainy day.
-
-* KalmanFilter.batch_filter() now accepts lists of all the KF matrices
-
-* lots of docstring corrections and additions
 
 License
 -------
