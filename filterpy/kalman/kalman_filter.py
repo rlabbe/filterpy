@@ -742,16 +742,19 @@ class KalmanFilter(object):
         return self._alpha_sq**.5
 
 
-    def log_likelihood(self, z):
+    def log_likelihood(self, z, H=None):
         """ log likelihood of the measurement `z`. """
 
+        if H is None:
+            H = self.H
+        
         if z is None:
             return math.log(sys.float_info.min)
         else:
-            return logpdf(z, dot(self.H, self.x), self.S)
+            return logpdf(z, dot(H, self.x), self.S)
 
 
-    def likelihood(self, z, allow_zero=False):
+    def likelihood(self, z, allow_zero=False, H=None):
         """ likelihood of measurement `z`.
 
         Computed from the log-likelihood. the log-likelihood can be very small,
@@ -764,7 +767,7 @@ class KalmanFilter(object):
         But really, this is a bad measure because of the scaling that is
         involved - try to use log-likelihood in your equations!"""
 
-        lh = math.exp(self.log_likelihood(z))
+        lh = math.exp(self.log_likelihood(z, H))
         if lh == 0:
             return sys.float_info.min
         else:
