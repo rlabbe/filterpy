@@ -21,6 +21,14 @@ to Bayesian filters.
 
 -----
 
+.. autofunction:: log_likelihood
+
+-----
+
+.. autofunction:: likelihood
+
+-----
+
 .. autofunction:: logpdf
 
 -----

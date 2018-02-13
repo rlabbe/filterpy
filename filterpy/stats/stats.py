@@ -100,6 +100,20 @@ def mahalanobis(x, mean, cov):
     return np.sqrt(dist)
 
 
+def log_likelihood(z, x, P, H, R):
+    """Returns log-likelihood of the measurement z given the Gaussian
+    posterior (x, P) using measurement function H and measurement
+    covariance error R"""
+    S = np.dot(H, np.dot(P, H.T)) + R
+    return logpdf(z, np.dot(H, x), S)
+
+
+def likelihood(z, x, P, H, R):
+    """Returns likelihood of the measurement z given the Gaussian
+    posterior (x, P) using measurement function H and measurement
+    covariance error R"""
+    return np.exp(log_likelihood(z, x, P, H, R))
+
 
 def logpdf(x, mean, cov, allow_singular=True):
     """Computes the log of the probability density function of the normal

@@ -14,15 +14,15 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function
+
 
 import numpy.random as random
 from numpy.random import randn
 import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import KalmanFilter, update, predict, batch_filter
-from filterpy.common import Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise, kinematic_kf
 from scipy.linalg import block_diag, norm
 
 DO_PLOT = False
@@ -327,6 +327,22 @@ def test_procedure_form():
         plt.plot(measurements)
 
 
+def test_steadystate():
+
+    dim = 7
+
+    cv = kinematic_kf(dim=dim, order=5)
+
+    cv.x[1] = 1.0
+
+    for i in range(100):
+        cv.predict()
+        cv.update([i]*dim)
+
+
+    for i in range(100):
+        cv.predict_steadystate()
+        cv.update_steadystate([i]*dim)
 
 def test_procedural_batch_filter():
     f = KalmanFilter (dim_x=2, dim_z=1)
