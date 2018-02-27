@@ -147,7 +147,7 @@ class GHFilterOrder(object):
 
             self.x[0] = x + dxdt + 0.5*ddx*T2 + g*self.residual
             self.x[1] = dx + ddx*self.dt      + h*self.residual / self.dt
-            self.x[2] = ddx            + 2*self.k*self.residual / (self.dt**2)
+            self.x[2] = ddx                 + 2*k*self.residual / (self.dt**2)
 
 
 class GHFilter(object):
