@@ -225,7 +225,7 @@ are ignored in other books - track initialization, detecting and
 discarding noise, tracking multiple objects, an so on.
 
 I said three books. I also like and use Bar-Shalom's Estimation with
-Applications to Tracking and Navigation. Much more mathmatical than the
+Applications to Tracking and Navigation. Much more mathematical than the
 previous two books, I would not recommend it as a first text unless you
 already have a background in control theory or optimal estimation. Once
 you have that experience, this book is a gem. Every sentence is crystal
