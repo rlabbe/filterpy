@@ -17,6 +17,7 @@ for more information.
 from __future__ import absolute_import, division
 import numpy as np
 from numpy import dot, zeros, eye
+from numpy.linalg import multi_dot
 import scipy.linalg as linalg
 
 
@@ -55,26 +56,37 @@ class HInfinityFilter(object):
 
         self.x = zeros((dim_x, 1)) # state
 
-        self.G = 0                # control transition matrix
+        self.B = 0                # control transition matrix
         self.F = 0                # state transition matrix
-        self.H = 0                # Measurement function
+        self.H = 0                # Measurement function (matrix)
+        
+        # Uncertainty covariance. 
+        # In the beginning should be small if we are highly confident
+        # of our initial state estimate
+        self.P = eye(dim_x)                 
 
-        self.P = eye(dim_x)       # uncertainty covariance
-        self._V_inv = zeros((dim_z, dim_z))
-        self.W = zeros((dim_x, dim_x))
-        self.Q = eye(dim_x)       # process uncertainty
+        # the noise of measurement inversed 
+        # the less V, the more we believe in measurement)
+        self._V_inv = zeros((dim_z, dim_z)) 
+        
+        # noise of process 
+        # (the less the noise, the more we believe in prediction)
+        self.W = zeros((dim_x, dim_x))      
+        
+        # process uncertainty
+        self.Q = eye(dim_x)                 
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = 0 # kalman gain
+        self.K = 0 # H-Infinity gain matrix
         self.residual = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
 
 
-    def update(self, Z):
+    def update(self, Z, R = None):
         """
         Add a new measurement (Z) to the H-Infinity filter. If Z is None, nothing
         is changed.
@@ -84,11 +96,19 @@ class HInfinityFilter(object):
 
         Z : np.array
             measurement for this update.
+            
+        R : np.array, scalar, or None
+            Optionally provide R to override the measurement noise for this
+            one call, otherwise  self._V will be used.
+
         """
 
         if Z is None:
             return
 
+        if R is not None:
+            self.V = R
+        
         # rename for readability and a tiny extra bit of speed
         I = self._I
         gamma = self.gamma
@@ -106,19 +126,19 @@ class HInfinityFilter(object):
         if np.isscalar(P):
             L = linalg.inv(I - gamma * Q * P + dot(HTVI, H) * P)
         else:
-            L = linalg.inv(I - gamma * dot(Q, P) + np.linalg.multi_dot([HTVI, H, P]))
+            L = linalg.inv(I - gamma * dot(Q, P) + multi_dot([HTVI, H, P]))
 
         # common subexpression P*L
         PL = dot(P, L)
 
-        K = np.linalg.multi_dot([F, PL, HTVI])
+        K = multi_dot([F, PL, HTVI])  
 
         self.residual = Z - dot(H, x)
 
         # x = x + Ky
-        # predict new x with residual scaled by the kalman gain
+        # predict new x with residual scaled by the H-Infinity gain
         self.x = self.x + dot(K, self.residual)
-        self.P = np.linalg.multi_dot([F, PL, F.T]) + W
+        self.P = multi_dot([F, PL, F.T]) + W
 
         # force P to be symmetric
         self.P = (self.P + self.P.T) / 2
@@ -133,22 +153,22 @@ class HInfinityFilter(object):
     '''
 
 
-    def predict(self, u=0):
+    def predict(self, u = 0):
         """ Predict next position.
 
         Parameters
         ----------
 
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by G
+            Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
         """
 
-        # x = Fx + Gu
-        self.x = dot(self.F, self.x) + dot(self.G, u)
+        # x = Fx + Bu
+        self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
-    def batch_filter(self, Zs, Rs=None, update_first=False):
+    def batch_filter(self, Zs, Rs = None, update_first = False):
         """ Batch processes a sequences of measurements.
 
         Parameters
@@ -223,7 +243,7 @@ class HInfinityFilter(object):
             State vecto of the prediction.
         """
 
-        x = dot(self.F, self.x) + dot(self.G, u)
+        x = dot(self.F, self.x) + dot(self.B, u)
         return x
 
 
