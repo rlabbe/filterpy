@@ -43,6 +43,9 @@ class HInfinityFilter(object):
 
         dim_u : int
             Number of control inputs for the Gu part of the prediction step.
+            
+        gamma : float
+            
         """
 
         self.dim_x = dim_x
@@ -50,9 +53,9 @@ class HInfinityFilter(object):
         self.dim_u = dim_u
         self.gamma = gamma
 
-        self.x = zeros((dim_x,1)) # state
+        self.x = zeros((dim_x, 1)) # state
 
-        self.G = 0                # control transistion matrx
+        self.G = 0                # control transition matrix
         self.F = 0                # state transition matrix
         self.H = 0                # Measurement function
 
@@ -73,7 +76,7 @@ class HInfinityFilter(object):
 
     def update(self, Z):
         """
-        Add a new measurement (Z) to the kalman filter. If Z is None, nothing
+        Add a new measurement (Z) to the H-Infinity filter. If Z is None, nothing
         is changed.
 
         Parameters
@@ -97,22 +100,25 @@ class HInfinityFilter(object):
         F = self.F
         W = self.W
 
-        # common subexpression H.T * V^-1
+        # common subexpression H.T * V^-1.
         HTVI = dot(H.T, V_inv)
 
-        L = linalg.inv(I - gamma * dot(Q, P) + dot(HTVI, H).dot(P))
+        if np.isscalar(P):
+            L = linalg.inv(I - gamma * Q * P + dot(HTVI, H) * P)
+        else:
+            L = linalg.inv(I - gamma * dot(Q, P) + np.linalg.multi_dot([HTVI, H, P]))
 
-        #common subexpression P*L
+        # common subexpression P*L
         PL = dot(P, L)
 
-        K = dot(F, PL).dot(HTVI)
+        K = np.linalg.multi_dot([F, PL, HTVI])
 
         self.residual = Z - dot(H, x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(K, self.residual)
-        self.P = dot(F, PL).dot(F.T) + W
+        self.P = np.linalg.multi_dot([F, PL, F.T]) + W
 
         # force P to be symmetric
         self.P = (self.P + self.P.T) / 2
@@ -173,29 +179,29 @@ class HInfinityFilter(object):
             `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        n = np.size(Zs,0)
+        n = np.size(Zs, 0)
         if Rs is None:
-            Rs = [None]*n
+            Rs = [None] * n
 
         # mean estimates from Kalman Filter
-        means = zeros((n,self.dim_x,1))
+        means = zeros((n, self.dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x,self.dim_x))
+        covariances = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
-                self.update(z,r)
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+            for i, (z, r) in enumerate(zip(Zs, Rs)):
+                self.update(z, r)
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
                 self.predict()
         else:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i, (z, r) in enumerate(zip(Zs, Rs)):
                 self.predict()
-                self.update(z,r)
+                self.update(z, r)
 
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
 
         return (means, covariances)
 
