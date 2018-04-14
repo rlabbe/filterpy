@@ -149,7 +149,7 @@ class KalmanFilter(object):
     F : numpy.array()
         State Transition matrix
 
-    H : numpy.array(dim_x, dim_x)
+    H : numpy.array(dim_z, dim_x)
         Measurement function
 
 
