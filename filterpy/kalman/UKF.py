@@ -20,8 +20,10 @@ import math
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
+import sys
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
+
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
@@ -103,8 +105,9 @@ class UnscentedKalmanFilter(object):
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
                  sqrt_fn=None, x_mean_fn=None, z_mean_fn=None,
                  residual_x=None,
-                 residual_z=None):
-        r""" Create a Kalman filter. You are responsible for setting the
+                 residual_z=None,
+                 compute_log_likelihood=True):
+        """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
@@ -199,6 +202,10 @@ class UnscentedKalmanFilter(object):
                         y = 2*np.pi
                     return y
 
+        compute_log_likelihood : bool (default = True)
+            Computes log likelihood by default, but this can be a slow
+            computation, so if you never use it you can turn this computation
+            off.
 
         References
         ----------
@@ -234,7 +241,9 @@ class UnscentedKalmanFilter(object):
         self.fx = fx
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
-        self.log_likelihood = 0.0
+
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
 
         if sqrt_fn is None:
             self.msqrt = cholesky
@@ -364,7 +373,8 @@ class UnscentedKalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, Pz).dot(self.K.T)
 
-        self.log_likelihood = logpdf(self.y, np.zeros(len(self.y)), Pz)
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=Pz)
 
 
     def cross_variance(self, x, z, sigmas_f, sigmas_h):
@@ -378,7 +388,22 @@ class UnscentedKalmanFilter(object):
 
     @property
     def likelihood(self):
-        return math.exp(self.log_likelihood)
+        """
+        likelihood of last measurment.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
+
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+             lh = sys.float_info.min
+        return lh
 
 
     def batch_filter(self, zs, Rs=None, UT=None):

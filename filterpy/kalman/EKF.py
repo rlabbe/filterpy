@@ -16,14 +16,73 @@ for more information.
 """
 
 from __future__ import (absolute_import, division, unicode_literals)
+import math
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
+import sys
+from filterpy.stats import logpdf
 
 
 class ExtendedKalmanFilter(object):
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+    """ Implements an extended Kalman filter (EKF). You are responsible for
+    setting the various state variables to reasonable values; the defaults
+    will  not give you a functional filter.
+
+    You will have to set the following attributes after constructing this
+    object for the filter to perform properly. Please note that there are
+    various checks in place to ensure that you have made everything the
+    'correct' size. However, it is possible to provide incorrectly sized
+    arrays such that the linear algebra can not perform an operation.
+    It can also fail silently - you can end up with matrices of a size that
+    allows the linear algebra to work, but are the wrong shape for the problem
+    you are trying to solve.
+
+    Attributes
+    ----------
+    x : numpy.array(dim_x, 1)
+        State estimate vector
+
+    P : numpy.array(dim_x, dim_x)
+        Covariance matrix
+
+    R : numpy.array(dim_z, dim_z)
+        Measurement noise matrix
+
+    Q : numpy.array(dim_x, dim_x)
+        Process noise matrix
+
+    F : numpy.array()
+        State Transition matrix
+
+    H : numpy.array(dim_x, dim_x)
+        Measurement function
+
+    You may read the following attributes.
+
+    Read Only Attributes
+    --------------------
+    y : numpy.array
+        Residual of the update step.
+
+    K : numpy.array(dim_x, dim_z)
+        Kalman gain of the update step
+
+    S :  numpy.array
+        Systen uncertaintly projected to measurement space
+
+    log_likelihood : float
+        log-likelihood of the last measurement
+
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+    """
+
+    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
         """ Extended Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -47,6 +106,11 @@ class ExtendedKalmanFilter(object):
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
+
+        compute_log_likelihood : bool (default = True)
+            Computes log likelihood by default, but this can be a slow
+            computation, so if you never use it you can turn this computation
+            off.
         """
 
         self.dim_x = dim_x
@@ -61,8 +125,19 @@ class ExtendedKalmanFilter(object):
         self.Q = eye(dim_x)       # process uncertainty
         self.y = zeros((dim_z, 1))
 
+        # gain and residual are computed during the innovation step. We
+        # save them so that in case you want to inspect them for various
+        # purposes
+        self.K = np.zeros(self.x.shape) # kalman gain
+        self.y = zeros((dim_z, 1))
+        self.S = np.zeros((dim_z, dim_z)) # system uncertainty
+
+
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
+
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
 
 
     def predict_update(self, z, HJacobian, Hx, args=(), hx_args=(), u=0):
@@ -131,6 +206,9 @@ class ExtendedKalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=self.S)
+
 
     def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
                residual=np.subtract):
@@ -181,7 +259,6 @@ class ExtendedKalmanFilter(object):
         if not isinstance(hx_args, tuple):
             hx_args = (hx_args,)
 
-        P = self.P
         if R is None:
             R = self.R
         elif np.isscalar(R):
@@ -190,20 +267,21 @@ class ExtendedKalmanFilter(object):
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
-        x = self.x
+        H = HJacobian(self.x, *args)
 
-        H = HJacobian(x, *args)
+        PHT = dot(self.P, H.T)
+        self.S = dot(H, PHT) + R
+        self.K = PHT.dot(linalg.inv(self.S))
 
-        PHT = dot(P, H.T)
-        S = dot(H, PHT) + R
-        self.K = PHT.dot(linalg.inv (S))
-
-        hx =  Hx(x, *hx_args)
+        hx =  Hx(self.x, *hx_args)
         self.y = residual(z, hx)
-        self.x = x + dot(self.K, self.y)
+        self.x = self.x + dot(self.K, self.y)
 
         I_KH = self._I - dot(self.K, H)
-        self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
+        self.P = dot(I_KH, self.P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
+
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
 
     def predict_x(self, u=0):
@@ -229,3 +307,22 @@ class ExtendedKalmanFilter(object):
         self.predict_x(u)
         self.P = dot(self.F, self.P).dot(self.F.T) + self.Q
 
+
+    @property
+    def likelihood(self):
+        """
+        likelihood of last measurment.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
+
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+             lh = sys.float_info.min
+        return lh

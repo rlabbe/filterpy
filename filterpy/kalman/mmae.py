@@ -119,7 +119,7 @@ class MMAEFilterBank(object):
         # new probability is recursively defined as prior * likelihood
         for i, f in enumerate(self.filters):
             f.update(z, R, H)
-            self.p[i] *= f.likelihood(z)
+            self.p[i] *= f.likelihood
 
         self.p /= sum(self.p) # normalize
 

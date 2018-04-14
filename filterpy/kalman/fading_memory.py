@@ -16,18 +16,22 @@ for more information.
 """
 
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (absolute_import, division, unicode_literals)
+import math
 import numpy as np
-from numpy import dot, zeros, eye, asarray
+from numpy import dot, zeros, eye
 import scipy.linalg as linalg
+import sys
+from filterpy.stats import logpdf
 
 
 class FadingKalmanFilter(object):
 
-    def __init__(self, alpha, dim_x, dim_z, dim_u=0):
+    def __init__(self, alpha, dim_x, dim_z, dim_u=0,
+                 compute_log_likelihood=True):
         """ Create a Kalman filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below will not give you a functional filter.
+        various state variables to reasonable values; the defaults below
+        will not give you a functional filter.
 
         Parameters
         ----------
@@ -52,8 +56,13 @@ class FadingKalmanFilter(object):
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
 
+        compute_log_likelihood : bool (default = True)
+            Computes log likelihood by default, but this can be a slow
+            computation, so if you never use it you can turn this computation
+            off.
 
-        **Attributes**
+        Attributes
+        ----------
 
         You will have to assign reasonable values to all of these before
         running the filter. All must have dtype of float
@@ -78,6 +87,21 @@ class FadingKalmanFilter(object):
 
         B : ndarray (dim_x, dim_u), default 0
             control transition matrix
+
+        Read Only Attributes
+        --------------------
+        y : numpy.array
+            Residual of the update step.
+
+        K : numpy.array(dim_x, dim_z)
+            Kalman gain of the update step
+
+        S :  numpy.array
+            Systen uncertaintly projected to measurement space
+
+        log_likelihood : float
+            log-likelihood of the last measurement
+
 
 
         Examples
@@ -116,6 +140,9 @@ class FadingKalmanFilter(object):
         # identity matrix. Do not alter this.
         self.I = np.eye(dim_x)
 
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
+
 
     def update(self, z, R=None):
         """
@@ -141,35 +168,31 @@ class FadingKalmanFilter(object):
         elif np.isscalar(R):
             R = eye(self.dim_z) * R
 
-        # rename for readability and a tiny extra bit of speed
-        H = self.H
-        P = self.P
-        x = self.x
-
         # y = z - Hx
         # error (residual) between measurement and prediction
-        self.y = z - dot(H, x)
+        self.y = z - dot(self.H, self.x)
 
-        PHT = dot(P, H.T)
+        PHT = dot(self.P, self.H.T)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
-        S = dot(H, PHT) + R
+        self.S = dot(self.H, PHT) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        K = PHT.dot(linalg.inv(S))
+        self.K = PHT.dot(linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x = x + dot(K, self.y)
+        self.x = self.x + dot(self.K, self.y)
 
         # P = (I-KH)P(I-KH)' + KRK'
-        I_KH = self.I - dot(K, H)
-        self.P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
+        I_KH = self.I - dot(self.K, self.H)
+        self.P = dot(I_KH, self.P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-        self.S = S
-        self.K = K
+
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
 
     def predict(self, u=0):
@@ -310,3 +333,23 @@ class FadingKalmanFilter(object):
             measurement corresponding to the given state
         """
         return dot(self.H, x)
+
+
+    @property
+    def likelihood(self):
+        """
+        likelihood of last measurment.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
+
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+             lh = sys.float_info.min
+        return lh

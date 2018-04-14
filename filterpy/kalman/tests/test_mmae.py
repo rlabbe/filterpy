@@ -180,9 +180,7 @@ def test_MMAE2():
         xs.append(bank.x[0])
         cvxs.append(cv.x[0])
         caxs.append(ca.x[0])
-        print(i, cv.likelihood(z), ca.likelihood(z), bank.p)
-
-
+        print(i, cv.likelihood, ca.likelihood, bank.p)
 
         #print('p', bank.p)
         probs.append(bank.p[0] / bank.p[1])

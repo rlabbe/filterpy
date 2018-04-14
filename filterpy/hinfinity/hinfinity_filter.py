@@ -18,6 +18,7 @@ from __future__ import absolute_import, division
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
+import warnings
 
 
 class HInfinityFilter(object):
@@ -26,6 +27,11 @@ class HInfinityFilter(object):
         """ Create an H-Infinity filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
+
+        NOTICE: I do not believe this code is correct. DO NOT USE THIS.
+        In particular, note that predict does not update the covariance
+        matrix.
+
 
         Parameters
         ----------
@@ -44,6 +50,10 @@ class HInfinityFilter(object):
         dim_u : int
             Number of control inputs for the Gu part of the prediction step.
         """
+
+        warnings.warn("This code is likely incorrect. DO NOT USE.",
+                      DeprecationWarning)
+
 
         self.dim_x = dim_x
         self.dim_z = dim_z
@@ -258,4 +268,3 @@ class HInfinityFilter(object):
         else:
             self._V = value
         self._V_inv = linalg.inv(self._V)
-

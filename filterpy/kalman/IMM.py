@@ -102,7 +102,7 @@ class IMMEstimator(object):
         L = zeros(len(self.filters))
         for i, f in enumerate(self.filters):
             f.update(z)
-            L[i] = f.likelihood(z)
+            L[i] = f.likelihood
 
         # initial condition IMM state, covariance
         xs, Ps = [], []
@@ -139,7 +139,6 @@ class IMMEstimator(object):
             if u is not None:
                 f.x += dot(f.B, u[i])
             f.P = dot(f.F, Ps[i]).dot(f.F.T) + f.Q
-
 
         # compute mixed IMM state and covariance
         self.x.fill(0.)

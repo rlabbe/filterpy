@@ -119,7 +119,7 @@ from filterpy.stats import logpdf
 
 
 class KalmanFilter(object):
-    """ Implements a Kalman filter. You are responsible for setting the
+    r""" Implements a Kalman filter. You are responsible for setting the
     various state variables to reasonable values; the defaults  will
     not give you a functional filter.
 
@@ -166,6 +166,8 @@ class KalmanFilter(object):
     S :  numpy.array
         Systen uncertaintly projected to measurement space
 
+    log_likelihood : float
+        log-likelihood of the last measurement
 
     Examples
     --------
@@ -175,7 +177,8 @@ class KalmanFilter(object):
     """
 
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+
+    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
         """ Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -187,12 +190,19 @@ class KalmanFilter(object):
             you are tracking the position and velocity of an object in two
             dimensions, dim_x would be 4.
             This is used to set the default size of P, Q, and u
+
         dim_z : int
             Number of of measurement inputs. For example, if the sensor
             provides you with position in (x,y), dim_z would be 2.
+
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
+
+        compute_log_likelihood : bool (default = True)
+            Computes log likelihood by default, but this can be a slow
+            computation, so if you never use it you can turn this computation
+            off.
         """
 
         assert dim_x > 0
@@ -227,6 +237,9 @@ class KalmanFilter(object):
         self.x_pred = zeros((dim_x, 1))
         self.P_pred = eye(dim_x)
 
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
+
 
     def update(self, z, R=None, H=None):
         """
@@ -258,18 +271,15 @@ class KalmanFilter(object):
         elif isscalar(R):
             R = eye(self.dim_z) * R
 
-        # rename for readability and a tiny extra bit of speed
         if H is None:
             H = self.H
-        P = self.P
-        x = self.x
 
         # y = z - Hx
         # error (residual) between measurement and prediction
-        self.y = z - dot(H, x)
+        self.y = z - dot(H, self.x)
 
         # common subexpression for speed
-        PHT = dot(P, H.T)
+        PHT = dot(self.P, H.T)
 
         # S = HPH' + R
         # project system uncertainty into measurement space
@@ -281,14 +291,17 @@ class KalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x = x + dot(self.K, self.y)
+        self.x = self.x + dot(self.K, self.y)
 
         if self.x.ndim == 2:
             assert self.x.shape[0] == self.dim_x and self.x.shape[1] == 1
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(self.K, H)
-        self.P = dot(dot(I_KH, P), I_KH.T) + dot(dot(self.K, R), self.K.T)
+        self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
+
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
 
     def update_steadystate(self, z):
@@ -314,13 +327,6 @@ class KalmanFilter(object):
             measurement for this update. z can be a scalar if dim_z is 1,
             otherwise it must be convertible to a column vector.
 
-        R : np.array, scalar, or None
-            Optionally provide R to override the measurement noise for this
-            one call, otherwise  self.R will be used.
-
-        H : np.array, or None
-            Optionally provide H to override the measurement function for this
-            one call, otherwise self.H will be used.
 
         Example
         -------
@@ -351,10 +357,15 @@ class KalmanFilter(object):
         # error (residual) between measurement and prediction
         self.y = z - dot(self.H, self.x)
 
+        if self.compute_log_likelihood:
+            S = dot(dot(self.H, self.P), self.H.T) + self.R
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
+
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=S)
 
 
     def update_correlated(self, z, R=None, H=None):
@@ -392,13 +403,10 @@ class KalmanFilter(object):
         # rename for readability and a tiny extra bit of speed
         if H is None:
             H = self.H
-        x = self.x
-        P = self.P
-        M = self.M
 
         # handle special case: if z is in form [[z]] but x is not a column
         # vector dimensions will not match
-        if x.ndim == 1 and shape(z) == (1, 1):
+        if self.x.ndim == 1 and shape(z) == (1, 1):
             z = z[0]
 
         if shape(z) == (): # is it scalar, e.g. z=3 or z=np.array(3)
@@ -406,22 +414,25 @@ class KalmanFilter(object):
 
         # y = z - Hx
         # error (residual) between measurement and prediction
-        self.y = z - dot(H, x)
+        self.y = z - dot(H, self.x)
 
         # common subexpression for speed
-        PHT = dot(P, H.T)
+        PHT = dot(self.P, H.T)
 
         # project system uncertainty into measurement space
-        self.S = dot(H, PHT) + dot(H, M) + dot(M.T, H.T) + R
+        self.S = dot(H, PHT) + dot(H, self.M) + dot(self.M.T, H.T) + R
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot(PHT + M, linalg.inv(self.S))
+        self.K = dot(PHT + self.M, linalg.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x = x + dot(self.K, self.y)
-        self.P = P - dot(self.K, dot(H, P) + M.T)
+        self.x = self.x + dot(self.K, self.y)
+        self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
+
+        if self.compute_log_likelihood:
+            self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
@@ -939,8 +950,29 @@ class KalmanFilter(object):
         return self._alpha_sq**.5
 
 
-    def log_likelihood(self, z):
-        """ log likelihood of the measurement `z`. This should only be called
+    @property
+    def likelihood(self):
+        """
+        likelihood of last measurment.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
+
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+             lh = sys.float_info.min
+        return lh
+
+
+    def log_likelihood_of(self, z):
+        """
+        log likelihood of the measurement `z`. This should only be called
         after a call to update(). Calling after predict() will yield an
         incorrect result."""
 
@@ -948,26 +980,6 @@ class KalmanFilter(object):
             return math.log(sys.float_info.min)
         else:
             return logpdf(z, dot(self.H, self.x), self.S)
-
-
-    def likelihood(self, z, allow_zero=False):
-        """ likelihood of measurement `z`.
-
-        Computed from the log-likelihood. the log-likelihood can be very small,
-        meaning a large negative value such as -28000. Taking the exp() of that
-        results in 0.0, which can break typical algorithms which multiply
-        by this value, so by default we always return a
-        number >= sys.float_info.min. If you want to allow zero, set allow_zero
-        to True.
-
-        But really, this is a bad measure because of the scaling that is
-        involved - try to use log-likelihood in your equations!"""
-
-        lh = math.exp(self.log_likelihood(z))
-        if lh == 0:
-            return sys.float_info.min
-        else:
-            return lh
 
 
     @alpha.setter

@@ -115,7 +115,7 @@ def likelihood(z, x, P, H, R):
     return np.exp(log_likelihood(z, x, P, H, R))
 
 
-def logpdf(x, mean, cov, allow_singular=True):
+def logpdf(x, mean=None, cov=1, allow_singular=True):
     """Computes the log of the probability density function of the normal
     N(mean, cov) for the data x. The normal may be univariate or multivariate.
 
@@ -128,7 +128,11 @@ def logpdf(x, mean, cov, allow_singular=True):
     `x` and `mean` may be column vectors, row vectors, or lists.
     """
 
-    flat_mean = np.asarray(mean).flatten()
+    if mean is not None:
+        flat_mean = np.asarray(mean).flatten()
+    else:
+        flat_mean = None
+
     flat_x = np.asarray(x).flatten()
 
     if _support_singular:
