@@ -68,16 +68,17 @@ class HInfinityFilter(object):
         self.B = 0                # control transistion matrx
         self.F = 0                # state transition matrix
         self.H = 0                # Measurement function
+        self.P = eye(dim_x)       # Uncertainty covariance.
+        self.Q = eye(dim_x)
 
-        self.P = eye(dim_x)       # uncertainty covariance
-        self._V_inv = zeros((dim_z, dim_z))
-        self.W = zeros((dim_x, dim_x))
-        self.Q = eye(dim_x)       # process uncertainty
+        self._V_inv = zeros((dim_z, dim_z)) # inverse measurement noise
+        self.W = zeros((dim_x, dim_x))      # process uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = 0 # kalman gain
+
+        self.K = 0 # H-infinity gain
         self.residual = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
@@ -96,7 +97,7 @@ class HInfinityFilter(object):
             measurement for this update.
         """
 
-        if Z is None:
+        if z is None:
             return
 
         # rename for readability and a tiny extra bit of speed
@@ -115,7 +116,7 @@ class HInfinityFilter(object):
 
         L = linalg.inv(I - gamma * dot(Q, P) + dot(HTVI, H).dot(P))
 
-        #common subexpression P*L
+        # common subexpression P*L
         PL = dot(P, L)
 
         K = dot(F, PL).dot(HTVI)
@@ -196,7 +197,7 @@ class HInfinityFilter(object):
         else:
             for i, (z, r) in enumerate(zip(Zs, Rs)):
                 self.predict()
-                self.update(z,r)
+                self.update(z, r)
 
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
