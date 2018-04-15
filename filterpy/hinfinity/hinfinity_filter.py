@@ -41,11 +41,11 @@ class HInfinityFilter(object):
         you are tracking the position and velocity of an object in two
         dimensions, dim_x would be 4.
 
-        This is used to set the default size of P, Q, and u
+        This is used to set the default size of `P`, `Q`, and `u`
 
     dim_z : int
         Number of of measurement inputs. For example, if the sensor
-        provides you with position in (x,y), dim_z would be 2.
+        provides you with position in (x, y), `dim_z` would be 2.
 
     dim_u : int
         Number of control inputs for the Gu part of the prediction step.
@@ -65,7 +65,7 @@ class HInfinityFilter(object):
 
         self.x = zeros((dim_x, 1)) # state
 
-        self.G = 0                # control transistion matrx
+        self.B = 0                # control transistion matrx
         self.F = 0                # state transition matrix
         self.H = 0                # Measurement function
 
@@ -84,15 +84,15 @@ class HInfinityFilter(object):
         self._I = np.eye(dim_x)
 
 
-    def update(self, Z):
+    def update(self, z):
         """
-        Add a new measurement (Z) to the kalman filter. If Z is None, nothing
+        Add a new measurement `z` to the kalman filter. If `z` is None, nothing
         is changed.
 
         Parameters
         ----------
 
-        Z : np.array
+        z : ndarray
             measurement for this update.
         """
 
@@ -120,7 +120,7 @@ class HInfinityFilter(object):
 
         K = dot(F, PL).dot(HTVI)
 
-        self.residual = Z - dot(H, x)
+        self.residual = z - dot(H, x)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -137,13 +137,13 @@ class HInfinityFilter(object):
         Parameters
         ----------
 
-        u : np.array
-            Optional control vector. If non-zero, it is multiplied by G
+        u : ndarray
+            Optional control vector. If non-zero, it is multiplied by `B`
             to create the control input into the system.
         """
 
         # x = Fx + Gu
-        self.x = dot(self.F, self.x) + dot(self.G, u)
+        self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
     def batch_filter(self, Zs, Rs=None, update_first=False):
@@ -168,16 +168,16 @@ class HInfinityFilter(object):
         Returns
         -------
 
-        means: np.array((n,dim_x,1))
+        means: ndarray ((n, dim_x, 1))
             array of the state for each time step. Each entry is an np.array.
             In other words `means[k,:]` is the state at step `k`.
 
-        covariance: np.array((n,dim_x,dim_x))
+        covariance: ndarray((n, dim_x, dim_x))
             array of the covariances for each time step. In other words
-            `covariance[k,:,:]` is the covariance at step `k`.
+            `covariance[k, :, :]` is the covariance at step `k`.
         """
 
-        n = np.size(Zs,0)
+        n = np.size(Zs, 0)
         if Rs is None:
             Rs = [None] * n
 
@@ -190,16 +190,16 @@ class HInfinityFilter(object):
         if update_first:
             for i, (z, r) in enumerate(zip(Zs, Rs)):
                 self.update(z,r)
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
                 self.predict()
         else:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i, (z, r) in enumerate(zip(Zs, Rs)):
                 self.predict()
                 self.update(z,r)
 
-                means[i,:] = self.x
-                covariances[i,:,:] = self.P
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
 
         return (means, covariances)
 
@@ -211,13 +211,13 @@ class HInfinityFilter(object):
         Parameters
         ----------
 
-        u : np.array
+        u : ndarray
             optional control input
 
         Returns
         -------
 
-        x : numpy.ndarray
+        x : ndarray
             State vecto of the prediction.
         """
 
@@ -238,13 +238,13 @@ class HInfinityFilter(object):
         Parameters
         ----------
 
-        x : np.array
+        x : ndarray
             kalman state vector
 
         Returns
         -------
 
-        z : np.array
+        z : ndarray
             measurement corresponding to the given state
         """
         return dot(self.H, x)
