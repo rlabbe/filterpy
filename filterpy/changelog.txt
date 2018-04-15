@@ -1,3 +1,9 @@
+Version 1.2.3
+=============
+* I pushed a broken version! This should fix that. Do not use 1.2.2.
+
+* This push sucks in some minor documentation and PEP8 changes to a few files.
+
 Version 1.2.2
 =============
 
