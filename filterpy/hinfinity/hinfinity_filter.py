@@ -49,6 +49,8 @@ class HInfinityFilter(object):
 
     dim_u : int
         Number of control inputs for the Gu part of the prediction step.
+        
+    gamma : float
     """
 
 
@@ -65,7 +67,7 @@ class HInfinityFilter(object):
 
         self.x = zeros((dim_x, 1)) # state
 
-        self.B = 0                # control transistion matrx
+        self.B = 0                # control transition matrix
         self.F = 0                # state transition matrix
         self.H = 0                # Measurement function
         self.P = eye(dim_x)       # Uncertainty covariance.
@@ -87,7 +89,7 @@ class HInfinityFilter(object):
 
     def update(self, z):
         """
-        Add a new measurement `z` to the kalman filter. If `z` is None, nothing
+        Add a new measurement `z` to the H-Infinity filter. If `z` is None, nothing
         is changed.
 
         Parameters
@@ -124,7 +126,7 @@ class HInfinityFilter(object):
         self.residual = z - dot(H, x)
 
         # x = x + Ky
-        # predict new x with residual scaled by the kalman gain
+        # predict new x with residual scaled by the H-Infinity gain
         self.x = self.x + dot(K, self.residual)
         self.P = dot(F, PL).dot(F.T) + W
 
@@ -143,7 +145,7 @@ class HInfinityFilter(object):
             to create the control input into the system.
         """
 
-        # x = Fx + Gu
+        # x = Fx + Bu
         self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
@@ -182,10 +184,10 @@ class HInfinityFilter(object):
         if Rs is None:
             Rs = [None] * n
 
-        # mean estimates from Kalman Filter
+        # mean estimates from H-Infinity Filter
         means = zeros((n, self.dim_x, 1))
 
-        # state covariances from Kalman Filter
+        # state covariances from H-Infinity Filter
         covariances = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
@@ -219,10 +221,10 @@ class HInfinityFilter(object):
         -------
 
         x : ndarray
-            State vecto of the prediction.
+            State vector of the prediction.
         """
 
-        x = dot(self.F, self.x) + dot(self.G, u)
+        x = dot(self.F, self.x) + dot(self.B, u)
         return x
 
 
@@ -240,7 +242,7 @@ class HInfinityFilter(object):
         ----------
 
         x : ndarray
-            kalman state vector
+            H-Infinity state vector
 
         Returns
         -------
