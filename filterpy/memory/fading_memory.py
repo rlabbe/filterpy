@@ -57,7 +57,7 @@ class FadingMemoryFilter(object):
         Attributes
         ----------
 
-        self.x : np.array
+        x : np.array
             State of the filter.
             x[0] is the value being tracked
             x[1] is the derivative of x[0] (order 1 and 2 only)
@@ -66,13 +66,13 @@ class FadingMemoryFilter(object):
             This is always an np.array, even for order 0 where you can
             initialize x0 with a scalar.
 
-        self.P : np.array
+        P : np.array
             The diagonal of the covariance matrix. Assumes that variance
             is one; multiply by sigma^2 to get the actual variances.
 
             This is a constant and will not vary as the filter runs.
 
-        self.e : np.array
+        e : np.array
             The truncation error of the filter. Each term must be multiplied
             by the a_1, a_2, or a_3 of the polynomial for the system.
 

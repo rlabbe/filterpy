@@ -99,20 +99,14 @@ class CubatureKalmanFilter(object):
     Q : numpy.array(dim_x, dim_x)
         process noise matrix
 
-
-    You may read the following attributes.
-
-    Readable Attributes
-    -------------------
-
     K : numpy.array
-        Kalman gain
+        Kalman gain. Read only.
 
     y : numpy.array
-        innovation residual
+        innovation residual. Read only.
 
     log_likelihood : float
-        log-likelihood of the last measurement
+        log-likelihood of the last measurement. Read only.
 
 
     References

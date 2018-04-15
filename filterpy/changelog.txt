@@ -1,3 +1,14 @@
+Version 1.2.2
+=============
+
+* changes log-likelihood and likelihood back into attributes/properties
+and added to several classes so the IMM code works uniformally across all
+
+* bug fix in gh code that ignored k (submitted by Lucal Beyer)
+
+* doc block fix by Andriy Teraz
+
+
 Version 1.2.0
 =============
 

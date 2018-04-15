@@ -17,14 +17,17 @@ for more information.
 
 
 from __future__ import (absolute_import, division)
+import math
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import inv
+import sys
+from filterpy.stats import logpdf
 
 
 class InformationFilter(object):
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
         """ Create a Information filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
@@ -46,6 +49,9 @@ class InformationFilter(object):
         dim_u : int (optional)
             size of the control input, if it is being used.
             Default value of 0 indicates it is not used.
+
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
 
         Examples
         --------
@@ -82,6 +88,9 @@ class InformationFilter(object):
         self._I = np.eye(dim_x)
         self._no_information = False
 
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
+
 
     def update(self, z, R_inv=None):
         """
@@ -116,6 +125,7 @@ class InformationFilter(object):
         if self._no_information:
             self.x = dot(P_inv, x) + dot(H_T, R_inv).dot(z)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
+            self.log_likelihood = math.log(sys.float_info.min)
 
         else:
             # y = z - Hx
@@ -124,13 +134,16 @@ class InformationFilter(object):
 
             # S = HPH' + R
             # project system uncertainty into measurement space
-            self.S = P_inv + dot(H_T, R_inv).dot (H)
+            self.S = P_inv + dot(H_T, R_inv).dot(H)
             self.K = dot(inv(self.S), H_T).dot(R_inv)
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
             self.x = x + dot(self.K, self.y)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
+
+            if self.compute_log_likelihood:
+                self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
 
     def predict(self, u=0):
@@ -234,54 +247,23 @@ class InformationFilter(object):
         return (means, covariances)
 
 
-    def get_prediction(self, u=0):
-        """ Predicts the next state of the filter and returns it. Does not
-        alter the state of the filter.
-
-        Parameters
-        ----------
-
-        u : np.array
-            optional control input
-
-        Returns
-        -------
-
-        (x, P)
-            State vector and covariance array of the prediction.
+    @property
+    def likelihood(self):
         """
-        raise "Not implemented yet"
+        likelihood of last measurment.
 
-        x = dot(self._F, self.x) + dot(self.B, u)
-        P = dot(self._F, self._P).dot(self._F.T) + self.Q
-        return (x, P)
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
 
+        But really, this is a bad measure because of the scaling that is
+        involved - try to use log-likelihood in your equations!"""
 
-    def residual_of(self, z):
-        """ returns the residual for the given measurement (z). Does not alter
-        the state of the filter.
-        """
-        raise "Not implemented yet"
-        return z - dot(self.H, self.x)
-
-
-    def measurement_of_state(self, x):
-        """ Helper function that converts a state into a measurement.
-
-        Parameters
-        ----------
-
-        x : np.array
-            kalman state vector
-
-        Returns
-        -------
-
-        z : np.array
-            measurement corresponding to the given state
-        """
-        raise "Not implemented yet"
-        return dot(self.H, x)
+        lh = math.exp(self.log_likelihood)
+        if lh == 0:
+             lh = sys.float_info.min
 
 
     @property

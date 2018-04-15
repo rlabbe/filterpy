@@ -186,7 +186,7 @@ class JulierSigmaPoints(object):
 
     def __init__(self,n,  kappa, sqrt_method=None, subtract=None):
         """ Generates sigma points and weights according to Simon J. Julier
-        and Jeffery K. Uhlmann's original paper []. It parametizes the sigma
+        and Jeffery K. Uhlmann's original paper[1]. It parametizes the sigma
         points using kappa.
 
         Parameters
@@ -315,7 +315,7 @@ class JulierSigmaPoints(object):
 
     def weights(self):
         """ Computes the weights for the unscented Kalman filter. In this
-        formulatyion the weights for the mean and covariance are the same.
+        formulation the weights for the mean and covariance are the same.
 
         Returns
         -------
@@ -339,7 +339,7 @@ class SimplexSigmaPoints(object):
 
     def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
         """ Generates sigma points and weights according to the simplex
-        method presented in [1] DOI: 10.1051/cocv/2010006
+        method presented in [1].
 
         Parameters
         ----------
@@ -367,9 +367,11 @@ class SimplexSigmaPoints(object):
         References
         ----------
 
-        .. [1] Phillippe Moireau and Dominique Chapelle "Reduced-Order Unscented
-        Kalman Filtering with Application to Parameter Identification in
-        Large-Dimensional Systems"
+        .. [1] Phillippe Moireau and Dominique Chapelle "Reduced-Order
+               Unscented Kalman Filtering with Application to Parameter
+               Identification in Large-Dimensional Systems"
+               DOI: 10.1051/cocv/2010006
+
         """
 
         self.n = n
@@ -402,7 +404,7 @@ class SimplexSigmaPoints(object):
         Parameters
         ----------
 
-        X An array-like object of the means of length n
+        x : An array-like object of the means of length n
             Can be a scalar if 1D.
             examples: 1, [1,2], np.array([1,2])
 

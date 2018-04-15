@@ -51,13 +51,6 @@ class UnscentedKalmanFilter(object):
     Q : numpy.array(dim_x, dim_x)
         process noise matrix
 
-
-    You may read the following attributes.
-
-    Readable Attributes
-    -------------------
-
-
     K : numpy.array
         Kalman gain
 
@@ -69,9 +62,6 @@ class UnscentedKalmanFilter(object):
 
     P : numpy.array(dim_x, dim_x)
         predicted/updated covariance matrix (result of predict()/update())
-
-    likelihood : scalar
-        Likelihood of last measurement update.
 
     log_likelihood : scalar
         Log likelihood of last measurement update.

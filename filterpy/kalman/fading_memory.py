@@ -88,19 +88,17 @@ class FadingKalmanFilter(object):
         B : ndarray (dim_x, dim_u), default 0
             control transition matrix
 
-        Read Only Attributes
-        --------------------
         y : numpy.array
-            Residual of the update step.
+            Residual of the update step. Read only.
 
         K : numpy.array(dim_x, dim_z)
-            Kalman gain of the update step
+            Kalman gain of the update step. Read only.
 
         S :  numpy.array
-            Systen uncertaintly projected to measurement space
+            Systen uncertaintly projected to measurement space. Read only.
 
         log_likelihood : float
-            log-likelihood of the last measurement
+            log-likelihood of the last measurement. Read only.
 
 
 

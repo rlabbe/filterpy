@@ -43,8 +43,8 @@ arrays, although in a few cases, particularly method parameters,
 it will accept types that convert to NumPy arrays, such as lists
 of lists. These exceptions are documented in the method or function.
 
-Example
--------
+Examples
+--------
 The following example constructs a constant velocity kinematic
 filter, filters noisy data, and plots the results
 
@@ -153,21 +153,17 @@ class KalmanFilter(object):
         Measurement function
 
 
-    You may read the following attributes.
-
-    Read Only Attributes
-    --------------------
     y : numpy.array
-        Residual of the update step.
+        Residual of the update step. Read only.
 
     K : numpy.array(dim_x, dim_z)
-        Kalman gain of the update step
+        Kalman gain of the update step. Read only.
 
     S :  numpy.array
-        Systen uncertaintly projected to measurement space
+        Systen uncertaintly projected to measurement space. Read only.
 
     log_likelihood : float
-        log-likelihood of the last measurement
+        log-likelihood of the last measurement. Read only.
 
     Examples
     --------
@@ -328,8 +324,8 @@ class KalmanFilter(object):
             otherwise it must be convertible to a column vector.
 
 
-        Example
-        -------
+        Examples
+        --------
         >>> cv = kinematic_kf(dim=3, order=2) # 3D const velocity filter
         >>> # let filter converge on representative data, then save k and P
         >>> for i in range(100):
@@ -622,8 +618,8 @@ class KalmanFilter(object):
         ----------
 
         zs : list-like
-            list of measurements at each time step `self.dt` Missing
-            measurements must be represented by 'None'.
+            list of measurements at each time step `self.dt`. Missing
+            measurements must be represented by `None`.
 
         Fs : list-like, optional
             optional list of values to use for the state transition matrix matrix;
@@ -784,16 +780,16 @@ class KalmanFilter(object):
         Returns
         -------
 
-        'x' : numpy.ndarray
+        x : numpy.ndarray
            smoothed means
 
-        'P' : numpy.ndarray
+        P : numpy.ndarray
            smoothed state covariances
 
-        'K' : numpy.ndarray
+        K : numpy.ndarray
             smoother gain at each step
 
-        'Pp' : numpy.ndarray
+        Pp : numpy.ndarray
            Predicted state covariances
 
         Examples
@@ -856,7 +852,7 @@ class KalmanFilter(object):
 
 
     def get_update(self, z=None):
-        """ Computes the new estimate based on measurement ``z`. Does not
+        """ Computes the new estimate based on measurement `z`. Does not
         alter the state of the filter.
 
         Parameters
@@ -1130,8 +1126,8 @@ def update_steadystate(x, z, K, H=None):
     x : numpy.array
         Posterior state estimate vector
 
-    Example
-    -------
+    Examples
+    --------
 
     This can handle either the multidimensional or unidimensional case. If
     all parameters are floats instead of arrays the filter will still work,
@@ -1248,7 +1244,7 @@ def predict_steadystate(x, F=1, u=0, B=1):
         F = np.array(F)
     x = dot(F, x) + dot(B, u)
 
-    return x, P
+    return x
 
 
 
@@ -1260,7 +1256,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
 
     zs : list-like
         list of measurements at each time step. Missing measurements must be
-        represented by 'None'.
+        represented by None.
 
     Fs : list-like
         list of values to use for the state transition matrix matrix.
@@ -1403,16 +1399,16 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     Returns
     -------
 
-    'x' : numpy.ndarray
+    x : numpy.ndarray
        smoothed means
 
-    'P' : numpy.ndarray
+    P : numpy.ndarray
        smoothed state covariances
 
-    'K' : numpy.ndarray
+    K : numpy.ndarray
         smoother gain at each step
 
-    'pP' : numpy.ndarray
+    pP : numpy.ndarray
        predicted state covariances
 
     Examples
@@ -1453,24 +1449,24 @@ class Saver(object):
     to convert all of the lists to numpy arrays. You cannot safely call
     save() after calling to_array().
 
-    Example
-    -------
+    Examples
+    --------
 
     .. code-block:: Python
 
-    kf = KalmanFilter(...whatever)
-    # initialize kf here
+        kf = KalmanFilter(...whatever)
+        # initialize kf here
 
-    saver = Saver(kf) # save data for kf filter
-    for z in zs:
-        kf.predict()
-        kf.update(z)
+        saver = Saver(kf) # save data for kf filter
+        for z in zs:
+            kf.predict()
+            kf.update(z)
 
-        saver.save()
+            saver.save()
 
-    saver.to_array()
-    # plot the 0th element of the state
-    plt.plot(saver.xs[:, 0, 0])
+        saver.to_array()
+        # plot the 0th element of the state
+        plt.plot(saver.xs[:, 0, 0])
     """
 
     def __init__(self, kf, save_current=True):
@@ -1508,7 +1504,6 @@ class Saver(object):
         self.ys = np.array(self.ys)
         self.xs_pred = np.array(self.xs_pred)
         self.Ps_pred = np.array(self.Ps_pred)
-
 
 
 def _reshape_z(z, dim_z, ndim):
