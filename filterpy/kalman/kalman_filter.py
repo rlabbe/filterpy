@@ -930,17 +930,19 @@ class KalmanFilter(object):
 
     @property
     def alpha(self):
-        """ Fading memory setting. 1.0 gives the normal Kalman filter, and
+        """
+        Fading memory setting. 1.0 gives the normal Kalman filter, and
         values slightly larger than 1.0 (such as 1.02) give a fading
         memory effect - previous measurements have less influence on the
         filter's estimates. This formulation of the Fading memory filter
-        (there are many) is due to Dan Simon [1].
+        (there are many) is due to Dan Simon [1]_.
 
         References
         ----------
 
-        [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
-            p. 208-212. (2006)
+        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
+           p. 208-212. (2006)
+
         """
 
         return self._alpha_sq**.5

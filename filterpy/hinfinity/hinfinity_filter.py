@@ -22,34 +22,37 @@ import warnings
 
 
 class HInfinityFilter(object):
-
-    def __init__(self, dim_x, dim_z, dim_u, gamma):
-        """ Create an H-Infinity filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below will
-        not give you a functional filter.
-
-        NOTICE: I do not believe this code is correct. DO NOT USE THIS.
+    """
+    .. warning::
+        I do not believe this code is correct. DO NOT USE THIS.
         In particular, note that predict does not update the covariance
         matrix.
 
+    H-Infinity filter. You are responsible for setting the
+    various state variables to reasonable values; the defaults below will
+    not give you a functional filter.
 
-        Parameters
-        ----------
 
-        dim_x : int
-            Number of state variables for the Kalman filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
+    Parameters
+    ----------
 
-            This is used to set the default size of P, Q, and u
+    dim_x : int
+        Number of state variables for the Kalman filter. For example, if
+        you are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
 
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
+        This is used to set the default size of P, Q, and u
 
-        dim_u : int
-            Number of control inputs for the Gu part of the prediction step.
-        """
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dim_u : int
+        Number of control inputs for the Gu part of the prediction step.
+    """
+
+
+    def __init__(self, dim_x, dim_z, dim_u, gamma):
 
         warnings.warn("This code is likely incorrect. DO NOT USE.",
                       DeprecationWarning)
@@ -60,7 +63,7 @@ class HInfinityFilter(object):
         self.dim_u = dim_u
         self.gamma = gamma
 
-        self.x = zeros((dim_x,1)) # state
+        self.x = zeros((dim_x, 1)) # state
 
         self.G = 0                # control transistion matrx
         self.F = 0                # state transition matrix
@@ -128,15 +131,6 @@ class HInfinityFilter(object):
         self.P = (self.P + self.P.T) / 2
 
 
-    '''def update_safe(self, Z):
-        """ same as update(), except we perform a check to ensure that the
-        eigenvalues are < 1. An exception is thrown if not. """
-
-        update(Z)
-        evalue = linalg.eig(self.P)'
-    '''
-
-
     def predict(self, u=0):
         """ Predict next position.
 
@@ -185,16 +179,16 @@ class HInfinityFilter(object):
 
         n = np.size(Zs,0)
         if Rs is None:
-            Rs = [None]*n
+            Rs = [None] * n
 
         # mean estimates from Kalman Filter
-        means = zeros((n,self.dim_x,1))
+        means = zeros((n, self.dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x,self.dim_x))
+        covariances = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(Zs,Rs)):
+            for i, (z, r) in enumerate(zip(Zs, Rs)):
                 self.update(z,r)
                 means[i,:] = self.x
                 covariances[i,:,:] = self.P
