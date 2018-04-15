@@ -17,6 +17,7 @@ a Kalman filter in Python on a tiny chip? No. So, this is for learning.
 
 .. automodule:: filterpy.kalman
 
+Square Root Kalman Filter
 
 .. autoclass:: SquareRootKalmanFilter
     :members:
