@@ -32,11 +32,11 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
         2D array of sigma points.
 
     Wm : ndarray [# sigmas per dimension]
-        Weights for the mean. Must sum to 1.
+        Weights for the mean.
 
 
     Wc : ndarray [# sigmas per dimension]
-        Weights for the covariance. Must sum to 1.
+        Weights for the covariance.
 
     noise_cov : ndarray, optional
         noise matrix added to the final computed covariance matrix.

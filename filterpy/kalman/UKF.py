@@ -525,27 +525,24 @@ class UnscentedKalmanFilter(object):
             Qs = [self.Q] * n
 
         # smoother gain
-        Ks = zeros((n,dim_x,dim_x))
+        Ks = zeros((n, dim_x, dim_x))
 
         num_sigmas = self._num_sigmas
 
         xs, ps = Xs.copy(), Ps.copy()
         sigmas_f = zeros((num_sigmas, dim_x))
 
-        for k in range(n-2,-1,-1):
+        for k in reversed(range(n-1)):
             # create sigma points from state estimate, pass through state func
             sigmas = self.points_fn.sigma_points(xs[k], ps[k])
             for i in range(num_sigmas):
                 sigmas_f[i] = self.fx(sigmas[i], dt[k])
 
-            # compute backwards prior state and covariance
-            xb = dot(self.Wm, sigmas_f)
-            Pb = 0
-            x = Xs[k]
-            for i in range(num_sigmas):
-                y = self.residual_x(sigmas_f[i], x)
-                Pb += self.Wc[i] * outer(y, y)
-            Pb += Qs[k]
+            """can I curry this so we don't have to pass in x_mean and residual_x
+            every time?"""
+            xb, Pb = unscented_transform(
+                    sigmas_f, self.Wm, self.Wc, self.Q,
+                    self.x_mean, self.residual_x)
 
             # compute cross variance
             Pxb = 0
