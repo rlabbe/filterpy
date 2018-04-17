@@ -21,13 +21,14 @@ from __future__ import (absolute_import, division, print_function,
 
 
 from numpy import array, zeros, vstack, eye
-from scipy.linalg import expm, inv
+from scipy.linalg import expm, inv, block_diag
 
 
-def Q_discrete_white_noise(dim, dt=1., var=1.):
-    """ Returns the Q matrix for the Discrete Constant White Noise
-    Model. dim may be either 2 or 3, dt is the time step, and sigma is the
-    variance in the noise.
+def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
+    """
+    Returns the Q matrix for the Discrete Constant White Noise
+    Model. dim may be either 2, 3, or 4 dt is the time step, and sigma
+    is the variance in the noise.
 
     Q is computed as the G * G^T * variance, where G is the process noise per
     time step. In other words, G = [[.5dt^2][dt]]^T for the constant velocity
@@ -36,7 +37,7 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     Parameters
     -----------
 
-    dim : int (2 or 3)
+    dim : int (2, 3, or 4)
         dimension for Q, where the final dimension is (dim x dim)
 
     dt : float, default=1.0
@@ -46,6 +47,23 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     var : float, default=1.0
         variance in the noise
 
+    block_size : int >= 1
+        If your state variable contains more than one dimension, such as
+        a 3d constant velocity model [x x' y y' z z']^T, then Q must be
+        a block diagonal matrix.
+
+
+    Examples
+    --------
+    >>> # constant velocity model in a 3D world with a 10 Hz update rate
+    >>> Q_discrete_white_noise(2, dt=0.1, var=1., block_size=3)
+    array([[0.000025, 0.0005  , 0.      , 0.      , 0.      , 0.      ],
+           [0.0005  , 0.01    , 0.      , 0.      , 0.      , 0.      ],
+           [0.      , 0.      , 0.000025, 0.0005  , 0.      , 0.      ],
+           [0.      , 0.      , 0.0005  , 0.01    , 0.      , 0.      ],
+           [0.      , 0.      , 0.      , 0.      , 0.000025, 0.0005  ],
+           [0.      , 0.      , 0.      , 0.      , 0.0005  , 0.01    ]])
+
     References
     ----------
 
@@ -53,27 +71,37 @@ def Q_discrete_white_noise(dim, dt=1., var=1.):
     John Wiley & Sons, 2001. Page 274.
     """
 
-    assert dim == 2 or dim == 3
+    assert dim == 2 or dim == 3 or dim == 4
     if dim == 2:
-        Q = array([[.25*dt**4, .5*dt**3],
-                   [ .5*dt**3,    dt**2]], dtype=float)
+        Q = [[.25*dt**4, .5*dt**3],
+             [ .5*dt**3,    dt**2]]
+    elif dim == 3:
+        Q = [[.25*dt**4, .5*dt**3, .5*dt**2],
+             [ .5*dt**3,    dt**2,       dt],
+             [ .5*dt**2,       dt,        1]]
     else:
-        Q = array([[.25*dt**4, .5*dt**3, .5*dt**2],
-                   [ .5*dt**3,    dt**2,       dt],
-                   [ .5*dt**2,       dt,        1]], dtype=float)
+        Q = [[(dt**6)/36, (dt**5)/12, (dt**4)/6, (dt**3)/6],
+             [(dt**5)/12, (dt**4)/4,  (dt**3)/2, (dt**2)/2],
+             [(dt**4)/6,  (dt**3)/2,   dt**2,     dt],
+             [(dt**3)/6,  (dt**2)/2 ,  dt,        1.]]
 
-    return Q * var
+    return block_diag(*[Q]*block_size) * var
 
-def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
-    """ Returns the Q matrix for the Discretized Continuous White Noise
-    Model. dim may be either 2 or 3, dt is the time step, and sigma is the
+
+def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
+                             block_size=1):
+    """
+    Returns the Q matrix for the Discretized Continuous White Noise
+    Model. dim may be either 2, 3, 4, dt is the time step, and sigma is the
     variance in the noise.
 
     Parameters
     ----------
 
-    dim : int (2 or 3)
+    dim : int (2 or 3 or 4)
         dimension for Q, where the final dimension is (dim x dim)
+        2 is constant velocity, 3 is constant acceleration, 4 is
+        constant jerk
 
     dt : float, default=1.0
         time step in whatever units your filter is using for time. i.e. the
@@ -81,18 +109,41 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.):
 
     spectral_density : float, default=1.0
         spectral density for the continuous process
+
+    block_size : int >= 1
+        If your state variable contains more than one dimension, such as
+        a 3d constant velocity model [x x' y y' z z']^T, then Q must be
+        a block diagonal matrix.
+
+    Examples
+    --------
+
+    >>> # constant velocity model in a 3D world with a 10 Hz update rate
+    >>> Q_continuous_white_noise(2, dt=0.1, block_size=3)
+    array([[0.00033333, 0.005     , 0.        , 0.        , 0.        , 0.        ],
+           [0.005     , 0.1       , 0.        , 0.        , 0.        , 0.        ],
+           [0.        , 0.        , 0.00033333, 0.005     , 0.        , 0.        ],
+           [0.        , 0.        , 0.005     , 0.1       , 0.        , 0.        ],
+           [0.        , 0.        , 0.        , 0.        , 0.00033333, 0.005     ],
+           [0.        , 0.        , 0.        , 0.        , 0.005     , 0.1       ]])
     """
 
-    assert dim == 2 or dim == 3
+    assert dim == 2 or dim == 3 or dim == 4
     if dim == 2:
-        Q = array([[(dt**3)/3, (dt**2)/2],
-                   [(dt**2)/2,    dt]])
-    else:
-        Q = array([[(dt**5)/20, (dt**4)/8, (dt**3)/6],
-                   [ (dt**4)/8, (dt**3)/3, (dt**2)/2],
-                   [ (dt**3)/6, (dt**2)/2,        dt]], dtype=float)
+        Q = [[(dt**3)/3., (dt**2)/2.],
+             [(dt**2)/2.,    dt]]
+    elif dim == 3:
+        Q = [[(dt**5)/20., (dt**4)/8., (dt**3)/6.],
+             [ (dt**4)/8., (dt**3)/3., (dt**2)/2.],
+             [ (dt**3)/6., (dt**2)/2.,        dt]]
 
-    return Q * spectral_density
+    else:
+        Q = [[(dt**7)/252., (dt**6)/72., (dt**5)/30., (dt**4)/24.],
+             [(dt**6)/72.,  (dt**5)/20., (dt**4)/8.,  (dt**3)/6.],
+             [(dt**5)/30.,  (dt**4)/8.,  (dt**3)/3.,  (dt**2)/2.],
+             [(dt**4)/24.,  (dt**3)/6.,  (dt**2/2.),   dt]]
+
+    return block_diag(*[Q]*block_size) * spectral_density
 
 
 def van_loan_discretization(F, G, dt):
