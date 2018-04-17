@@ -216,7 +216,9 @@ filterpy.common
 ---------------
 
 Contains various useful functions that support the filtering classes 
-and functions.
+and functions. Most useful are functions to compute the process noise
+matrix Q. It also implements the Van Loan discretization of a linear
+differential equation.
 
 .. toctree::
     :maxdepth: 1
@@ -227,8 +229,10 @@ and functions.
 filterpy.stats
 --------------
 
-Contains various statistical functions and plotting of things like
-Gaussians and covariance ellipses.
+Contains statistical functions useful for Kalman filtering such as
+multivariate Gaussian multiplication, computing the log-likelihood,
+NESS, and mahalanobis distance, along with plotting routines to plot
+multivariate Gaussians CDFs, PDFs, and covariance ellipses.
 
 .. toctree::
     :maxdepth: 1

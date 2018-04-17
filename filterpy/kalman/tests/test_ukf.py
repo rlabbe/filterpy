@@ -26,11 +26,11 @@ from numpy import asarray
 import numpy as np
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
-                             JulierSigmaPoints, SimplexSigmaPoints)
+                             JulierSigmaPoints, SimplexSigmaPoints,
+                             KalmanFilter)
 from filterpy.common import Q_discrete_white_noise
 import filterpy.stats as stats
 from math import cos, sin
-
 
 
 
@@ -875,8 +875,102 @@ def two_radar():
     plt.tight_layout()
     plt.show()
 
+def test_linear_rts():
+
+    """ for a linear model the Kalman filter and UKF should produce nearly
+    identical results.
+
+    Test code mostly due to user gboehl as reported in GitHub issue #97, though
+    I converted it from an AR(1) process to constant velocity kinematic
+    model.
+    """
+    dt = 1.0
+    F 	= np.array([[1., dt], [.0, 1]])
+    H 	= np.array([[1., .0]])
+
+
+    def t_func(x, dt):
+        F = np.array([[1., dt], [.0, 1]])
+        return np.dot(F, x)
+
+    def o_func(x):
+    	return np.dot(H, x)
+
+    sig_t 	= .1    # peocess
+    sig_o 	= .00000001   # measurement
+
+    N = 50
+    X_true, X_obs = [], []
+
+    for i in range(N):
+        X_true.append([i + 1, 1.])
+        X_obs.append(i + 1 + np.random.normal(scale=sig_o))
+
+    X_true = np.array(X_true)
+    X_obs = np.array(X_obs)
+
+
+    oc = np.ones((1,1))*sig_o**2
+    tc = np.zeros((2,2))
+    tc[1,1]	= sig_t**2
+
+    tc = Q_discrete_white_noise(dim=2, dt=dt, var=sig_t**2)
+
+
+    points = MerweScaledSigmaPoints(n=2, alpha=.1, beta=2., kappa=1)
+
+    ukf = UKF(dim_x=2,dim_z=1,dt=dt,hx=o_func,fx=t_func,points=points)
+    ukf.x = np.array([0., 1.])
+    ukf.R = oc[:]
+    ukf.Q = tc[:]
+
+
+    kf = KalmanFilter(dim_x=2,dim_z=1)
+    kf.x = np.array([[0., 1]]).T
+    kf.R = oc[:]
+    kf.Q = tc[:]
+    kf.H = H[:]
+    kf.F = F[:]
+
+
+    mu_ukf, cov_ukf = ukf.batch_filter(X_obs)
+    x_ukf, _, _ 	= ukf.rts_smoother(mu_ukf, cov_ukf)
+
+    mu_kf, cov_kf, _, _	= kf.batch_filter(X_obs)
+    x_kf, _, _, _ 		= kf.rts_smoother(mu_kf, cov_kf)
+
+
+    # check results of filtering are correct
+    kfx = mu_kf[:,0,0]
+    ukfx = mu_ukf[:,0]
+    kfxx = mu_kf[:,1,0]
+    ukfxx = mu_ukf[:,1]
+
+    dx = kfx - ukfx
+    dxx = kfxx - ukfxx
+
+    # error in position should be smaller then error in velocity, hence
+    # atol is different for the two tests.
+    assert np.allclose(dx, 0, atol=1e-7)
+    assert np.allclose(dxx, 0, atol=1e-6)
+
+    # now ensure the RTS smoothers gave nearly identical results
+    kfx = x_kf[:,0,0]
+    ukfx = x_ukf[:,0]
+    kfxx = x_kf[:,1,0]
+    ukfxx = x_ukf[:,1]
+
+    dx = kfx - ukfx
+    dxx = kfxx - ukfxx
+
+    assert np.allclose(dx, 0, atol=1e-7)
+    assert np.allclose(dxx, 0, atol=1e-6)
+
+
 
 if __name__ == "__main__":
+
+    test_linear_rts()
 
     DO_PLOT = True
     #test_sigma_plot()

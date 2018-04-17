@@ -1,3 +1,12 @@
+Version 1.2.4
+=============
+
+* BUG: UKF smoother had an important bug in it. DO NOT use the rts_smoother
+prior to this release! GitHub issue #97
+
+* Added jerk option to the computation of Q. GitHub issue #83
+
+
 Version 1.2.3
 =============
 * I pushed a broken version! This should fix that. Do not use 1.2.2.

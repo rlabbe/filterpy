@@ -297,8 +297,8 @@ class UnscentedKalmanFilter(object):
         # calculate sigma points for given mean and covariance
         sigmas = self.points_fn.sigma_points(self.x, self.P)
 
-        for i in range(self._num_sigmas):
-            self.sigmas_f[i] = self.fx(sigmas[i], dt, *fx_args)
+        for i, s in enumerate(sigmas):
+            self.sigmas_f[i] = self.fx(s, dt, *fx_args)
 
         self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
                             self.x_mean, self.residual_x)
@@ -343,23 +343,20 @@ class UnscentedKalmanFilter(object):
         elif isscalar(R):
             R = eye(self._dim_z) * R
 
-        for i in range(self._num_sigmas):
-            self.sigmas_h[i] = self.hx(self.sigmas_f[i], *hx_args)
+        for i, s in enumerate(self.sigmas_f):
+            self.sigmas_h[i] = self.hx(s, *hx_args)
 
         # mean and covariance of prediction passed through unscented transform
         zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R, self.z_mean, self.residual_z)
 
         # compute cross variance of the state and the measurements
-        Pxz = zeros((self._dim_x, self._dim_z))
-        for i in range(self._num_sigmas):
-            dx = self.residual_x(self.sigmas_f[i], self.x)
-            dz =  self.residual_z(self.sigmas_h[i], zp)
-            Pxz += self.Wc[i] * outer(dx, dz)
+        Pxz = self.cross_variance(self.x, zp, self.sigmas_f, self.sigmas_h)
 
 
         self.K = dot(Pxz, inv(Pz))        # Kalman gain
         self.y = self.residual_z(z, zp)   # residual
 
+        # update Gaussian state estimate (x, P)
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, Pz).dot(self.K.T)
 
@@ -368,12 +365,17 @@ class UnscentedKalmanFilter(object):
 
 
     def cross_variance(self, x, z, sigmas_f, sigmas_h):
+        """
+        Compute cross variance of the state `x` and measurement `z`.
+        """
+
         Pxz = zeros((sigmas_f.shape[1], sigmas_h.shape[1]))
         N = sigmas_f.shape[0]
         for i in range(N):
             dx = self.residual_x(sigmas_f[i], x)
             dz =  self.residual_z(sigmas_h[i], z)
             Pxz += self.Wc[i] * outer(dx, dz)
+        return Pxz
 
 
     @property
@@ -538,8 +540,6 @@ class UnscentedKalmanFilter(object):
             for i in range(num_sigmas):
                 sigmas_f[i] = self.fx(sigmas[i], dt[k])
 
-            """can I curry this so we don't have to pass in x_mean and residual_x
-            every time?"""
             xb, Pb = unscented_transform(
                     sigmas_f, self.Wm, self.Wc, self.Q,
                     self.x_mean, self.residual_x)
@@ -547,8 +547,8 @@ class UnscentedKalmanFilter(object):
             # compute cross variance
             Pxb = 0
             for i in range(num_sigmas):
-                z = self.residual_x(sigmas[i], Xs[k])
                 y = self.residual_x(sigmas_f[i], xb)
+                z = self.residual_x(sigmas[i], Xs[k])
                 Pxb += self.Wc[i] * outer(z, y)
 
             # compute gain
