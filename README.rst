@@ -117,6 +117,10 @@ I haven't made a new release yet, I strongly advise not installing from git.
 Basic use
 ---------
 
+Full documentation is at
+https://filterpy.readthedocs.io/en/latest/
+
+
 First, import the filters and helper functions.
 
 .. code-block:: python
