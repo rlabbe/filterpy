@@ -108,9 +108,9 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
     # times the weights
 
     # this is the fast way to do this - see 'else' for the slow way
-    if residual_fn is None:
+    if residual_fn is np.subtract or residual_fn is None:
         y = sigmas - x[np.newaxis,:]
-        P = y.T.dot(np.diag(Wc)).dot(y)
+        P = np.dot(y.T, np.dot(np.diag(Wc), y))
     else:
         P = np.zeros((n, n))
         for k in range(kmax):

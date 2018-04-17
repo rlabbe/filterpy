@@ -358,7 +358,7 @@ class UnscentedKalmanFilter(object):
 
         # update Gaussian state estimate (x, P)
         self.x = self.x + dot(self.K, self.y)
-        self.P = self.P - dot(self.K, Pz).dot(self.K.T)
+        self.P = self.P - dot(self.K, dot(Pz, self.K.T))
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=Pz)
