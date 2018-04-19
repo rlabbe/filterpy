@@ -36,7 +36,7 @@ def kinematic_state_transition(order, dt):
     if order == 2:
         return np.array([[1., dt, 0.5*dt*dt],
                          [0., 1., dt],
-                         [0., 1., dt]])
+                         [0., 0., 1.]])
 
     # grind it out computationally....
     N = order + 1
