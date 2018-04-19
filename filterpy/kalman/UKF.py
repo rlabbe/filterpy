@@ -295,13 +295,12 @@ class UnscentedKalmanFilter(object):
             UT = unscented_transform
 
         # calculate sigma points for given mean and covariance
-        sigmas = self.points_fn.sigma_points(self.x, self.P)
+        self.compute_process_sigmas(dt, *fx_args)
 
-        for i, s in enumerate(sigmas):
-            self.sigmas_f[i] = self.fx(s, dt, *fx_args)
-
+        #and pass sigmas through the unscented transform
         self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
                             self.x_mean, self.residual_x)
+
 
 
     def update(self, z, R=None, UT=None, hx_args=()):
@@ -376,6 +375,21 @@ class UnscentedKalmanFilter(object):
             dz =  self.residual_z(sigmas_h[i], z)
             Pxz += self.Wc[i] * outer(dx, dz)
         return Pxz
+
+
+    def compute_process_sigmas(self, dt, *fx_args):
+        """
+        computes the values of sigmas_f. Normally a user would not call
+        this, but it is useful if you need to call update more than once
+        between calls to predict (to update for multiple simultaneous
+        measurements), so the sigmas correctly reflect the updated state
+        x, P.
+        """
+        # calculate sigma points for given mean and covariance
+        sigmas = self.points_fn.sigma_points(self.x, self.P)
+
+        for i, s in enumerate(sigmas):
+            self.sigmas_f[i] = self.fx(s, dt, *fx_args)
 
 
     @property
