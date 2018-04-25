@@ -14,11 +14,13 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import math
 import numpy as np
 import scipy as sp
-from filterpy.kalman import KalmanFilter
+import filterpy
 
 
 def kinematic_state_transition(order, dt):
@@ -142,7 +144,7 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
 
     dim_x = order + 1
 
-    kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
+    kf = filterpy.kalman.KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
     F = kinematic_state_transition(order, dt)
     if order_by_dim:
         diag = [F] * dim

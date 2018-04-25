@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0903, W1401
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too few public methods, anomalous backslash
+# in string
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -20,6 +25,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy as np
 from numpy import dot
+from filterpy.common import pretty_str
 
 
 class GHFilterOrder(object):
@@ -83,7 +89,7 @@ class GHFilterOrder(object):
             This is always an np.array, even for order 0 where you can
             initialize x0 with a scalar.
 
-        self.residual : np.array
+        self.y : np.array
             difference between the measurement and the prediction
         """
 
@@ -103,6 +109,7 @@ class GHFilterOrder(object):
         self.g = g
         self.h = h
         self.k = k
+        self.y = 0.
 
 
     def update(self, z, g=None, h=None, k=None):
@@ -113,8 +120,8 @@ class GHFilterOrder(object):
         if self.order == 0:
             if g is None:
                 g = self.g
-            self.residual = z - self.x[0]
-            self.x += dot(g, self.residual)
+            self.y = z - self.x[0]
+            self.x += dot(g, self.y)
 
         elif self.order == 1:
             if g is None:
@@ -125,9 +132,9 @@ class GHFilterOrder(object):
             dx = self.x[1]
             dxdt = dot(dx, self.dt)
 
-            self.residual = z - (x + dxdt)
-            self.x[0] = x + dxdt + g*self.residual
-            self.x[1] = dx       + h*self.residual / self.dt
+            self.y = z - (x + dxdt)
+            self.x[0] = x + dxdt + g*self.y
+            self.x[1] = dx       + h*self.y / self.dt
 
         else: # order == 2
             if g is None:
@@ -143,11 +150,11 @@ class GHFilterOrder(object):
             dxdt = dot(dx, self.dt)
             T2 = self.dt**2.
 
-            self.residual = z -(x + dxdt +0.5*ddx*T2)
+            self.y = z -(x + dxdt +0.5*ddx*T2)
 
-            self.x[0] = x + dxdt + 0.5*ddx*T2 + g*self.residual
-            self.x[1] = dx + ddx*self.dt      + h*self.residual / self.dt
-            self.x[2] = ddx                 + 2*k*self.residual / (self.dt**2)
+            self.x[0] = x + dxdt + 0.5*ddx*T2 + g*self.y
+            self.x[1] = dx + ddx*self.dt      + h*self.y / self.dt
+            self.x[2] = ddx                 + 2*k*self.y / (self.dt**2)
 
 
 class GHFilter(object):
@@ -203,6 +210,7 @@ class GHFilter(object):
     **Methods**
     """
 
+
     def __init__(self, x, dx, dt, g, h):
         """ Creates a g-h filter.
 
@@ -242,9 +250,13 @@ class GHFilter(object):
         self.dt = dt
         self.g = g
         self.h = h
+        self.dx_prediction = self.dx
+        self.x_prediction  = self.x
+        self.y = 0.   # residual
 
 
-    def update (self, z, g=None, h=None):
+
+    def update(self, z, g=None, h=None):
         """performs the g-h filter predict and update step on the
         measurement z. Modifies the member variables listed below,
         and returns the state of x and dx as a tuple as a convienence.
@@ -294,14 +306,14 @@ class GHFilter(object):
         self.x_prediction  = self.x + (self.dx*self.dt)
 
         # update step
-        self.residual = z - self.x_prediction
-        self.dx = self.dx_prediction + h * self.residual / self.dt
-        self.x  = self.x_prediction  + g * self.residual
+        self.y = z - self.x_prediction
+        self.dx = self.dx_prediction + h * self.y / self.dt
+        self.x  = self.x_prediction  + g * self.y
 
         return (self.x, self.dx)
 
 
-    def batch_filter (self, data, save_predictions=False):
+    def batch_filter(self, data, save_predictions=False):
         """
         Given a sequenced list of data, performs g-h filter
         with a fixed g and h. See update() if you need to vary g and/or h.
@@ -342,8 +354,8 @@ class GHFilter(object):
         n = len(data)
 
         results = np.zeros((n+1, 2))
-        results[0,0] = x
-        results[0,1] = dx
+        results[0, 0] = x
+        results[0, 1] = dx
 
         if save_predictions:
             predictions = np.zeros(n)
@@ -351,24 +363,24 @@ class GHFilter(object):
         # optimization to avoid n computations of h / dt
         h_dt = self.h / self.dt
 
-        for i,z in enumerate(data):
+        for i, z in enumerate(data):
             #prediction step
-            x_est = x + (dx*self.dt)
+            x_est = x + (dx * self.dt)
 
             # update step
             residual = z - x_est
             dx = dx    + h_dt   * residual # i.e. dx = dx + h * residual / dt
             x  = x_est + self.g * residual
 
-            results[i+1,0] = x
-            results[i+1,1] = dx
+            results[i+1, 0] = x
+            results[i+1, 1] = dx
             if save_predictions:
                 predictions[i] = x_est
 
         if save_predictions:
             return results, predictions
-        else:
-            return results
+
+        return results
 
 
     def VRF_prediction(self):
@@ -422,6 +434,18 @@ class GHFilter(object):
 
         return (vx, vdx)
 
+    def __repr__(self):
+        return '\n'.join([
+            'GHFilter object',
+            pretty_str('dt', self.dt),
+            pretty_str('g', self.g),
+            pretty_str('h', self.h),
+            pretty_str('x', self.x),
+            pretty_str('dx', self.dx),
+            pretty_str('x_prediction', self.x_prediction),
+            pretty_str('dx_prediction', self.dx_prediction),
+            pretty_str('y', self.y)
+            ])
 
 class GHKFilter(object):
     """ Implements the g-h-k filter.
@@ -481,17 +505,22 @@ class GHKFilter(object):
         self.x = x
         self.dx = dx
         self.ddx = ddx
+        self.x_prediction = self.x
+        self.dx_prediction = self.dx
+        self.ddx_prediction = self.ddx
+
         self.dt = dt
         self.g = g
         self.h = h
         self.k = k
+        self.y = 0. # residual
 
 
-    def update (self, z, g=None, h=None, k=None):
+    def update(self, z, g=None, h=None, k=None):
         """performs the g-h filter predict and update step on the
         measurement z.
 
-        On return, self.x, self.dx, self.residual, and self.x_prediction
+        On return, self.x, self.dx, self.y, and self.x_prediction
         will have been updated with the results of the computation. For
         convienence, self.x and self.dx are returned in a tuple.
 
@@ -526,20 +555,20 @@ class GHKFilter(object):
         dt_sqr = dt**2
         #prediction step
         self.ddx_prediction = self.ddx
-        self.dx_prediction = self.dx + self.ddx*dt
-        self.x_prediction  = self.x  + self.dx*dt + .5*self.ddx*(dt_sqr)
+        self.dx_prediction  = self.dx + self.ddx*dt
+        self.x_prediction   = self.x  + self.dx*dt + .5*self.ddx*(dt_sqr)
 
         # update step
-        self.residual = z - self.x_prediction
+        self.y = z - self.x_prediction
 
-        self.ddx = self.ddx_prediction + 2*k*self.residual / dt_sqr
-        self.dx  = self.dx_prediction  + h * self.residual / dt
-        self.x   = self.x_prediction   + g * self.residual
+        self.ddx = self.ddx_prediction + 2*k*self.y / dt_sqr
+        self.dx  = self.dx_prediction  + h * self.y / dt
+        self.x   = self.x_prediction   + g * self.y
 
         return (self.x, self.dx)
 
 
-    def batch_filter (self, data, save_predictions=False):
+    def batch_filter(self, data, save_predictions=False):
         """
         Performs g-h filter with a fixed g and h.
 
@@ -578,8 +607,8 @@ class GHKFilter(object):
         n = len(data)
 
         results = np.zeros((n+1, 2))
-        results[0,0] = x
-        results[0,1] = dx
+        results[0, 0] = x
+        results[0, 1] = dx
 
         if save_predictions:
             predictions = np.zeros(n)
@@ -587,7 +616,7 @@ class GHKFilter(object):
         # optimization to avoid n computations of h / dt
         h_dt = self.h / self.dt
 
-        for i,z in enumerate(data):
+        for i, z in enumerate(data):
             #prediction step
             x_est = x + (dx*self.dt)
 
@@ -596,15 +625,15 @@ class GHKFilter(object):
             dx = dx    + h_dt   * residual # i.e. dx = dx + h * residual / dt
             x  = x_est + self.g * residual
 
-            results[i+1,0] = x
-            results[i+1,1] = dx
+            results[i+1, 0] = x
+            results[i+1, 1] = dx
             if save_predictions:
                 predictions[i] = x_est
 
         if save_predictions:
             return results, predictions
-        else:
-            return results
+
+        return results
 
 
     def VRF_prediction(self):
@@ -692,6 +721,23 @@ class GHKFilter(object):
         return (vx, vdx, vddx)
 
 
+    def __repr__(self):
+        return '\n'.join([
+            'GHFilter object',
+            pretty_str('dt', self.dt),
+            pretty_str('g', self.g),
+            pretty_str('h', self.h),
+            pretty_str('k', self.k),
+            pretty_str('x', self.x),
+            pretty_str('dx', self.dx),
+            pretty_str('ddx', self.ddx),
+            pretty_str('x_prediction', self.x_prediction),
+            pretty_str('dx_prediction', self.dx_prediction),
+            pretty_str('ddx_prediction', self.dx_prediction),
+            pretty_str('y', self.y)
+            ])
+
+
 def optimal_noise_smoothing(g):
     """ provides g,h,k parameters for optimal smoothing of noise for a given
     value of g. This is due to Polge and Bhagavan[1].
@@ -733,7 +779,7 @@ def optimal_noise_smoothing(g):
     h = ((2*g**3 - 4*g**2) + (4*g**6 -64*g**5 + 64*g**4)**.5) / (8*(1-g))
     k = (h*(2-g) - g**2) / g
 
-    return (g,h,k)
+    return (g, h, k)
 
 
 def least_squares_parameters(n):
@@ -777,7 +823,7 @@ def least_squares_parameters(n):
 
     g = (2*(2*n + 1)) / den
     h = 6 / den
-    return (g,h)
+    return (g, h)
 
 
 def critical_damping_parameters(theta, order=2):
@@ -914,5 +960,5 @@ def benedict_bornder_constants(g, critical=False):
     g_sqr = g**2
     if critical:
         return (g, 0.8 * (2. - g_sqr - 2*(1-g_sqr)**.5) / g_sqr)
-    else:
-        return (g, g_sqr / (2.-g))
+
+    return (g, g_sqr / (2.-g))

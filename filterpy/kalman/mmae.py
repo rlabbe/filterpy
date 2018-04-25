@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -16,6 +19,8 @@ for more information.
 """
 
 import numpy as np
+from filterpy.common import pretty_str
+
 
 class MMAEFilterBank(object):
     """ Implements the fixed Multiple Model Adaptive Estimator (MMAE). This
@@ -51,7 +56,6 @@ class MMAEFilterBank(object):
 
     """
 
-
     def __init__(self, filters, p, dim_x, H=None):
         """ Creates an fixed MMAE Estimator.
 
@@ -78,6 +82,8 @@ class MMAEFilterBank(object):
         self.p = np.asarray(p)
         self.dim_x = dim_x
         self.x = None
+        self.P = None
+        self.H = H
 
 
     def predict(self, u=0):
@@ -116,6 +122,9 @@ class MMAEFilterBank(object):
             one call, otherwise  self.H will be used.
         """
 
+        if H is None:
+            H = self.H
+
         # new probability is recursively defined as prior * likelihood
         for i, f in enumerate(self.filters):
             f.update(z, R, H)
@@ -141,3 +150,12 @@ class MMAEFilterBank(object):
         for x, f, p in zip(self.x, self.filters, self.p):
             y = f.x - x
             self.P += p*(np.outer(y, y) + f.P)
+
+    def __repr__(self):
+        return '\n'.join([
+            'MMAEFilterBank object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('log-p', self.p),
+            ])

@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103
+# pylint: disable=R0913
+
+
 """Copyright 2016 Roger R Labbe Jr.
 
 FilterPy library.
@@ -18,11 +22,12 @@ from __future__ import (absolute_import, division)
 
 import math
 from math import sqrt
+import sys
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
-import sys
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
 
 
 def spherical_radial_sigmas(x, P):
@@ -51,7 +56,7 @@ def spherical_radial_sigmas(x, P):
     sigmas = np.empty((2*n, n))
     U = cholesky(P) * sqrt(n)
     for k in range(n):
-        sigmas[k]   = x + U[k]
+        sigmas[k] = x + U[k]
         sigmas[n+k] = x - U[k]
 
     return sigmas
@@ -204,6 +209,7 @@ class CubatureKalmanFilter(object):
         self.R = eye(dim_z)
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
+        self.K = 0
         self._dim_x = dim_x
         self._dim_z = dim_z
         self._dt = dt
@@ -212,6 +218,7 @@ class CubatureKalmanFilter(object):
         self.fx = fx
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
+        self.y = 0
 
 
         if residual_x is None:
@@ -233,7 +240,7 @@ class CubatureKalmanFilter(object):
         self.log_likelihood = math.log(sys.float_info.min)
 
 
-    def predict(self, dt=None,  fx_args=()):
+    def predict(self, dt=None, fx_args=()):
         r""" Performs the predict step of the CKF. On return, self.x and
         self.P contain the predicted state (x) and covariance (P).
 
@@ -312,7 +319,7 @@ class CubatureKalmanFilter(object):
         zpf = zp.flatten()
         for k in range(m):
             dx = self.sigmas_f[k] - xf
-            dz =  self.sigmas_h[k] - zpf
+            dz = self.sigmas_h[k] - zpf
             Pxz += outer(dx, dz)
 
         Pxz /= m
@@ -325,6 +332,21 @@ class CubatureKalmanFilter(object):
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=Pz)
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'CubatureKalmanFilter object',
+            pretty_str('dim_x', self._dim_x),
+            pretty_str('dim_z', self._dim_z),
+            pretty_str('dt', self._dt),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('log-likelihood', self.log_likelihood)])
 
 
     @property
@@ -343,5 +365,5 @@ class CubatureKalmanFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
         return lh

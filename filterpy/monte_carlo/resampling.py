@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables
+
+
 
 """Copyright 2015 Roger R Labbe Jr.
 

@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, C0302, C0321, R0914, R0912
+#
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many lines, more than one statement
+# on line, too many local variables, too many branches
 
 """
 This module implements the linear Kalman filter in both an object
@@ -110,12 +115,14 @@ Copyright 2014-2018 Roger R Labbe Jr.
 """
 
 from __future__ import absolute_import, division
+import sys
 import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import scipy.linalg as linalg
-import sys
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
+
 
 
 class KalmanFilter(object):
@@ -389,7 +396,7 @@ class KalmanFilter(object):
         if z is None:
             return
 
-        z = _reshape_z(z, self.dim_z)
+        z = _reshape_z(z, self.dim_z, self.x.ndim)
 
         if R is None:
             R = self.R
@@ -447,46 +454,49 @@ class KalmanFilter(object):
         allowed to pass in any combination that works.
         """
 
-        if H is None: H = self.H
-        if R is None: R = self.R
-        if F is None: F = self.F
-        if Q is None: Q = self.Q
+        if H is None:
+            H = self.H
+        if R is None:
+            R = self.R
+        if F is None:
+            F = self.F
+        if Q is None:
+            Q = self.Q
         x = self.x
         P = self.P
 
         assert x.ndim == 1 or x.ndim == 2, \
-                "x must have one or two dimensions, but has {}".format(
-                x.ndim)
+                "x must have one or two dimensions, but has {}".format(x.ndim)
 
         if x.ndim == 1:
             assert x.shape[0] == self.dim_x, \
                    "Shape of x must be ({},{}), but is {}".format(
-                   self.dim_x, 1, x.shape)
+                       self.dim_x, 1, x.shape)
         else:
             assert x.shape == (self.dim_x, 1), \
                    "Shape of x must be ({},{}), but is {}".format(
-                   self.dim_x, 1, x.shape)
+                       self.dim_x, 1, x.shape)
 
         assert P.shape == (self.dim_x, self.dim_x), \
                "Shape of P must be ({},{}), but is {}".format(
-               self.dim_x, self.dim_x, P.shape)
+                   self.dim_x, self.dim_x, P.shape)
 
         assert Q.shape == (self.dim_x, self.dim_x), \
                "Shape of P must be ({},{}), but is {}".format(
-               self.dim_x, self.dim_x, P.shape)
+                   self.dim_x, self.dim_x, P.shape)
 
         assert F.shape == (self.dim_x, self.dim_x), \
                "Shape of F must be ({},{}), but is {}".format(
-               self.dim_x, self.dim_x, F.shape)
+                   self.dim_x, self.dim_x, F.shape)
 
 
         assert np.ndim(H) == 2, \
                "Shape of H must be (dim_z, {}), but is {}".format(
-               P.shape[0], shape(H))
+                   P.shape[0], shape(H))
 
         assert H.shape[1] == P.shape[0], \
                "Shape of H must be (dim_z, {}), but is {}".format(
-               P.shape[0], H.shape)
+                   P.shape[0], H.shape)
 
         # shape of R must be the same as HPH'
         hph_shape = (H.shape[0], H.shape[0])
@@ -496,7 +506,7 @@ class KalmanFilter(object):
             # r can be scalar, 1D, or 2D in this case
             assert r_shape == () or r_shape == (1,) or r_shape == (1,1), \
             "R must be scalar or one element array, but is shaped {}".format(
-            r_shape)
+                r_shape)
         else:
             assert r_shape == hph_shape, \
             "shape of R should be {} but it is {}".format(hph_shape, r_shape)
@@ -513,7 +523,7 @@ class KalmanFilter(object):
         if z_shape == (): # scalar or np.array(scalar)
             assert Hx.ndim == 1 or shape(Hx) == (1,1), \
             "shape of z should be {}, not {} for the given H".format(
-                   shape(Hx), z_shape)
+                shape(Hx), z_shape)
 
         elif shape(Hx) == (1,):
             assert z_shape[0] == 1, 'Shape of z must be {} for the given H'.format(shape(Hx))
@@ -522,12 +532,12 @@ class KalmanFilter(object):
             assert (z_shape == shape(Hx) or
                     (len(z_shape) == 1 and shape(Hx) == (z_shape[0], 1))), \
                     "shape of z should be {}, not {} for the given H".format(
-                    shape(Hx), z_shape)
+                        shape(Hx), z_shape)
 
         if np.ndim(Hx) > 1 and shape(Hx) != (1,1):
             assert shape(Hx) == z_shape, \
                'shape of z should be {} for the given H, but it is {}'.format(
-               shape(Hx), z_shape)
+                   shape(Hx), z_shape)
 
 
     def predict(self, u=0, B=None, F=None, Q=None):
@@ -805,9 +815,8 @@ class KalmanFilter(object):
         """
 
         assert len(Xs) == len(Ps)
-        shape = Xs.shape
-        n = shape[0]
-        dim_x = shape[1]
+        n = Xs.shape[0]
+        dim_x = Xs.shape[1]
 
         if Fs is None:
             Fs = [self.F] * n
@@ -872,7 +881,7 @@ class KalmanFilter(object):
 
         if z is None:
             return self.x, self.P
-        z = _reshape_z(z, self.dim_z)
+        z = _reshape_z(z, self.dim_z, self.x.ndim)
 
         R = self.R
         H = self.H
@@ -895,7 +904,7 @@ class KalmanFilter(object):
         x = x + dot(K, y)
 
         # P = (I-KH)P(I-KH)' + KRK'
-        I_KH = self.I - dot(K, H)
+        I_KH = self._I - dot(K, H)
         P = dot(dot(I_KH, P), I_KH.T) + dot(dot(K, R), K.T)
 
         return x, P
@@ -964,7 +973,7 @@ class KalmanFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
         return lh
 
 
@@ -976,8 +985,7 @@ class KalmanFilter(object):
 
         if z is None:
             return math.log(sys.float_info.min)
-        else:
-            return logpdf(z, dot(self.H, self.x), self.S)
+        return logpdf(z, dot(self.H, self.x), self.S)
 
 
     @alpha.setter
@@ -986,6 +994,28 @@ class KalmanFilter(object):
         assert value > 0.
 
         self._alpha_sq = value**2
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'KalmanFilter object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('M', self.M),
+            pretty_str('B', self.B),
+            pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('alpha', self.alpha)
+            ])
 
 
 def update(x, P, z, R, H=None, return_all=False):
@@ -1051,8 +1081,7 @@ def update(x, P, z, R, H=None, return_all=False):
     if z is None:
         if return_all:
             return x, P, None, None, None, None
-        else:
-            return x, P
+        return x, P
 
     if H is None:
         H = np.array([1])
@@ -1095,8 +1124,7 @@ def update(x, P, z, R, H=None, return_all=False):
         # compute log likelihood
         log_likelihood = logpdf(z, dot(H, x), S)
         return x, P, y, K, S, log_likelihood
-    else:
-        return x, P
+    return x, P
 
 
 def update_steadystate(x, z, K, H=None):
@@ -1341,8 +1369,8 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
     covariances_p = zeros((n, dim_x, dim_x))
 
     if us is None:
-       us = [0.]*n
-       Bs = [0.]*n
+        us = [0.] * n
+        Bs = [0.] * n
 
     if len(Fs) < n: Fs = [Fs]*n
     if len(Qs) < n: Qs = [Qs]*n
@@ -1485,6 +1513,7 @@ class Saver(object):
         if save_current:
             self.save()
 
+
     def save(self):
         """ save the current state of the Kalman filter"""
 
@@ -1525,4 +1554,3 @@ def _reshape_z(z, dim_z, ndim):
         z = z[0,0]
 
     return z
-

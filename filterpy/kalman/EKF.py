@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902
+# disable snake_case warning, too many arguments, too many attributes
+
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -16,12 +19,14 @@ for more information.
 """
 
 from __future__ import (absolute_import, division, unicode_literals)
+
+import sys
 import math
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
-import sys
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
 
 
 class ExtendedKalmanFilter(object):
@@ -113,13 +118,13 @@ class ExtendedKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.B = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.R = eye(dim_z)       # state uncertainty
-        self.Q = eye(dim_x)       # process uncertainty
-        self.y = zeros((dim_z, 1))
+        self.x = zeros((dim_x, 1)) # state
+        self.P = eye(dim_x)        # uncertainty covariance
+        self.B = 0                 # control transition matrix
+        self.F = np.eye(dim_x)     # state transition matrix
+        self.R = eye(dim_z)        # state uncertainty
+        self.Q = eye(dim_x)        # process uncertainty
+        self.y = zeros((dim_z, 1)) # residual
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -194,7 +199,7 @@ class ExtendedKalmanFilter(object):
         # update step
         PHT = dot(P, H.T)
         self.S = dot(H, PHT) + R
-        self.K = PHT.dot(linalg.inv (self.S))
+        self.K = dot(PHT, linalg.inv(self.S))
 
         self.y = z - Hx(x, *hx_args)
         self.x = x + dot(self.K, self.y)
@@ -269,7 +274,7 @@ class ExtendedKalmanFilter(object):
         self.S = dot(H, PHT) + R
         self.K = PHT.dot(linalg.inv(self.S))
 
-        hx =  Hx(self.x, *hx_args)
+        hx = Hx(self.x, *hx_args)
         self.y = residual(z, hx)
         self.x = self.x + dot(self.K, self.y)
 
@@ -320,5 +325,19 @@ class ExtendedKalmanFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
         return lh
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'KalmanFilter object',
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('log-likelihood', self.log_likelihood)])

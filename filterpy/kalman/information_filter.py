@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -18,11 +21,12 @@ for more information.
 
 from __future__ import (absolute_import, division)
 import math
+import sys
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import inv
-import sys
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
 
 
 class InformationFilter(object):
@@ -71,18 +75,18 @@ class InformationFilter(object):
         self.x = zeros((dim_x, 1)) # state
         self.P_inv = eye(dim_x)   # uncertainty covariance
         self.Q = eye(dim_x)       # process uncertainty
-        self.B = 0                # control transition matrix
-        self._F = 0                # state transition matrix
-        self._F_inv = 0            # state transition matrix
-        self.H = 0                # Measurement function
+        self.B = 0.               # control transition matrix
+        self._F = 0.              # state transition matrix
+        self._F_inv = 0.          # state transition matrix
+        self.H = np.zeros((dim_z, dim_x)) # Measurement function
         self.R_inv = eye(dim_z)   # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = 0 # kalman gain
+        self.K = 0. # kalman gain
         self.y = zeros((dim_z, 1))
-        self.S = 0 # system uncertainty in measurement space
+        self.S = 0. # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -171,13 +175,13 @@ class InformationFilter(object):
                 self._no_information = False
         except:
             invertable = False
-            self._no_information  = True
+            self._no_information = True
 
         if invertable:
             self.x = dot(self._F, self.x) + dot(self.B, u)
             self.P_inv = inv(AI + self.Q)
         else:
-            I_PF = self._I - dot(self.P_inv,self._F_inv)
+            I_PF = self._I - dot(self.P_inv, self._F_inv)
             FTI = inv(self._F.T)
             FTIX = dot(FTI, self.x)
             AQI = inv(A + self.Q)
@@ -225,24 +229,24 @@ class InformationFilter(object):
             Rs = [None] * n
 
         # mean estimates from Kalman Filter
-        means = zeros((n, self.dim_x,1))
+        means = zeros((n, self.dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances = zeros((n,self.dim_x, self.dim_x))
+        covariances = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(zs, Rs)):
+            for i, (z, r) in enumerate(zip(zs, Rs)):
                 self.update(z, r)
-                means[i,:] = self.x
-                covariances[i,:,:] = self._P
+                means[i, :] = self.x
+                covariances[i, :, :] = self._P
                 self.predict()
         else:
-            for i,(z,r) in enumerate(zip(zs, Rs)):
+            for i, (z, r) in enumerate(zip(zs, Rs)):
                 self.predict()
                 self.update(z, r)
 
-                means[i,:] = self.x
-                covariances[i,:,:] = self._P
+                means[i, :] = self.x
+                covariances[i, :, :] = self._P
 
         return (means, covariances)
 
@@ -263,7 +267,7 @@ class InformationFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
 
 
     @property
@@ -276,3 +280,24 @@ class InformationFilter(object):
     def F(self, value):
         self._F = value
         self._F_inv = inv(self._F)
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'InformationFilter object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P_inv', self.P_inv),
+            pretty_str('F', self.F),
+            pretty_str('_F_inv', self._F_inv),
+            pretty_str('Q', self.Q),
+            pretty_str('R_inv', self.R_inv),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('B', self.B),
+            pretty_str('log-likelihood', self.log_likelihood),
+            ])

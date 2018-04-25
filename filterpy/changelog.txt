@@ -1,3 +1,9 @@
+Version 1.2.5
+=============
+
+#102 - Bug: UKF uwas sing slow code path when using np.subtract. 
+
+
 Version 1.2.4
 =============
 

@@ -50,7 +50,7 @@ def pretty_str(label, arr, transpose=True):
 
     def is_col(a):
         try:
-            return a.shape[1] == 1
+            return a.shape[0] > 1 and a.shape[1] == 1
         except:
             return False
     """

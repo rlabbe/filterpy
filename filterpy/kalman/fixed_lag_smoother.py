@@ -21,7 +21,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import inv
-
+from filterpy.common import pretty_str
 
 class FixedLagSmoother(object):
     """ Fixed Lag Kalman smoother.
@@ -114,13 +114,13 @@ class FixedLagSmoother(object):
         self.x_s = zeros((dim_x,1)) # smoothed state
         self.P = eye(dim_x)       # uncertainty covariance
         self.Q = eye(dim_x)       # process uncertainty
-        self.F = 0                # state transition matrix
-        self.H = 0                # Measurement function
+        self.F = 0.               # state transition matrix
+        self.H = 0.               # Measurement function
         self.R = eye(dim_z)       # state uncertainty
-        self.K = 0                # kalman gain
-        self.residual = zeros((dim_z, 1))
-
-        self.B = 0
+        self.K = 0.               # kalman gain
+        self.y = zeros((dim_z, 1))
+        self.B = 0.
+        self.S = 0.
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -180,14 +180,14 @@ class FixedLagSmoother(object):
         P = dot(F, P).dot(F.T) + Q
 
         # update step of normal Kalman filter
-        y = z - dot(H, x_pre)
+        self.y = z - dot(H, x_pre)
 
-        S = dot(H, P).dot(H.T) + R
-        SI = inv(S)
+        self.S = dot(H, P).dot(H.T) + R
+        SI = inv(self.S)
 
         K = dot(P, H.T).dot(SI)
 
-        x = x_pre + dot(K, y)
+        x = x_pre + dot(K, self.y)
 
         I_KH = self._I - dot(K, H)
         P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
@@ -205,7 +205,7 @@ class FixedLagSmoother(object):
                 PS = dot(PS, F_LH) # smoothed covariance
 
                 si = k-i
-                self.xSmooth[si] = self.xSmooth[si] + dot(K, y)
+                self.xSmooth[si] = self.xSmooth[si] + dot(K, self.y)
         else:
             # Some sources specify starting the fix lag smoother only
             # after N steps have passed, some don't. I am getting far
@@ -314,3 +314,23 @@ class FixedLagSmoother(object):
                 xSmooth[k] = xhat[k]
 
         return xSmooth, xhat
+
+
+    def __repr__(self):
+        return '\n'.join([
+                'FixedLagSmoother object',
+                pretty_str('dim_x', self.x),
+                pretty_str('dim_z', self.x),
+                pretty_str('N', self.N),
+                pretty_str('x', self.x),
+                pretty_str('x_s', self.x_s),
+                pretty_str('P', self.P),
+                pretty_str('F', self.F),
+                pretty_str('Q', self.Q),
+                pretty_str('R', self.R),
+                pretty_str('H', self.H),
+                pretty_str('K', self.K),
+                pretty_str('y', self.y),
+                pretty_str('S', self.S),
+                pretty_str('B', self.B),
+                ])

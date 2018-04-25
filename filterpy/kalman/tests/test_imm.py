@@ -272,6 +272,8 @@ def test_imm():
         plt.plot(xs)
         plt.plot(xs[:, 0])'''
 
+        return bank
+
 if __name__ == '__main__':
     DO_PLOT = True
     test_imm()

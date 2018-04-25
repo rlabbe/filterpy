@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0903
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too few public methods
+
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -18,6 +22,7 @@ for more information.
 from __future__ import (absolute_import, division)
 import numpy as np
 from numpy import dot, zeros
+from filterpy.common import pretty_str
 
 
 class IMMEstimator(object):
@@ -79,8 +84,9 @@ class IMMEstimator(object):
 
         self.x = np.zeros(x_shape)
         self.P = np.zeros((n_states, n_states))
-
         self.N = len(filters) # number of filters
+        self.cbar = 0.
+        self.likelihood = 0
 
 
     def update(self, z, u=None):
@@ -152,5 +158,19 @@ class IMMEstimator(object):
             self.P += w * (np.outer(y, y) + f.P)
 
         # update mode probabilities from total probability * likelihood
-        self.mu =  self.cbar * L
+        self.mu = self.cbar * L
         self.mu /= sum(self.mu) # normalize
+        self.likelihood = L
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'IMMEstimator object',
+            pretty_str('N', self.N),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('mu', self.mu),
+            pretty_str('M', self.M),
+            pretty_str('cbar', self.cbar),
+            pretty_str('likelihood', self.likelihood),
+            ])

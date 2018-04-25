@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914, R0903
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables, too few public
+# methods
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -20,6 +25,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from numpy import dot
+from filterpy.common import pretty_str
 
 
 class FadingMemoryFilter(object):
@@ -105,7 +111,7 @@ class FadingMemoryFilter(object):
 
             e = 2*dt*2 * (beta / (1-beta))**2
             de = dt*((1+3*beta)/(1-beta))
-            self.e = np.array ([e, de], dtype=float)
+            self.e = np.array([e, de], dtype=float)
 
         else:
             p11 = (1-beta)*((1+6*beta + 16*beta**2 + 24*beta**3 + 19*beta**4) /
@@ -120,9 +126,20 @@ class FadingMemoryFilter(object):
 
             e = 6*dt**3*(beta/(1-beta))**3
             de = dt**2 * (2 + 5*beta + 11*beta**2) / (1-beta)**2
-            dde = 6*dt*(1+2*beta)/(1-beta)
+            dde = 6*dt*(1+2*beta) / (1-beta)
 
-            self.e = np.array ([e, de, dde], dtype=float)
+            self.e = np.array([e, de, dde], dtype=float)
+
+    def __repr__(self):
+        return '\n'.join([
+            'FadingMemoryFilter object',
+            pretty_str('dt', self.dt),
+            pretty_str('order', self.order),
+            pretty_str('beta', self.beta),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('e', self.e),
+            ])
 
 
     def update(self, z):
@@ -132,7 +149,7 @@ class FadingMemoryFilter(object):
 
         if self.order == 0:
             G = 1 - self.beta
-            self.x = self.x + dot(G,(z-self.x))
+            self.x = self.x + dot(G, (z - self.x))
 
         elif self.order == 1:
             G = 1 - self.beta**2
@@ -144,7 +161,6 @@ class FadingMemoryFilter(object):
             residual = z - (x+dxdt)
             self.x[0] = x + dxdt + G*residual
             self.x[1] = dx + (H / self.dt)*residual
-            #print(self.x)
 
         else: # order == 2
             G = 1-self.beta**3
@@ -157,7 +173,7 @@ class FadingMemoryFilter(object):
             dxdt = dot(dx, self.dt)
             T2 = self.dt**2.
 
-            residual = z -(x + dxdt +0.5*ddx*T2)
+            residual = z - (x + dxdt + 0.5*ddx*T2)
 
             self.x[0] = x + dxdt + 0.5*ddx*T2 + G*residual
             self.x[1] = dx + ddx*self.dt + (H/self.dt)*residual

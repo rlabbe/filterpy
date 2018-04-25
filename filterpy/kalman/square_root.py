@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -19,6 +22,7 @@ from __future__ import (absolute_import, division)
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import cholesky, qr, pinv
+from filterpy.common import pretty_str
 
 
 class SquareRootKalmanFilter(object):
@@ -100,15 +104,19 @@ class SquareRootKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self.x = zeros((dim_x,1)) # state
+        self.x = zeros((dim_x, 1)) # state
         self._P = eye(dim_x)      # uncertainty covariance
-        self._P1_2 = eye(dim_x)      # sqrt uncertainty covariance
+        self._P1_2 = eye(dim_x)   # sqrt uncertainty covariance
         self._Q = eye(dim_x)      # sqrt process uncertainty
-        self._Q1_2 = eye(dim_x)      # sqrt process uncertainty
-        self.B = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.H = 0                # Measurement function
-        self._R1_2 = eye(dim_z)      # sqrt state uncertainty
+        self._Q1_2 = eye(dim_x)   # sqrt process uncertainty
+        self.B = 0.               # control transition matrix
+        self.F = np.eye(dim_x)    # state transition matrix
+        self.H = np.zeros((dim_z, dim_x)) # Measurement function
+        self._R1_2 = eye(dim_z)   # sqrt state uncertainty
+        self._R = eye(dim_z)      # state uncertainty
+
+        self.K = 0.
+        self.S = 0.
 
         # Residual is computed during the innovation (update) step. We
         # save it so that in case you want to inspect it for various
@@ -154,9 +162,9 @@ class SquareRootKalmanFilter(object):
         M[dim_z:, 0:dim_z] = dot(self.H, self._P1_2).T
         M[dim_z:, dim_z:] = self._P1_2.T
 
-        _, S = qr(M)
-        self.K = S[0:dim_z,  dim_z:].T
-        N = S[0:dim_z, 0:dim_z].T
+        _, self.S = qr(M)
+        self.K = self.S[0:dim_z, dim_z:].T
+        N = self.S[0:dim_z, 0:dim_z].T
 
         # y = z - Hx
         # error (residual) between measurement and prediction
@@ -165,7 +173,7 @@ class SquareRootKalmanFilter(object):
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self.x += dot(self.K, pinv(N)).dot(self.y)
-        self._P1_2 = S[dim_z:, dim_z:].T
+        self._P1_2 = self.S[dim_z:, dim_z:].T
 
 
     def predict(self, u=0):
@@ -183,7 +191,7 @@ class SquareRootKalmanFilter(object):
         self.x = dot(self.F, self.x) + dot(self.B, u)
 
         # P = FPF' + Q
-        T, P2 = qr(np.hstack([dot(self.F, self._P1_2), self._Q1_2]).T)
+        _, P2 = qr(np.hstack([dot(self.F, self._P1_2), self._Q1_2]).T)
         self._P1_2 = P2[:self.dim_x, :self.dim_x].T
 
 
@@ -229,7 +237,7 @@ class SquareRootKalmanFilter(object):
     def Q(self, value):
         """ Process uncertainty"""
         self._Q = value
-        self._Q1_2 = cholesky (self._Q, lower=True)
+        self._Q1_2 = cholesky(self._Q, lower=True)
 
     @property
     def P(self):
@@ -265,4 +273,24 @@ class SquareRootKalmanFilter(object):
     def R(self, value):
         """ measurement uncertainty"""
         self._R = value
-        self._R1_2 = cholesky (self._R, lower=True)
+        self._R1_2 = cholesky(self._R, lower=True)
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'SquareRootKalmanFilter object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('M', self.M),
+            pretty_str('B', self.B),
+            ])

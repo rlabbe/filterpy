@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -109,7 +113,7 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
 
     # this is the fast way to do this - see 'else' for the slow way
     if residual_fn is np.subtract or residual_fn is None:
-        y = sigmas - x[np.newaxis,:]
+        y = sigmas - x[np.newaxis, :]
         P = np.dot(y.T, np.dot(np.diag(Wc), y))
     else:
         P = np.zeros((n, n))

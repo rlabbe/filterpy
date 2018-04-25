@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -15,10 +19,11 @@ for more information.
 """
 
 from __future__ import absolute_import, division
+import warnings
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
-import warnings
+from filterpy.common import pretty_str
 
 
 class HInfinityFilter(object):
@@ -49,7 +54,7 @@ class HInfinityFilter(object):
 
     dim_u : int
         Number of control inputs for the Gu part of the prediction step.
-        
+
     gamma : float
     """
 
@@ -74,6 +79,7 @@ class HInfinityFilter(object):
         self.Q = eye(dim_x)
 
         self._V_inv = zeros((dim_z, dim_z)) # inverse measurement noise
+        self._V = zeros((dim_z, dim_z))     #  measurement noise
         self.W = zeros((dim_x, dim_x))      # process uncertainty
 
         # gain and residual are computed during the innovation step. We
@@ -81,7 +87,7 @@ class HInfinityFilter(object):
         # purposes
 
         self.K = 0 # H-infinity gain
-        self.residual = zeros((dim_z, 1))
+        self.y = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -123,11 +129,11 @@ class HInfinityFilter(object):
 
         K = dot(F, PL).dot(HTVI)
 
-        self.residual = z - dot(H, x)
+        self.y = z - dot(H, x)
 
         # x = x + Ky
         # predict new x with residual scaled by the H-Infinity gain
-        self.x = self.x + dot(K, self.residual)
+        self.x = self.x + dot(K, self.y)
         self.P = dot(F, PL).dot(F.T) + W
 
         # force P to be symmetric
@@ -180,6 +186,8 @@ class HInfinityFilter(object):
             `covariance[k, :, :]` is the covariance at step `k`.
         """
 
+        assert False, "this is not correct, do not use!"
+
         n = np.size(Zs, 0)
         if Rs is None:
             Rs = [None] * n
@@ -192,7 +200,7 @@ class HInfinityFilter(object):
 
         if update_first:
             for i, (z, r) in enumerate(zip(Zs, Rs)):
-                self.update(z,r)
+                self.update(z, r)
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
                 self.predict()
@@ -265,3 +273,20 @@ class HInfinityFilter(object):
         else:
             self._V = value
         self._V_inv = linalg.inv(self._V)
+
+    def __repr__(self):
+        return '\n'.join([
+            'HInfinityFilter object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('gamma', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('V', self.V),
+            pretty_str('W', self.W),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            ])

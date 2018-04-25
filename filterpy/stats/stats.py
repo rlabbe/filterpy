@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, C0302, C0321, R0914, R0912
+#
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many lines, more than one statement
+# on line, too many local variables, too many branches
+
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -21,17 +27,17 @@ from __future__ import (absolute_import, division, print_function,
 
 import math
 from math import cos, sin
+import random
+import warnings
 from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import inv
-import random
 import scipy.linalg as linalg
 import scipy.sparse as sp
 import scipy.sparse.linalg as spln
 import scipy.stats
 from scipy.stats import norm, multivariate_normal
-import warnings
 
 
 # Older versions of scipy do not support the allow_singular keyword. I could
@@ -137,8 +143,7 @@ def logpdf(x, mean=None, cov=1, allow_singular=True):
 
     if _support_singular:
         return multivariate_normal.logpdf(flat_x, flat_mean, cov, allow_singular)
-    else:
-        return multivariate_normal.logpdf(flat_x, flat_mean, cov)
+    return multivariate_normal.logpdf(flat_x, flat_mean, cov)
 
 
 
@@ -182,7 +187,7 @@ def gaussian(x, mean, var):
             math.sqrt(2*math.pi*var))
 
 
-def mul (mean1, var1, mean2, var2):
+def mul(mean1, var1, mean2, var2):
     """ multiply Gaussians (mean1, var1) with (mean2, var2) and return the
     results as a tuple (mean,var).
 
@@ -194,7 +199,7 @@ def mul (mean1, var1, mean2, var2):
     return (mean, var)
 
 
-def add (mean1, var1, mean2, var2):
+def add(mean1, var1, mean2, var2):
     """ add the Gaussians (mean1, var1) with (mean2, var2) and return the
     results as a tuple (mean,var).
 
@@ -259,8 +264,8 @@ def multivariate_gaussian(x, mu, cov):
     """
 
     # force all to numpy.array type, and flatten in case they are vectors
-    x   = np.array(x, copy=False, ndmin=1).flatten()
-    mu  = np.array(mu,copy=False, ndmin=1).flatten()
+    x = np.array(x, copy=False, ndmin=1).flatten()
+    mu = np.array(mu, copy=False, ndmin=1).flatten()
 
     nx = len(mu)
     cov = _to_cov(cov, nx)
@@ -268,7 +273,7 @@ def multivariate_gaussian(x, mu, cov):
     norm_coeff = nx*math.log(2*math.pi) + np.linalg.slogdet(cov)[1]
 
     err = x - mu
-    if (sp.issparse(cov)):
+    if sp.issparse(cov):
         numerator = spln.spsolve(cov, err).T.dot(err)
     else:
         numerator = np.linalg.solve(cov, err).T.dot(err)
@@ -489,7 +494,7 @@ def plot_gaussian_pdf(mean=0., variance=1.,
         xlim = [n.ppf(0.001), n.ppf(0.999)]
 
     xs = np.arange(xlim[0], xlim[1], (xlim[1] - xlim[0]) / 1000.)
-    ax.plot(xs,n.pdf(xs), label=label)
+    ax.plot(xs, n.pdf(xs), label=label)
     ax.set_xlim(xlim)
 
     if ylim is not None:
@@ -566,21 +571,22 @@ def covariance_ellipse(P, deviations=1):
     Returns (angle_radians, width_radius, height_radius)
     """
 
-    U,s,v = linalg.svd(P)
-    orientation = math.atan2(U[1,0],U[0,0])
-    width  = deviations*math.sqrt(s[0])
+    U, s, v = linalg.svd(P)
+    orientation = math.atan2(U[1, 0], U[0, 0])
+    width = deviations*math.sqrt(s[0])
     height = deviations*math.sqrt(s[1])
 
     assert width >= height
     return (orientation, width, height)
 
 
-def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
-             ellipse=None, title=None, axis_equal=True, show_semiaxis=False,
-             facecolor=None, edgecolor=None,
-             fc='none', ec='#004080',
-             alpha=1.0, xlim=None, ylim=None,
-             ls='solid'):
+def plot_covariance_ellipse(
+        mean, cov=None, variance=1.0, std=None,
+        ellipse=None, title=None, axis_equal=True, show_semiaxis=False,
+        facecolor=None, edgecolor=None,
+        fc='none', ec='#004080',
+        alpha=1.0, xlim=None, ylim=None,
+        ls='solid'):
     """ plots the covariance ellipse where
 
     mean is a (x,y) tuple for the mean of the covariance (center of ellipse)
@@ -618,7 +624,7 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
         plt.axis('equal')
 
     if title is not None:
-        plt.title (title)
+        plt.title(title)
 
     compute_std = False
     if std is None:
@@ -627,7 +633,7 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
 
 
     if np.isscalar(std):
-            std = [std]
+        std = [std]
 
     if compute_std:
         std = np.sqrt(np.asarray(std))
@@ -660,8 +666,9 @@ def plot_covariance_ellipse(mean, cov=None, variance = 1.0, std=None,
         plt.plot([x, x+ w*cos(a)], [y, y + w*sin(a)])
 
 
-def norm_cdf (x_range, mu, var=1, std=None):
-    """ computes the probability that a Gaussian distribution lies
+def norm_cdf(x_range, mu, var=1, std=None):
+    """
+    Computes the probability that a Gaussian distribution lies
     within a range of values.
 
     Parameters
@@ -706,14 +713,16 @@ def _is_inside_ellipse(x, y, ex, ey, orientation, width, height):
     return ((x-ex)*co - (y-ey)*so)**2/width**2 + \
            ((x-ex)*so + (y-ey)*co)**2/height**2 <= 1
 
+
 def _to_cov(x, n):
-    """ If x is a scalar, returns a covariance matrix generated from it
+    """
+    If x is a scalar, returns a covariance matrix generated from it
     as the identity matrix multiplied by x. The dimension will be nxn.
     If x is already a numpy array then it is returned unchanged.
     """
     try:
         x.shape
-        if type(x) != np.ndarray:
+        if not isinstance(x, np.ndarray):
             x = np.asarray(x)[0]
         return x
     except:
@@ -729,54 +738,56 @@ def _to_cov(x, n):
 
 def _do_plot_test():
 
-    from numpy.random import multivariate_normal
-    p = np.array([[32, 15],[15., 40.]])
+    from numpy.random import multivariate_normal as mnormal
 
-    x,y = multivariate_normal(mean=(0,0), cov=p, size=5000).T
+    p = np.array([[32, 15], [15., 40.]])
+
+    x, y = mnormal(mean=(0, 0), cov=p, size=5000).T
     sd = 2
-    a,w,h = covariance_ellipse(p,sd)
-    print (np.degrees(a), w, h)
+    a, w, h = covariance_ellipse(p, sd)
+    print(np.degrees(a), w, h)
 
     count = 0
-    color=[]
+    color = []
     for i in range(len(x)):
         if _is_inside_ellipse(x[i], y[i], 0, 0, a, w, h):
             color.append('b')
             count += 1
         else:
             color.append('r')
-    plt.scatter(x,y,alpha=0.2, c=color)
-
-
+    plt.scatter(x, y, alpha=0.2, c=color)
     plt.axis('equal')
 
     plot_covariance_ellipse(mean=(0., 0.),
-                            cov = p,
+                            cov=p,
                             std=sd,
                             facecolor='none')
 
-    print (count / len(x))
+    print(count / len(x))
 
 
 def plot_std_vs_var():
     plt.figure()
-    x = (0,0)
-    P = np.array([[3,1],[1,3]])
-    plot_covariance_ellipse(x, P, std=[1,2,3], facecolor='g', alpha=.2)
-    plot_covariance_ellipse(x, P, variance=[1,2,3], facecolor='r', alpha=.5)
+    x = (0, 0)
+    P = np.array([[3, 1], [1, 3]])
+    plot_covariance_ellipse(x, P, std=[1, 2, 3], facecolor='g', alpha=.2)
+    plot_covariance_ellipse(x, P, variance=[1, 2, 3], facecolor='r', alpha=.5)
 
 
 def rand_student_t(df, mu=0, std=1):
-    """return random number distributed by student's t distribution with
+    """
+    return random number distributed by student's t distribution with
     `df` degrees of freedom with the specified mean and standard deviation.
     """
+
     x = random.gauss(0, std)
-    y = 2.0*random.gammavariate(0.5*df, 2.0)
-    return x / (math.sqrt(y/df)) + mu
+    y = 2.0*random.gammavariate(0.5 * df, 2.0)
+    return x / (math.sqrt(y / df)) + mu
 
 
 def NESS(xs, est_xs, ps):
-    """ Computes the normalized estimated error squared test on a sequence
+    """
+    Computes the normalized estimated error squared test on a sequence
     of estimates. The estimates are optimal if the mean error is zero and
     the covariance matches the Kalman filter's covariance. If this holds,
     then the mean of the NESS should be equal to or less than the dimension
@@ -818,8 +829,7 @@ def NESS(xs, est_xs, ps):
     return ness
 
 
-
-
+'''
 if __name__ == '__main__':
 
     """ax = plot_gaussian_pdf(2, 3)
@@ -830,14 +840,14 @@ if __name__ == '__main__':
     ys /= np.sum(ys)
     plot_discrete_cdf(xs=None, ys=ys)"""
 
-    mean=(0,0)
+    mean = (0, 0)
+    cov = [[1, .5], [.5, 1]]
 
-    cov=[[1,.5],[.5,1]]
     print("For list and np.array covariances:")
-    for covariance in (cov,np.asarray(cov)):
-        a = [[multivariate_gaussian((i,j),mean,covariance)
-              for i in (-1,0,1)]
-             for j in (-1,0,1)]
+    for covariance in (cov, np.asarray(cov)):
+        a = [[multivariate_gaussian((i, j), mean, covariance)
+              for i in (-1, 0, 1)]
+             for j in (-1, 0 ,1)]
         print(np.asarray(a))
         print()
 
@@ -875,3 +885,4 @@ if __name__ == '__main__':
 
     print("all tests passed")
     """
+'''

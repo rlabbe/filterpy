@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -17,6 +21,7 @@ for more information.
 from __future__ import division
 import numpy as np
 from scipy.linalg import cholesky
+from filterpy.common import pretty_str
 
 class MerweScaledSigmaPoints(object):
 
@@ -93,7 +98,7 @@ class MerweScaledSigmaPoints(object):
             self.sqrt = sqrt_method
 
         if subtract is None:
-            self.subtract= np.subtract
+            self.subtract = np.subtract
         else:
             self.subtract = subtract
 
@@ -182,9 +187,25 @@ class MerweScaledSigmaPoints(object):
         return Wm, Wc
 
 
+    def __repr__(self):
+        Wm, Wc = self.weights()
+
+        return '\n'.join([
+            'MerweScaledSigmaPoints object',
+            pretty_str('n', self.n),
+            pretty_str('alpha', self.alpha),
+            pretty_str('beta', self.beta),
+            pretty_str('kappa', self.kappa),
+            pretty_str('Wm', Wm),
+            pretty_str('Wc', Wc),
+            pretty_str('subtract', self.subtract),
+            pretty_str('sqrt', self.sqrt)
+            ])
+
+
 class JulierSigmaPoints(object):
 
-    def __init__(self,n,  kappa, sqrt_method=None, subtract=None):
+    def __init__(self, n, kappa, sqrt_method=None, subtract=None):
         """ Generates sigma points and weights according to Simon J. Julier
         and Jeffery K. Uhlmann's original paper[1]. It parametizes the sigma
         points using kappa.
@@ -238,7 +259,7 @@ class JulierSigmaPoints(object):
             self.sqrt = sqrt_method
 
         if subtract is None:
-            self.subtract= np.subtract
+            self.subtract = np.subtract
         else:
             self.subtract = subtract
 
@@ -335,6 +356,20 @@ class JulierSigmaPoints(object):
         return W, W
 
 
+    def __repr__(self):
+        Wm, Wc = self.weights()
+
+        return '\n'.join([
+            'JulierSigmaPoints object',
+            pretty_str('n', self.n),
+            pretty_str('kappa', self.kappa),
+            pretty_str('Wm', Wm),
+            pretty_str('Wc', Wc),
+            pretty_str('subtract', self.subtract),
+            pretty_str('sqrt', self.sqrt)
+            ])
+
+
 class SimplexSigmaPoints(object):
 
     def __init__(self, n, alpha=1, sqrt_method=None, subtract=None):
@@ -382,7 +417,7 @@ class SimplexSigmaPoints(object):
             self.sqrt = sqrt_method
 
         if subtract is None:
-            self.subtract= np.subtract
+            self.subtract = np.subtract
         else:
             self.subtract = subtract
 
@@ -468,3 +503,16 @@ class SimplexSigmaPoints(object):
         W = np.full(n + 1, c)
 
         return W, W
+
+    def __repr__(self):
+        Wm, Wc = self.weights()
+
+        return '\n'.join([
+            'SimplexSigmaPoints object',
+            pretty_str('n', self.n),
+            pretty_str('alpha', self.alpha),
+            pretty_str('Wm', Wm),
+            pretty_str('Wc', Wc),
+            pretty_str('subtract', self.subtract),
+            pretty_str('sqrt', self.sqrt)
+            ])

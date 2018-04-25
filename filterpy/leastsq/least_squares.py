@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -17,6 +21,7 @@ for more information.
 from __future__ import absolute_import, division
 from math import sqrt
 import numpy as np
+from filterpy.kalman import pretty_str
 
 
 class LeastSquaresFilter(object):
@@ -105,8 +110,8 @@ class LeastSquaresFilter(object):
         """ reset filter back to state at time of construction"""
 
         self.n = 0 #nth step in the recursion
-        self.x     = np.zeros(self._order+1)
-        self.K     = np.zeros(self._order+1)
+        self.x = np.zeros(self._order+1)
+        self.K = np.zeros(self._order+1)
 
 
     def update(self, z):
@@ -117,19 +122,19 @@ class LeastSquaresFilter(object):
 
         if self._order == 0:
             self.K[0] = 1./n
-            residual =  z - self.x
+            residual = z - self.x
             self.x += residual * self.K[0]
 
         elif self._order == 1:
             self.K[0] = 2*(2*n-1) / (n*(n+1))
             self.K[1] = 6 / (n*(n+1)*dt)
 
-            self.x[0] += self.x[1]*dt
+            self.x[0] += self.x[1] * dt
 
-            residual =  z - self.x[0]
+            residual = z - self.x[0]
 
-            self.x[0] += self.K[0]*residual
-            self.x[1] += self.K[1]*residual
+            self.x[0] += self.K[0] * residual
+            self.x[1] += self.K[1] * residual
 
         else:
             den = n*(n+1)*(n+2)
@@ -141,11 +146,11 @@ class LeastSquaresFilter(object):
             self.x[0] += self.x[1]*dt + .5*self.x[2]*dt2
             self.x[1] += self.x[2]*dt
 
-            residual =  z - self.x[0]
+            residual = z - self.x[0]
 
-            self.x[0] += self.K[0]*residual
-            self.x[1] += self.K[1]*residual
-            self.x[2] += self.K[2]*residual
+            self.x[0] += self.K[0] * residual
+            self.x[1] += self.K[1] * residual
+            self.x[2] += self.K[2] * residual
 
         return self.x
 
@@ -166,8 +171,8 @@ class LeastSquaresFilter(object):
         order = self._order
         sigma = self.sigma
 
-        error = np.zeros(order+1)
-        std   = np.zeros(order+1)
+        error = np.zeros(order + 1)
+        std = np.zeros(order + 1)
 
 
         if n == 0:
@@ -175,14 +180,14 @@ class LeastSquaresFilter(object):
 
         if order == 0:
             error[0] = sigma/sqrt(n)
-            std[0]   = sigma/sqrt(self.n)
+            std[0] = sigma/sqrt(n)
 
         elif order == 1:
             if n > 1:
-                error[0] = sigma*sqrt(2*(2*n-1)/(n*(n+1)))
-                error[1] = sigma*sqrt(12/(n*(n*n-1)*dt*dt))
-            std[0] = sigma*sqrt((2*(2*n-1)) / (n*(n+1)))
-            std[1] = (sigma/dt) *sqrt(12/(n*(n*n-1)))
+                error[0] = sigma * sqrt(2*(2*n-1) / (n*(n+1)))
+                error[1] = sigma * sqrt(12. / (n*(n*n-1)*dt*dt))
+            std[0] = sigma * sqrt((2*(2*n-1)) / (n*(n+1)))
+            std[1] = (sigma/dt) * sqrt(12. / (n*(n*n-1)))
 
         elif order == 2:
             dt2 = self.dt2
@@ -190,17 +195,24 @@ class LeastSquaresFilter(object):
             if n >= 3:
                 error[0] = sigma * sqrt(3*(3*n*n-3*n+2) / (n*(n+1)*(n+2)))
                 error[1] = sigma * sqrt(12*(16*n*n-30*n+11) /
-                                     (n*(n*n-1)*(n*n-4)*dt2))
+                                        (n*(n*n-1)*(n*n-4)*dt2))
                 error[2] = sigma * sqrt(720/(n*(n*n-1)*(n*n-4)*dt2*dt2))
 
-            std[0] = sigma*sqrt((3*(3*n*n - 3*n + 2)) / (n*(n+1)*(n+2)))
-            std[1] = (sigma/dt)*sqrt((12*(16*n*n - 30*n + 11)) /
-                                     (n*(n*n - 1)*(n*n -4)))
+            std[0] = sigma * sqrt((3*(3*n*n - 3*n + 2)) / (n*(n+1)*(n+2)))
+            std[1] = (sigma/dt) * sqrt((12*(16*n*n - 30*n + 11)) /
+                                       (n*(n*n - 1)*(n*n -4)))
             std[2] = (sigma/dt2) * sqrt(720 / (n*(n*n-1)*(n*n-4)))
 
         return error, std
 
 
     def __repr__(self):
-        return 'LeastSquareFilter x={}'.format(self.x)
-
+        return '\n'.join([
+            'LeastSquaresFilter object',
+            pretty_str('dt', self.dt),
+            pretty_str('dt2', self.dt2),
+            pretty_str('sigma', self.sigma),
+            pretty_str('_order', self._order),
+            pretty_str('x', self.x),
+            pretty_str('K', self.K)
+            ])

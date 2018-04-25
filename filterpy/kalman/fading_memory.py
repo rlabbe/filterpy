@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables
+
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -17,15 +21,17 @@ for more information.
 
 
 from __future__ import (absolute_import, division, unicode_literals)
+import sys
 import math
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
-import sys
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
 
 
 class FadingKalmanFilter(object):
+
 
     def __init__(self, alpha, dim_x, dim_z, dim_u=0,
                  compute_log_likelihood=True):
@@ -120,13 +126,13 @@ class FadingKalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self.x = zeros((dim_x,1)) # state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.Q = eye(dim_x)       # process uncertainty
-        self.B = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.H = 0                 # Measurement function
-        self.R = eye(dim_z)       # state uncertainty
+        self.x = zeros((dim_x, 1))     # state
+        self.P = eye(dim_x)            # uncertainty covariance
+        self.Q = eye(dim_x)            # process uncertainty
+        self.B = 0.                    # control transition matrix
+        self.F = np.eye(dim_x)         # state transition matrix
+        self.H = zeros((dim_z, dim_x)) # Measurement function
+        self.R = eye(dim_z)            # state uncertainty
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -252,36 +258,36 @@ class FadingKalmanFilter(object):
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        n = np.size(zs,0)
+        n = np.size(zs, 0)
         if Rs is None:
-            Rs = [None]*n
+            Rs = [None] * n
 
         # mean estimates from Kalman Filter
-        means   = zeros((n,self.dim_x,1))
-        means_p = zeros((n,self.dim_x,1))
+        means   = zeros((n, self.dim_x, 1))
+        means_p = zeros((n, self.dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances   = zeros((n,self.dim_x,self.dim_x))
-        covariances_p = zeros((n,self.dim_x,self.dim_x))
+        covariances   = zeros((n, self.dim_x, self.dim_x))
+        covariances_p = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i,(z,r) in enumerate(zip(zs,Rs)):
-                self.update(z,r)
-                means[i,:]         = self.x
-                covariances[i,:,:] = self.P
+            for i, (z, r) in enumerate(zip(zs, Rs)):
+                self.update(z, r)
+                means[i, :]          = self.x
+                covariances[i, :, :] = self.P
 
                 self.predict()
-                means_p[i,:]         = self.x
-                covariances_p[i,:,:] = self.P
+                means_p[i, :]          = self.x
+                covariances_p[i, :, :] = self.P
         else:
-            for i,(z,r) in enumerate(zip(zs,Rs)):
+            for i, (z, r) in enumerate(zip(zs, Rs)):
                 self.predict()
-                means_p[i,:]         = self.x
-                covariances_p[i,:,:] = self.P
+                means_p[i, :]          = self.x
+                covariances_p[i, :, :] = self.P
 
-                self.update(z,r)
-                means[i,:]         = self.x
-                covariances[i,:,:] = self.P
+                self.update(z, r)
+                means[i, :]          = self.x
+                covariances[i, :, :] = self.P
 
         return (means, covariances, means_p, covariances_p)
 
@@ -334,6 +340,12 @@ class FadingKalmanFilter(object):
 
 
     @property
+    def alpha(self):
+        """ scaling factor for fading memory"""
+
+        return math.sqrt(self.alpha_sq)
+
+    @property
     def likelihood(self):
         """
         likelihood of last measurment.
@@ -349,5 +361,25 @@ class FadingKalmanFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
         return lh
+
+    def __repr__(self):
+        return '\n'.join([
+            'FadingKalmanFilter object',
+            pretty_str('dim_x', self.x),
+            pretty_str('dim_z', self.x),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('B', self.B),
+            pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('alpha', self.alpha),
+            ])

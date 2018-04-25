@@ -109,6 +109,7 @@ def make_cv_filter(dt, noise_factor):
     cvfilter.Q = Q_discrete_white_noise(dim=2, dt=dt, var=0.02)
     return cvfilter
 
+
 def make_ca_filter(dt, noise_factor):
     cafilter = KalmanFilter(dim_x=3, dim_z=1)
     cafilter.x = array([0., 0., 0.])
@@ -148,29 +149,22 @@ def generate_data(steady_count, noise_factor):
 
 
 
-
-
 def test_MMAE2():
     dt = 0.1
     pos, zs = generate_data(120, noise_factor=0.6)
     z_xs = zs[:, 0]
-    t = np.arange(0, len(z_xs) * dt, dt)
 
     dt = 0.1
     ca = make_ca_filter(dt, noise_factor=0.6)
     cv = make_ca_filter(dt, noise_factor=0.6)
-    cv.F[:,2] = 0 # remove acceleration term
-    cv.P[2,2] = 0
-    cv.Q[2,2] = 0
+    cv.F[:, 2] = 0 # remove acceleration term
+    cv.P[2, 2] = 0
+    cv.Q[2, 2] = 0
 
     filters = [cv, ca]
 
 
-    H_ca = np.array([[1., 0., 0.],
-                     [0., 1., 0.],
-                     [0., 0., 1.]])
-
-    bank = MMAEFilterBank(filters, (0.5, 0.5), dim_x=3, H=(1., 1.))
+    bank = MMAEFilterBank(filters, (0.5, 0.5), dim_x=3, H=ca.H)
 
     xs, probs = [], []
     cvxs, caxs = [], []
@@ -182,7 +176,6 @@ def test_MMAE2():
         caxs.append(ca.x[0])
         print(i, cv.likelihood, ca.likelihood, bank.p)
 
-        #print('p', bank.p)
         probs.append(bank.p[0] / bank.p[1])
 
     if DO_PLOT:
@@ -202,6 +195,8 @@ def test_MMAE2():
         plt.figure()
         plt.plot(xs)
         plt.plot(pos[:, 0])
+
+    return bank
 
 if __name__ == '__main__':
     DO_PLOT = True

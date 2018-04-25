@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=C0103, R0913, R0902, C0326, R0914
+# disable snake_case warning, too many arguments, too many attributes,
+# one space before assignment, too many local variables
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -16,13 +20,14 @@ for more information.
 
 from __future__ import (absolute_import, division)
 
+import sys
 import math
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
-import sys
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
+from filterpy.common import pretty_str
 
 
 class UnscentedKalmanFilter(object):
@@ -259,8 +264,11 @@ class UnscentedKalmanFilter(object):
         self.sigmas_f = zeros((self._num_sigmas, self._dim_x))
         self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
+        self.K = 0. # Kalman gain
+        self.y = 0. # residual
 
-    def predict(self, dt=None,  UT=None, fx_args=()):
+
+    def predict(self, dt=None, UT=None, fx_args=()):
         r""" Performs the predict step of the UKF. On return, self.x and
         self.P contain the predicted state (x) and covariance (P). '
 
@@ -372,7 +380,7 @@ class UnscentedKalmanFilter(object):
         N = sigmas_f.shape[0]
         for i in range(N):
             dx = self.residual_x(sigmas_f[i], x)
-            dz =  self.residual_z(sigmas_h[i], z)
+            dz = self.residual_z(sigmas_h[i], z)
             Pxz += self.Wc[i] * outer(dx, dz)
         return Pxz
 
@@ -408,7 +416,7 @@ class UnscentedKalmanFilter(object):
 
         lh = math.exp(self.log_likelihood)
         if lh == 0:
-             lh = sys.float_info.min
+            lh = sys.float_info.min
         return lh
 
 
@@ -452,7 +460,7 @@ class UnscentedKalmanFilter(object):
             assert not isscalar(zs), 'zs must be list-like'
 
         if self._dim_z == 1:
-            assert isscalar(z) or (z.ndim==1 and len(z) == 1), \
+            assert isscalar(z) or (z.ndim == 1 and len(z) == 1), \
             'zs must be a list of scalars or 1D, 1 element arrays'
 
         else:
@@ -475,8 +483,8 @@ class UnscentedKalmanFilter(object):
         for i, (z, r) in enumerate(zip(zs, Rs)):
             self.predict(UT=UT)
             self.update(z, r, UT=UT)
-            means[i,:]         = self.x
-            covariances[i,:,:] = self.P
+            means[i, :]          = self.x
+            covariances[i, :, :] = self.P
 
         return (means, covariances)
 
@@ -555,8 +563,8 @@ class UnscentedKalmanFilter(object):
                 sigmas_f[i] = self.fx(sigmas[i], dt[k])
 
             xb, Pb = unscented_transform(
-                    sigmas_f, self.Wm, self.Wc, self.Q,
-                    self.x_mean, self.residual_x)
+                sigmas_f, self.Wm, self.Wc, self.Q,
+                self.x_mean, self.residual_x)
 
             # compute cross variance
             Pxb = 0
@@ -574,3 +582,27 @@ class UnscentedKalmanFilter(object):
             Ks[k] = K
 
         return (xs, ps, Ks)
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'UnscentedKalmanFilter object',
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('sigmas_f', self.sigmas_f),
+            pretty_str('h', self.sigmas_h),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
+            pretty_str('residual_x', self.residual_x),
+            pretty_str('residual_z', self.residual_z),
+            pretty_str('msqrt', self.msqrt),
+            pretty_str('hx', self.hx),
+            pretty_str('fx', self.fx),
+            pretty_str('x_mean', self.x_mean),
+            pretty_str('z_mean', self.z_mean)
+            ])
