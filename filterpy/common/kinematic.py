@@ -22,9 +22,11 @@ from filterpy.kalman import KalmanFilter
 
 
 def kinematic_state_transition(order, dt):
-    """ create a state transition matrix of a given order for a given time
+    """
+    create a state transition matrix of a given order for a given time
     step `dt`.
     """
+
     assert order >= 0 and int(order) == order, "order must be an int >= 0"
 
     # hard code common cases for computational efficiency
@@ -53,25 +55,40 @@ def kinematic_state_transition(order, dt):
     return F
 
 
-def kinematic_kf(dim, order, dt=1., order_by_dim=True):
-    """ Returns a KalmanFilter using newtonian kinematics for an arbitrary
-    number of dimensions and order. So, for example, a constant velocity
-    filter in 3D space would be created with
+def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
+    """
+    Returns a KalmanFilter using newtonian kinematics of arbitrary order
+    for any number of dimensions. For example, a constant velocity filter
+    in 3D space would have order 1 dimension 3.
 
-    kinematic_kf(3, 1)
+
+    Examples
+    --------
+
+    A constant velocity filter in 3D space with delta time = .2 seconds
+    would be created with
+
+    >>> kf = kinematic_kf(dim=3, order=1, dt=.2)
+    >>> kf.F
+    >>> array([[1. , 0.2, 0. , 0. , 0. , 0. ],
+               [0. , 1. , 0. , 0. , 0. , 0. ],
+               [0. , 0. , 1. , 0.2, 0. , 0. ],
+               [0. , 0. , 0. , 1. , 0. , 0. ],
+               [0. , 0. , 0. , 0. , 1. , 0.2],
+               [0. , 0. , 0. , 0. , 0. , 1. ]])
 
 
     which will set the state `x` to be interpreted as
 
     [x, x', y, y', z, z'].T
 
-    If you set `order_by_dim` to False, then `x` is assumed to be
+    If you set `order_by_dim` to False, then `x` is ordered as
 
     [x y z x' y' z'].T
 
     As another example, a 2D constant jerk is created with
 
-    kinematic_kf(2, 3)
+    >> kinematic_kf(2, 3)
 
 
     Assumes that the measurement z is position in each dimension. If this is not
@@ -84,11 +101,12 @@ def kinematic_kf(dim, order, dt=1., order_by_dim=True):
     Parameters
     ----------
 
-    dim : int
-        number of dimensions
+    dim : int, >= 1
+        number of dimensions (2D space would be dim=2)
 
-    order : int, >= 1
-        order of the filter. 2 would be a const acceleration model.
+    order : int, >= 0
+        order of the filter. 2 would be a const acceleration model with
+        a stat
 
     dim_z : int, default 1
         size of z vector *per* dimension `dim`. Normally should be 1
@@ -96,8 +114,31 @@ def kinematic_kf(dim, order, dt=1., order_by_dim=True):
     dt : float, default 1.0
         Time step. Used to create the state transition matrix
 
+    order_by_dim : bool, default=True
+        Defines ordering of variables in the state vector. `True` orders
+        by keeping all derivatives of each dimensions)
 
+        [x x' x'' y y' y'']
+
+        whereas `False` interleaves the dimensions
+
+        [x y z x' y' z' x'' y'' z'']
+
+    Examples
+    --------
+
+    >>> kf = kinematic_kf(2, 1, dt=3.0)
+    >>> kf.F
+    array([[1., 3., 0., 0.],
+           [0., 1., 0., 0.],
+           [0., 0., 1., 3.],
+           [0., 0., 0., 1.]])
     """
+
+    assert dim >= 1
+    assert order >= 0
+    assert dim_z >= 1
+
 
     dim_x = order + 1
 
