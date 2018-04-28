@@ -12,12 +12,13 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-__all__=["helpers", "discretization", "kinematic"]
+#pylint:disable=wildcard-import
+
+from __future__ import absolute_import
+
+__all__ = ["helpers", "discretization", "kinematic"]
 
 from .helpers import *
 from .discretization import *
 from .kinematic import *
-

@@ -22,8 +22,7 @@ for more information.
 """
 
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, unicode_literals
 
 import math
 from math import cos, sin
@@ -31,7 +30,6 @@ import random
 import warnings
 from matplotlib.patches import Ellipse
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D #pylint: disable=W0611
 import numpy as np
 from numpy.linalg import inv
 import scipy.linalg as linalg
@@ -590,7 +588,9 @@ def covariance_ellipse(P, deviations=1):
     width = deviations * math.sqrt(s[0])
     height = deviations * math.sqrt(s[1])
 
-    assert width >= height
+    if height > width:
+        raise ValueError('width must be greater than height')
+
     return (orientation, width, height)
 
 
@@ -683,20 +683,21 @@ def plot_3d_covariance(mean, cov, std=1.,
         keyword arguments to supply to the call to plot_surface()
     """
 
+    from mpl_toolkits.mplot3d import Axes3D
+
     # force mean to be a 1d vector no matter its shape when passed in
     mean = np.atleast_2d(mean)
     if mean.shape[1] == 1:
         mean = mean.T
-    assert mean.shape[0] == 1 and mean.shape[1] == 3
-    mean = mean[0]
 
-    assert len(mean) == 3, "mean must contain 3 values"
+    if not(mean.shape[0] == 1 and mean.shape[1] == 3):
+        raise ValueError('mean must be convertible to a 1x3 row vector')
+    mean = mean[0]
 
     # force covariance to be 3x3 np.array
     cov = np.asarray(cov)
-    assert cov.shape[0] == 3, "covariance must be 3x3"
-    assert cov.shape[1] == 3, "covariance must be 3x3"
-
+    if cov.shape[0] != 3 or cov.shape[1] != 3:
+        raise ValueError("covariance must be 3x3")
 
     # The idea is simple - find the 3 axis of the covariance matrix
     # by finding the eigenvalues and vectors. The eigenvalues are the
@@ -707,7 +708,8 @@ def plot_3d_covariance(mean, cov, std=1.,
     eigval, eigvec = _eigsorted(cov, asc=True)
     radii = std * np.sqrt(np.real(eigval))
 
-    assert eigval[0] >= 0, "covariance matrix must be positive definite"
+    if eigval[0] < 0:
+        raise ValueError("covariance matrix must be positive definite")
 
 
     # calculate cartesian coordinates for the ellipsoid surface
@@ -751,6 +753,10 @@ def plot_3d_covariance(mean, cov, std=1.,
 
     if title is not None:
         plt.title(title)
+
+    #pylint: disable=pointless-statement
+    Axes3D #kill pylint warning about unused import
+
     return ax
 
 
@@ -804,12 +810,12 @@ def _std_tuple_of(var=None, std=None, interval=None):
 
         return norm.interval(interval)[1]
 
-    assert var is not None, "no inputs were provided"
+    if var is None:
+        raise ValueError("no inputs were provided")
 
     if np.isscalar(var):
         var = (var,)
     return np.sqrt(var)
-
 
 
 def plot_covariance(
@@ -899,8 +905,12 @@ def plot_covariance(
         line style for the edge of the ellipse
     """
 
-    assert cov is None or ellipse is None
-    assert not (cov is None and ellipse is None)
+
+    if cov is not None and ellipse is not None:
+        raise ValueError('You cannot specify both cov and ellipse')
+
+    if cov is None and ellipse is None:
+        raise ValueError('Specify one of cov or ellipse')
 
     if facecolor is None:
         facecolor = fc
@@ -912,12 +922,10 @@ def plot_covariance(
         ellipse = covariance_ellipse(cov)
 
     if axis_equal:
-        #plt.gca().set_aspect('equal')
         plt.axis('equal')
 
     if title is not None:
         plt.title(title)
-
 
     ax = plt.gca()
 
@@ -926,7 +934,6 @@ def plot_covariance(
     height = ellipse[2] * 2.
 
     std = _std_tuple_of(variance, std, interval)
-    print(std)
     for sd in std:
         e = Ellipse(xy=mean, width=sd*width, height=sd*height, angle=angle,
                     facecolor=facecolor,
@@ -980,10 +987,6 @@ def norm_cdf(x_range, mu, var=1, std=None):
         std = math.sqrt(var)
     return abs(norm.cdf(x_range[0], loc=mu, scale=std) -
                norm.cdf(x_range[1], loc=mu, scale=std))
-
-
-
-
 
 
 def _to_cov(x, n):

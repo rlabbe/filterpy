@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, C0302, C0321, R0914, R0912
-#
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment, too many lines, more than one statement
-# on line, too many local variables, too many branches
+# pylint: disable=invalid-name, too-many-arguments, too-many-branches,
+# pylint: disable=too-many-locals, too-many-instance-attributes, too-many-lines
 
 """
 This module implements the linear Kalman filter in both an object
@@ -119,7 +116,7 @@ import sys
 import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
-import scipy.linalg as linalg
+import numpy.linalg as linalg
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str
 
@@ -142,10 +139,10 @@ class KalmanFilter(object):
     Attributes
     ----------
     x : numpy.array(dim_x, 1)
-        State estimate vector
+        State estimate
 
     P : numpy.array(dim_x, dim_x)
-        Covariance matrix
+        State covariance matrix
 
     R : numpy.array(dim_z, dim_z)
         Measurement noise matrix
@@ -159,7 +156,6 @@ class KalmanFilter(object):
     H : numpy.array(dim_z, dim_x)
         Measurement function
 
-
     y : numpy.array
         Residual of the update step. Read only.
 
@@ -172,13 +168,16 @@ class KalmanFilter(object):
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
 
+    inv : function, default numpy.linalg.inv
+        If you prefer another inverse function, such as the Moore-Penrose
+        pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+
     Examples
     --------
 
     See my book Kalman and Bayesian Filters in Python
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
-
 
 
     def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
@@ -216,15 +215,15 @@ class KalmanFilter(object):
         self.dim_z = dim_z
         self.dim_u = dim_u
 
-        self.x = zeros((dim_x, 1)) # state
-        self.P = eye(dim_x)        # uncertainty covariance
-        self.Q = eye(dim_x)        # process uncertainty
-        self.B = None              # control transition matrix
-        self.F = eye(dim_x)        # state transition matrix
-        self.H = zeros((dim_z, dim_x)) # Measurement function
-        self.R = eye(dim_z)        # state uncertainty
-        self._alpha_sq = 1.        # fading memory control
-        self.M = 0.                # process-measurement cross correlation
+        self.x = zeros((dim_x, 1))        # state
+        self.P = eye(dim_x)               # uncertainty covariance
+        self.Q = eye(dim_x)               # process uncertainty
+        self.B = None                     # control transition matrix
+        self.F = eye(dim_x)               # state transition matrix
+        self.H = zeros((dim_z, dim_x))    # Measurement function
+        self.R = eye(dim_z)               # state uncertainty
+        self._alpha_sq = 1.               # fading memory control
+        self.M = np.zeros((dim_z, dim_z)) # process-measurement cross correlation
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -242,6 +241,8 @@ class KalmanFilter(object):
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
+
+        self.inv = np.linalg.inv
 
 
     def update(self, z, R=None, H=None):
@@ -290,7 +291,7 @@ class KalmanFilter(object):
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot(PHT, linalg.inv(self.S))
+        self.K = dot(PHT, self.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -427,7 +428,7 @@ class KalmanFilter(object):
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = dot(PHT + self.M, linalg.inv(self.S))
+        self.K = dot(PHT + self.M, self.inv(self.S))
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
@@ -504,7 +505,7 @@ class KalmanFilter(object):
 
         if H.shape[0] == 1:
             # r can be scalar, 1D, or 2D in this case
-            assert r_shape == () or r_shape == (1,) or r_shape == (1,1), \
+            assert r_shape == () or r_shape == (1,) or r_shape == (1, 1), \
             "R must be scalar or one element array, but is shaped {}".format(
                 r_shape)
         else:
@@ -521,7 +522,7 @@ class KalmanFilter(object):
         Hx = dot(H, x)
 
         if z_shape == (): # scalar or np.array(scalar)
-            assert Hx.ndim == 1 or shape(Hx) == (1,1), \
+            assert Hx.ndim == 1 or shape(Hx) == (1, 1), \
             "shape of z should be {}, not {} for the given H".format(
                 shape(Hx), z_shape)
 
@@ -534,7 +535,7 @@ class KalmanFilter(object):
                     "shape of z should be {}, not {} for the given H".format(
                         shape(Hx), z_shape)
 
-        if np.ndim(Hx) > 1 and shape(Hx) != (1,1):
+        if np.ndim(Hx) > 1 and shape(Hx) != (1, 1):
             assert shape(Hx) == z_shape, \
                'shape of z should be {} for the given H, but it is {}'.format(
                    shape(Hx), z_shape)
@@ -706,7 +707,7 @@ class KalmanFilter(object):
 
         """
 
-        n = np.size(zs,0)
+        n = np.size(zs, 0)
         if Fs is None:
             Fs = [self.F] * n
         if Qs is None:
@@ -720,45 +721,46 @@ class KalmanFilter(object):
         if us is None:
             us = [0] * n
 
-        if len(Fs) < n: Fs = [Fs]*n
-        if len(Qs) < n: Qs = [Qs]*n
-        if len(Hs) < n: Hs = [Hs]*n
-        if len(Rs) < n: Rs = [Rs]*n
-        if len(Bs) < n: Bs = [Bs]*n
-        if len(us) < n: us = [us]*n
+        #pylint: disable=multiple-statements
+        if len(Fs) < n: Fs = [Fs] * n
+        if len(Qs) < n: Qs = [Qs] * n
+        if len(Hs) < n: Hs = [Hs] * n
+        if len(Rs) < n: Rs = [Rs] * n
+        if len(Bs) < n: Bs = [Bs] * n
+        if len(us) < n: us = [us] * n
 
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
-            means   = zeros((n, self.dim_x))
+            means = zeros((n, self.dim_x))
             means_p = zeros((n, self.dim_x))
         else:
-            means   = zeros((n, self.dim_x, 1))
+            means = zeros((n, self.dim_x, 1))
             means_p = zeros((n, self.dim_x, 1))
 
         # state covariances from Kalman Filter
-        covariances   = zeros((n, self.dim_x, self.dim_x))
+        covariances = zeros((n, self.dim_x, self.dim_x))
         covariances_p = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
             for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
                 self.update(z, R=R, H=H)
-                means[i, :]          = self.x
+                means[i, :] = self.x
                 covariances[i, :, :] = self.P
 
                 self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i, :]          = self.x
+                means_p[i, :] = self.x
                 covariances_p[i, :, :] = self.P
         else:
             for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
                 self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i, :]          = self.x
+                means_p[i, :] = self.x
                 covariances_p[i, :, :] = self.P
 
                 self.update(z, R=R, H=H)
-                means[i, :]          = self.x
+                means[i, :] = self.x
                 covariances[i, :, :] = self.P
 
         return (means, covariances, means_p, covariances_p)
@@ -824,14 +826,14 @@ class KalmanFilter(object):
             Qs = [self.Q] * n
 
         # smoother gain
-        K = zeros((n,dim_x, dim_x))
+        K = zeros((n, dim_x, dim_x))
 
         x, P, Pp = Xs.copy(), Ps.copy(), Ps.copy()
-
-        for k in range(n-2,-1,-1):
+        for k in range(n-2, -1, -1):
             Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
-            K[k]  = dot(dot(P[k], Fs[k+1].T), linalg.inv(Pp[k]))
+            #pylint: disable=bad-whitespace
+            K[k]  = dot(dot(P[k], Fs[k+1].T), self.inv(Pp[k]))
             x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
             P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
 
@@ -898,7 +900,7 @@ class KalmanFilter(object):
         S = dot(H, PHT) + R
 
         # map system uncertainty into kalman gain
-        K = dot(PHT, linalg.inv(S))
+        K = dot(PHT, self.inv(S))
 
         # predict new x with residual scaled by the kalman gain
         x = x + dot(K, y)
@@ -1014,7 +1016,8 @@ class KalmanFilter(object):
             pretty_str('M', self.M),
             pretty_str('B', self.B),
             pretty_str('log-likelihood', self.log_likelihood),
-            pretty_str('alpha', self.alpha)
+            pretty_str('alpha', self.alpha),
+            pretty_str('inv', self.inv)
             ])
 
 
@@ -1077,6 +1080,7 @@ def update(x, P, z, R, H=None, return_all=False):
         log likelihood of the measurement
     """
 
+    #pylint: disable=bare-except
 
     if z is None:
         if return_all:
@@ -1103,6 +1107,7 @@ def update(x, P, z, R, H=None, return_all=False):
     try:
         K = dot(dot(P, H.T), linalg.inv(S))
     except:
+        # can't invert a 1D array, annoyingly
         K = dot(dot(P, H.T), 1./S)
 
 
@@ -1111,7 +1116,6 @@ def update(x, P, z, R, H=None, return_all=False):
 
     # P = (I-KH)P(I-KH)' + KRK'
     KH = dot(K, H)
-
 
     try:
         I_KH = np.eye(KH.shape[0]) - KH
@@ -1353,25 +1357,26 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
 
     """
 
-    n = np.size(zs,0)
+    n = np.size(zs, 0)
     dim_x = x.shape[0]
 
     # mean estimates from Kalman Filter
     if x.ndim == 1:
-        means   = zeros((n, dim_x))
+        means = zeros((n, dim_x))
         means_p = zeros((n, dim_x))
     else:
-        means   = zeros((n, dim_x, 1))
+        means = zeros((n, dim_x, 1))
         means_p = zeros((n, dim_x, 1))
 
     # state covariances from Kalman Filter
-    covariances   = zeros((n, dim_x, dim_x))
+    covariances = zeros((n, dim_x, dim_x))
     covariances_p = zeros((n, dim_x, dim_x))
 
     if us is None:
         us = [0.] * n
         Bs = [0.] * n
 
+    #pylint: disable=multiple-statements
     if len(Fs) < n: Fs = [Fs]*n
     if len(Qs) < n: Qs = [Qs]*n
     if len(Hs) < n: Hs = [Hs]*n
@@ -1384,21 +1389,21 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
             x, P = update(x, P, z, R=R, H=H)
-            means[i, :]          = x
+            means[i, :] = x
             covariances[i, :, :] = P
 
             x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
-            means_p[i, :]          = x
+            means_p[i, :] = x
             covariances_p[i, :, :] = P
     else:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
             x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
-            means_p[i, :]          = x
+            means_p[i, :] = x
             covariances_p[i, :, :] = P
 
-            x, P  = update(x, P, z, R=R, H=H)
-            means[i, :]          = x
+            x, P = update(x, P, z, R=R, H=H)
+            means[i, :] = x
             covariances[i, :, :] = P
 
     return (means, covariances, means_p, covariances_p)
@@ -1457,12 +1462,13 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     dim_x = Xs.shape[1]
 
     # smoother gain
-    K = zeros((n,dim_x,dim_x))
+    K = zeros((n, dim_x, dim_x))
     x, P, pP = Xs.copy(), Ps.copy(), Ps.copy()
 
     for k in range(n-2, -1, -1):
         pP[k] = dot(dot(Fs[k], P[k]), Fs[k].T) + Qs[k]
 
+        #pylint: disable=bad-whitespace
         K[k]  = dot(dot(P[k], Fs[k].T), linalg.inv(pP[k]))
         x[k] += dot(K[k], x[k+1] - dot(Fs[k], x[k]))
         P[k] += dot(dot(K[k], P[k+1] - pP[k]), K[k].T)
@@ -1548,9 +1554,9 @@ def _reshape_z(z, dim_z, ndim):
         raise ValueError('z must be convertible to shape ({}, 1)'.format(dim_z))
 
     if ndim == 1:
-        z = z[:,0]
+        z = z[:, 0]
 
     if ndim == 0:
-        z = z[0,0]
+        z = z[0, 0]
 
     return z

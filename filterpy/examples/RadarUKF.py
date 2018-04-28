@@ -14,14 +14,19 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+#pylint: skip-file
+
+""" This is very old code, and no longer runs due to reorgization of the
+UKF code"""
+
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
 
 import numpy as np
 import scipy.linalg as linalg
 import matplotlib.pyplot as plt
-from GetRadar import GetRadar
+from GetRadar import get_radar
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.common import Q_discrete_white_noise
 

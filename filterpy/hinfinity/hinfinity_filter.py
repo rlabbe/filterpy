@@ -28,15 +28,9 @@ from filterpy.common import pretty_str
 
 class HInfinityFilter(object):
     """
-    .. warning::
-        I do not believe this code is correct. DO NOT USE THIS.
-        In particular, note that predict does not update the covariance
-        matrix.
-
     H-Infinity filter. You are responsible for setting the
     various state variables to reasonable values; the defaults below will
     not give you a functional filter.
-
 
     Parameters
     ----------
@@ -56,14 +50,15 @@ class HInfinityFilter(object):
         Number of control inputs for the Gu part of the prediction step.
 
     gamma : float
+
+    .. warning::
+        I do not believe this code is correct. DO NOT USE THIS.
+        In particular, note that predict does not update the covariance
+        matrix.
     """
 
-
     def __init__(self, dim_x, dim_z, dim_u, gamma):
-
-        warnings.warn("This code is likely incorrect. DO NOT USE.",
-                      DeprecationWarning)
-
+        warnings.warn("This code is likely incorrect. DO NOT USE.", DeprecationWarning)
 
         self.dim_x = dim_x
         self.dim_z = dim_z
@@ -72,10 +67,10 @@ class HInfinityFilter(object):
 
         self.x = zeros((dim_x, 1)) # state
 
-        self.B = 0                # control transition matrix
-        self.F = 0                # state transition matrix
-        self.H = 0                # Measurement function
-        self.P = eye(dim_x)       # Uncertainty covariance.
+        self.B = 0                     # control transition matrix
+        self.F = eye(dim_x)            # state transition matrix
+        self.H = zeros((dim_z, dim_x)) # Measurement function
+        self.P = eye(dim_x)            # Uncertainty covariance.
         self.Q = eye(dim_x)
 
         self._V_inv = zeros((dim_z, dim_z)) # inverse measurement noise
@@ -95,12 +90,11 @@ class HInfinityFilter(object):
 
     def update(self, z):
         """
-        Add a new measurement `z` to the H-Infinity filter. If `z` is None, nothing
-        is changed.
+        Add a new measurement `z` to the H-Infinity filter. If `z` is None,
+        nothing is changed.
 
         Parameters
         ----------
-
         z : ndarray
             measurement for this update.
         """
@@ -141,11 +135,11 @@ class HInfinityFilter(object):
 
 
     def predict(self, u=0):
-        """ Predict next position.
+        """
+        Predict next position.
 
         Parameters
         ----------
-
         u : ndarray
             Optional control vector. If non-zero, it is multiplied by `B`
             to create the control input into the system.
@@ -155,28 +149,21 @@ class HInfinityFilter(object):
         self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
-    def batch_filter(self, Zs, Rs=None, update_first=False):
+    def batch_filter(self, Zs,update_first=False):
         """ Batch processes a sequences of measurements.
 
         Parameters
         ----------
-
         Zs : list-like
             list of measurements at each time step `self.dt` Missing
             measurements must be represented by 'None'.
 
-        Rs : list-like, optional
-            optional list of values to use for the measurement error
-            covariance; a value of None in any position will cause the filter
-            to use `self.R` for that time step.
-
-        update_first : bool, optional,
+        update_first : bool, default=False, optional,
             controls whether the order of operations is update followed by
-            predict, or predict followed by update. Default is predict->update.
+            predict, or predict followed by update.
 
         Returns
         -------
-
         means: ndarray ((n, dim_x, 1))
             array of the state for each time step. Each entry is an np.array.
             In other words `means[k,:]` is the state at step `k`.
@@ -186,11 +173,8 @@ class HInfinityFilter(object):
             `covariance[k, :, :]` is the covariance at step `k`.
         """
 
-        assert False, "this is not correct, do not use!"
-
         n = np.size(Zs, 0)
-        if Rs is None:
-            Rs = [None] * n
+
 
         # mean estimates from H-Infinity Filter
         means = zeros((n, self.dim_x, 1))
@@ -199,15 +183,15 @@ class HInfinityFilter(object):
         covariances = zeros((n, self.dim_x, self.dim_x))
 
         if update_first:
-            for i, (z, r) in enumerate(zip(Zs, Rs)):
-                self.update(z, r)
+            for i, z in enumerate(Zs):
+                self.update(z)
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
                 self.predict()
         else:
-            for i, (z, r) in enumerate(zip(Zs, Rs)):
+            for i, z in enumerate(Zs):
                 self.predict()
-                self.update(z, r)
+                self.update(z)
 
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
@@ -221,19 +205,15 @@ class HInfinityFilter(object):
 
         Parameters
         ----------
-
         u : ndarray
             optional control input
 
         Returns
         -------
-
         x : ndarray
             State vector of the prediction.
         """
-
-        x = dot(self.F, self.x) + dot(self.B, u)
-        return x
+        return dot(self.F, self.x) + dot(self.B, u)
 
 
     def residual_of(self, z):
@@ -248,13 +228,11 @@ class HInfinityFilter(object):
 
         Parameters
         ----------
-
         x : ndarray
             H-Infinity state vector
 
         Returns
         -------
-
         z : ndarray
             measurement corresponding to the given state
         """
@@ -263,16 +241,20 @@ class HInfinityFilter(object):
 
     @property
     def V(self):
+        """ measurement noise matrix"""
         return self._V
 
 
     @V.setter
     def V(self, value):
+        """ measurement noise matrix"""
+
         if np.isscalar(value):
             self._V = np.array([[value]], dtype=float)
         else:
             self._V = value
         self._V_inv = linalg.inv(self._V)
+
 
     def __repr__(self):
         return '\n'.join([

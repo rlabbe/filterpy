@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#pylint: disable=invalid-name
 
 """Copyright 2018 Roger R Labbe Jr.
 
@@ -19,7 +20,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import math
 import numpy as np
-import scipy as sp
+from scipy.linalg import block_diag
 import filterpy
 
 
@@ -100,6 +101,14 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
 
     H is assigned assuming the measurement is position, one per dimension `dim`.
 
+
+    >>> kf = kinematic_kf(2, 1, dt=3.0)
+    >>> kf.F
+    array([[1., 3., 0., 0.],
+           [0., 1., 0., 0.],
+           [0., 0., 1., 3.],
+           [0., 0., 0., 1.]])
+
     Parameters
     ----------
 
@@ -125,22 +134,11 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
         whereas `False` interleaves the dimensions
 
         [x y z x' y' z' x'' y'' z'']
-
-    Examples
-    --------
-
-    >>> kf = kinematic_kf(2, 1, dt=3.0)
-    >>> kf.F
-    array([[1., 3., 0., 0.],
-           [0., 1., 0., 0.],
-           [0., 0., 1., 3.],
-           [0., 0., 0., 1.]])
     """
 
     assert dim >= 1
     assert order >= 0
     assert dim_z >= 1
-
 
     dim_x = order + 1
 
@@ -148,14 +146,14 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
     F = kinematic_state_transition(order, dt)
     if order_by_dim:
         diag = [F] * dim
-        kf.F = sp.linalg.block_diag(*diag)
+        kf.F = block_diag(*diag)
 
     else:
         kf.F.fill(0.0)
         for i, x in enumerate(F.ravel()):
             f = np.eye(dim) * x
 
-            ix, iy = (i // dim_x) * dim,  (i % dim_x) * dim
+            ix, iy = (i // dim_x) * dim, (i % dim_x) * dim
             kf.F[ix:ix+dim, iy:iy+dim] = f
 
     if order_by_dim:
@@ -167,13 +165,10 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
 
     return kf
 
+
 if __name__ == "__main__":
-    kf = kinematic_kf(2, 1, dt = 3, order_by_dim=False)
-    print(kf.F)
+    _kf = kinematic_kf(2, 1, dt=3., order_by_dim=False)
+    print(_kf.F)
     print('\n\n')
-    kf = kinematic_kf(3, 1, dt = 3, order_by_dim=False)
-    print(kf.F)
-
-
-
-
+    _kf = kinematic_kf(3, 1, dt=3., order_by_dim=False)
+    print(_kf.F)

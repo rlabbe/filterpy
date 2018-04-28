@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902
-# disable snake_case warning, too many arguments, too many attributes
+# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes
 
 """Copyright 2015 Roger R Labbe Jr.
 

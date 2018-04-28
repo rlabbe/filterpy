@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment
+# pylint: disable=invalid-name, too-many-arguments
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -23,7 +21,8 @@ import numpy as np
 
 def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
                         mean_fn=None, residual_fn=None):
-    """ Computes unscented transform of a set of sigma points and weights.
+    r"""
+    Computes unscented transform of a set of sigma points and weights.
     returns the mean and covariance in a tuple.
 
     This works in conjunction with the UnscentedKalmanFilter class.
@@ -80,7 +79,6 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
                 if y > np.pi:
                     y -= 2*np.pi
                 return y
-
 
     Returns
     -------

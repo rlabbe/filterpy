@@ -13,6 +13,9 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+#pylint: skip-file
+
+
 
 import math
 from numpy import array, asarray
@@ -30,7 +33,10 @@ platform is stationary, this is a very difficult problem because there are
 an infinite number of solutions. The literature is filled with this example,
 along with proposed solutions (usually, platform makes manuevers).
 
+This is very old code; it no longer runs due to changes in the UKF
 """
+
+
 dt = 0.1
 y = 20
 platform_pos=(0,20)

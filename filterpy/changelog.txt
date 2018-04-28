@@ -1,8 +1,16 @@
 Version 1.2.6
 =============
 
-#113 added plotting of 3D covariance ellipsoid with plot_3d_covariance
+* #113 added plotting of 3D covariance ellipsoid with plot_3d_covariance
 * Fixed bug where multivariate_gaussian accepted negative covariances
+* #108 used pylint symbolic names 
+* Got code in compliance with pylint
+* Fixed #105 - this was just test code, and it turns out the code as was was correct, so I deleted the second, unhit return
+
+* #88 fixed HInfinity.batch_filter to not use R
+
+
+
 
 Version 1.2.5
 =============

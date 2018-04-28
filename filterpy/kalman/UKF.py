@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, R0914
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment, too many local variables
+# pylint: disable=invalid-name
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -24,7 +22,7 @@ import sys
 import math
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
-from scipy.linalg import inv, cholesky
+from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str
@@ -33,7 +31,8 @@ from filterpy.common import pretty_str
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=C0103
-    r""" Implements the Scaled Unscented Kalman filter (UKF) as defined by
+    r"""
+    Implements the Scaled Unscented Kalman filter (UKF) as defined by
     Simon Julier in [1], using the formulation provided by Wan and Merle
     in [2]. This filter scales the sigma points to avoid strong nonlinearities.
 
@@ -71,6 +70,11 @@ class UnscentedKalmanFilter(object):
     log_likelihood : scalar
         Log likelihood of last measurement update.
 
+    inv : function, default numpy.linalg.inv
+        If you prefer another inverse function, such as the Moore-Penrose
+        pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+
+
 
     Examples
     --------
@@ -102,7 +106,8 @@ class UnscentedKalmanFilter(object):
                  residual_x=None,
                  residual_z=None,
                  compute_log_likelihood=True):
-        """ Create a Kalman filter. You are responsible for setting the
+        """
+        Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
@@ -223,6 +228,8 @@ class UnscentedKalmanFilter(object):
                Inference in Dynamic State-Space Models" (Doctoral dissertation)
         """
 
+        #pylint: disable=too-many-arguments
+
         self.Q = eye(dim_x)
         self.R = eye(dim_z)
         self.x = zeros(dim_x)
@@ -267,9 +274,12 @@ class UnscentedKalmanFilter(object):
         self.K = 0. # Kalman gain
         self.y = 0. # residual
 
+        self.inv = np.linalg.inv
+
 
     def predict(self, dt=None, UT=None, fx_args=()):
-        r""" Performs the predict step of the UKF. On return, self.x and
+        r"""
+        Performs the predict step of the UKF. On return, self.x and
         self.P contain the predicted state (x) and covariance (P). '
 
         Important: this MUST be called before update() is called for the first
@@ -312,7 +322,8 @@ class UnscentedKalmanFilter(object):
 
 
     def update(self, z, R=None, UT=None, hx_args=()):
-        """ Update the UKF with the given measurements. On return,
+        """
+        Update the UKF with the given measurements. On return,
         self.x and self.P contain the new mean and covariance of the filter.
 
         Parameters
@@ -360,7 +371,7 @@ class UnscentedKalmanFilter(object):
         Pxz = self.cross_variance(self.x, zp, self.sigmas_f, self.sigmas_h)
 
 
-        self.K = dot(Pxz, inv(Pz))        # Kalman gain
+        self.K = dot(Pxz, self.inv(Pz))        # Kalman gain
         self.y = self.residual_z(z, zp)   # residual
 
         # update Gaussian state estimate (x, P)
@@ -421,7 +432,8 @@ class UnscentedKalmanFilter(object):
 
 
     def batch_filter(self, zs, Rs=None, UT=None):
-        """ Performs the UKF filter over the list of measurement in `zs`.
+        """
+        Performs the UKF filter over the list of measurement in `zs`.
 
         Parameters
         ----------
@@ -456,16 +468,16 @@ class UnscentedKalmanFilter(object):
 
         try:
             z = zs[0]
-        except:
-            assert not isscalar(zs), 'zs must be list-like'
+        except TypeError:
+            raise TypeError('zs must be list-like')
 
         if self._dim_z == 1:
-            assert isscalar(z) or (z.ndim == 1 and len(z) == 1), \
-            'zs must be a list of scalars or 1D, 1 element arrays'
-
+            if not(isscalar(z) or (z.ndim == 1 and len(z) == 1)):
+                raise TypeError('zs must be a list of scalars or 1D, 1 element arrays')
         else:
-            assert len(z) == self._dim_z, 'each element in zs must be a' \
-            '1D array of length {}'.format(self._dim_z)
+            if len(z) != self._dim_z:
+                raise TypeError(
+                    'each element in zs must be a 1D array of length {}'.format(self._dim_z))
 
         z_n = np.size(zs, 0)
         if Rs is None:
@@ -483,14 +495,15 @@ class UnscentedKalmanFilter(object):
         for i, (z, r) in enumerate(zip(zs, Rs)):
             self.predict(UT=UT)
             self.update(z, r, UT=UT)
-            means[i, :]          = self.x
+            means[i, :] = self.x
             covariances[i, :, :] = self.P
 
         return (means, covariances)
 
 
     def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
-        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        """
+        Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by the UKF. The usual input
         would come from the output of `batch_filter()`.
 
@@ -536,8 +549,11 @@ class UnscentedKalmanFilter(object):
             (mu, cov, _, _) = kalman.batch_filter(zs)
             (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
         """
+        #pylint: disable=too-many-locals
 
-        assert len(Xs) == len(Ps)
+        if len(Xs) != len(Ps):
+            raise ValueError('Xs and Ps must have the same length')
+
         n, dim_x = Xs.shape
 
         if dt is None:
@@ -574,7 +590,7 @@ class UnscentedKalmanFilter(object):
                 Pxb += self.Wc[i] * outer(z, y)
 
             # compute gain
-            K = dot(Pxb, inv(Pb))
+            K = dot(Pxb, self.inv(Pb))
 
             # update the smoothed estimates
             xs[k] += dot(K, self.residual_x(xs[k+1], xb))

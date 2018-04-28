@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, R0903
+# pylint: disable=invalid-name, too-many-instance-attributes, too-few-public-methods
+
 # disable snake_case warning, too many arguments, too many attributes,
 # one space before assignment, too few public methods
 
@@ -79,7 +80,7 @@ class IMMEstimator(object):
         x_shape = filters[0].x.shape
         try:
             n_states = x_shape[0]
-        except:
+        except AttributeError:
             n_states = x_shape
 
         self.x = np.zeros(x_shape)
@@ -103,6 +104,7 @@ class IMMEstimator(object):
         u : np.array, optional
             u[i] contains the control input for the ith filter
         """
+        #pylint: disable=too-many-locals
 
         # run update on each filter, and save the likelihood in L
         L = zeros(len(self.filters))

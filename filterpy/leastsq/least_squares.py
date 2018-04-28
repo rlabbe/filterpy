@@ -34,19 +34,18 @@ class LeastSquaresFilter(object):
 
     It is implemented to be directly callable like a function. See examples.
 
-    Examples
-    --------
+    Parameters
+    ----------
 
-    .. code-block:: Python
+    dt : float
+       time step per update
 
-        from filterpy.leastsq import LeastSquaresFilter
+    order : int
+        order of filter 0..2
 
-        lsq = LeastSquaresFilter(dt=0.1, order=1, noise_sigma=2.3)
-
-        while True:
-            z = sensor_reading()  # get a measurement
-            x = lsq(z)            # get the filtered estimate.
-            print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
+    noise_sigma : float
+        sigma (std dev) in x. This allows us to calculate the error of
+        the filter, it does not influence the filter output.
 
 
     Attributes
@@ -64,6 +63,20 @@ class LeastSquaresFilter(object):
         estimate(s) of the output. 'd' denotes derivative, so 'dx' is the first
         derivative of x, 'ddx' is the second derivative.
 
+    Examples
+    --------
+
+    .. code-block:: Python
+
+        from filterpy.leastsq import LeastSquaresFilter
+
+        lsq = LeastSquaresFilter(dt=0.1, order=1, noise_sigma=2.3)
+
+        while True:
+            z = sensor_reading()  # get a measurement
+            x = lsq(z)            # get the filtered estimate.
+            print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
+
     References
     ----------
 
@@ -78,24 +91,8 @@ class LeastSquaresFilter(object):
 
 
     def __init__(self, dt, order, noise_sigma=0.):
-        """ Least Squares filter of order 0 to 2.
-
-        Parameters
-        ----------
-
-        dt : float
-           time step per update
-
-        order : int
-            order of filter 0..2
-
-        noise_sigma : float
-            sigma (std dev) in x. This allows us to calculate the error of
-            the filter, it does not influence the filter output.
-        """
-
-        assert order >= 0
-        assert order <= 2
+        if order < 0 or order > 2:
+            raise ValueError('order must be between 0 and 2')
 
         self.dt = dt
         self.dt2 = dt**2
@@ -110,11 +107,13 @@ class LeastSquaresFilter(object):
         """ reset filter back to state at time of construction"""
 
         self.n = 0 #nth step in the recursion
-        self.x = np.zeros(self._order+1)
-        self.K = np.zeros(self._order+1)
+        self.x = np.zeros(self._order + 1)
+        self.K = np.zeros(self._order + 1)
 
 
     def update(self, z):
+        """ Update filter with new measurement `z` """
+
         self.n += 1
         n = self.n
         dt = self.dt
@@ -156,7 +155,8 @@ class LeastSquaresFilter(object):
 
 
     def errors(self):
-        """ Computes and returns the error and  standard deviation  of the
+        """
+        Computes and returns the error and  standard deviation  of the
         filter at this time step.
 
         Returns

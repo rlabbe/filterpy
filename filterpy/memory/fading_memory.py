@@ -20,7 +20,6 @@ for more information.
 """
 
 
-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
@@ -30,62 +29,78 @@ from filterpy.common import pretty_str
 
 class FadingMemoryFilter(object):
 
+    """ Creates a fading memory filter of order 0, 1, or 2.
+
+    The KalmanFilter class also implements a more general fading memory
+    filter and should be preferred in most cases. This is probably faster
+    for low order systems.
+
+    This algorithm is based on the fading filter algorithm developed in
+    Zarcan's "Fundamentals of Kalman Filtering" [1].
+
+    Parameters
+    ----------
+
+    x0 : 1D np.array or scalar
+        Initial value for the filter state. Each value can be a scalar
+        or a np.array.
+
+        You can use a scalar for x0. If order > 0, then 0.0 is assumed
+        for the higher order terms.
+
+        x[0] is the value being tracked
+        x[1] is the first derivative (for order 1 and 2 filters)
+        x[2] is the second derivative (for order 2 filters)
+
+    dt : scalar
+        timestep
+
+    order : int
+        order of the filter. Defines the order of the system
+        0 - assumes system of form x = a_0 + a_1*t
+        1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
+        2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
+
+    beta : float
+        filter gain parameter.
+
+    Attributes
+    ----------
+
+    x : np.array
+        State of the filter.
+        x[0] is the value being tracked
+        x[1] is the derivative of x[0] (order 1 and 2 only)
+        x[2] is the 2nd derivative of x[0] (order 2 only)
+
+        This is always an np.array, even for order 0 where you can
+        initialize x0 with a scalar.
+
+    P : np.array
+        The diagonal of the covariance matrix. Assumes that variance
+        is one; multiply by sigma^2 to get the actual variances.
+
+        This is a constant and will not vary as the filter runs.
+
+    e : np.array
+        The truncation error of the filter. Each term must be multiplied
+        by the a_1, a_2, or a_3 of the polynomial for the system.
+
+        For example, if the filter is order 2, then multiply all terms
+        of self.e by a_3 to get the actual error. Multipy by a_2 for order
+        1, and a_1 for order 0.
+
+
+    References
+    ----------
+
+    Paul Zarchan and Howard Musoff. "Fundamentals of Kalman Filtering:
+    A Practical Approach" American Institute of Aeronautics and Astronautics,
+    Inc. Fourth Edition. p. 521-536. (2015)
+    """
+
     def __init__(self, x0, dt, order, beta):
 
-        """ Creates a fading memory filter of order 0, 1, or 2.
-
-        Parameters
-        ----------
-
-        x0 : 1D np.array or scalar
-            Initial value for the filter state. Each value can be a scalar
-            or a np.array.
-
-            You can use a scalar for x0. If order > 0, then 0.0 is assumed
-            for the higher order terms.
-
-            x[0] is the value being tracked
-            x[1] is the first derivative (for order 1 and 2 filters)
-            x[2] is the second derivative (for order 2 filters)
-
-        dt : scalar
-            timestep
-
-        order : int
-            order of the filter. Defines the order of the system
-            0 - assumes system of form x = a_0 + a_1*t
-            1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
-            2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
-
-        beta : float
-            filter gain parameter.
-
-        Attributes
-        ----------
-
-        x : np.array
-            State of the filter.
-            x[0] is the value being tracked
-            x[1] is the derivative of x[0] (order 1 and 2 only)
-            x[2] is the 2nd derivative of x[0] (order 2 only)
-
-            This is always an np.array, even for order 0 where you can
-            initialize x0 with a scalar.
-
-        P : np.array
-            The diagonal of the covariance matrix. Assumes that variance
-            is one; multiply by sigma^2 to get the actual variances.
-
-            This is a constant and will not vary as the filter runs.
-
-        e : np.array
-            The truncation error of the filter. Each term must be multiplied
-            by the a_1, a_2, or a_3 of the polynomial for the system.
-
-            For example, if the filter is order 2, then multiply all terms
-            of self.e by a_3 to get the actual error. Multipy by a_2 for order
-            1, and a_1 for order 0.
-        """
 
         assert order >= 0
         assert order <= 2

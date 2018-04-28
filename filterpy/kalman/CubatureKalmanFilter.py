@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103
-# pylint: disable=R0913
+# pylint: disable=invalid-name, too-many-arguments
 
 
 """Copyright 2016 Roger R Labbe Jr.
@@ -63,6 +62,27 @@ def spherical_radial_sigmas(x, P):
 
 
 def ckf_transform(Xs, Q):
+    """
+    Compute mean and covariance of array of cubature points.
+
+    Parameters
+    ----------
+
+    Xs : ndarray
+        Cubature points
+
+    Q : ndarray
+        Noise covariance
+
+    Returns
+    -------
+
+    mean : ndarray
+         mean of the cubature points
+
+    variance: ndarray
+         covariance matrix of the cubature points
+    """
 
     m, n = Xs.shape
 

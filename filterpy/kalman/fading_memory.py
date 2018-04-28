@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, R0914
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment, too many local variables
+# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes
 
 
 """Copyright 2015 Roger R Labbe Jr.
@@ -22,6 +20,7 @@ for more information.
 
 from __future__ import (absolute_import, division, unicode_literals)
 import sys
+import warnings
 import math
 import numpy as np
 from numpy import dot, zeros, eye
@@ -33,93 +32,103 @@ from filterpy.common import pretty_str
 class FadingKalmanFilter(object):
 
 
+    """
+    Fading memory Kalman filter. This implements a linear Kalman filter with
+    a fading memory effect controlled by `alpha`. This is obsolete. The
+    class KalmanFilter now incorporates the `alpha` attribute, and should
+    be used instead.
+
+    You are responsible for setting the
+    various state variables to reasonable values; the defaults below
+    will not give you a functional filter.
+
+    Parameters
+    ----------
+
+    alpha : float, >= 1
+        alpha controls how much you want the filter to forget past
+        measurements. alpha==1 yields identical performance to the
+        Kalman filter. A typical application might use 1.01
+
+    dim_x : int
+        Number of state variables for the Kalman filter. For example, if
+        you are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
+
+        This is used to set the default size of P, Q, and u
+
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dim_u : int (optional)
+        size of the control input, if it is being used.
+        Default value of 0 indicates it is not used.
+
+    compute_log_likelihood : bool (default = True)
+        Computes log likelihood by default, but this can be a slow
+        computation, so if you never use it you can turn this computation
+        off.
+
+    Attributes
+    ----------
+
+    You will have to assign reasonable values to all of these before
+    running the filter. All must have dtype of float
+
+    x : ndarray (dim_x, 1), default = [0,0,0...0]
+        state of the filter
+
+    P : ndarray (dim_x, dim_x), default identity matrix
+        covariance matrix
+
+    Q : ndarray (dim_x, dim_x), default identity matrix
+        Process uncertainty matrix
+
+    R : ndarray (dim_z, dim_z), default identity matrix
+        measurement uncertainty
+
+    H : ndarray (dim_z, dim_x)
+        measurement function
+
+    F : ndarray (dim_x, dim_x)
+        state transistion matrix
+
+    B : ndarray (dim_x, dim_u), default 0
+        control transition matrix
+
+    y : numpy.array
+        Residual of the update step. Read only.
+
+    K : numpy.array(dim_x, dim_z)
+        Kalman gain of the update step. Read only.
+
+    S :  numpy.array
+        Systen uncertaintly projected to measurement space. Read only.
+
+    log_likelihood : float
+        log-likelihood of the last measurement. Read only.
+
+
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+    """
+
+
     def __init__(self, alpha, dim_x, dim_z, dim_u=0,
                  compute_log_likelihood=True):
-        """ Create a Kalman filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below
-        will not give you a functional filter.
 
-        Parameters
-        ----------
-
-        alpha : float, >= 1
-            alpha controls how much you want the filter to forget past
-            measurements. alpha==1 yields identical performance to the
-            Kalman filter. A typical application might use 1.01
-
-        dim_x : int
-            Number of state variables for the Kalman filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
-
-            This is used to set the default size of P, Q, and u
-
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
-
-        dim_u : int (optional)
-            size of the control input, if it is being used.
-            Default value of 0 indicates it is not used.
-
-        compute_log_likelihood : bool (default = True)
-            Computes log likelihood by default, but this can be a slow
-            computation, so if you never use it you can turn this computation
-            off.
-
-        Attributes
-        ----------
-
-        You will have to assign reasonable values to all of these before
-        running the filter. All must have dtype of float
-
-        x : ndarray (dim_x, 1), default = [0,0,0...0]
-            state of the filter
-
-        P : ndarray (dim_x, dim_x), default identity matrix
-            covariance matrix
-
-        Q : ndarray (dim_x, dim_x), default identity matrix
-            Process uncertainty matrix
-
-        R : ndarray (dim_z, dim_z), default identity matrix
-            measurement uncertainty
-
-        H : ndarray (dim_z, dim_x)
-            measurement function
-
-        F : ndarray (dim_x, dim_x)
-            state transistion matrix
-
-        B : ndarray (dim_x, dim_u), default 0
-            control transition matrix
-
-        y : numpy.array
-            Residual of the update step. Read only.
-
-        K : numpy.array(dim_x, dim_z)
-            Kalman gain of the update step. Read only.
-
-        S :  numpy.array
-            Systen uncertaintly projected to measurement space. Read only.
-
-        log_likelihood : float
-            log-likelihood of the last measurement. Read only.
-
-
-
-        Examples
-        --------
-
-        See my book Kalman and Bayesian Filters in Python
-        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
-        """
+        warnings.warn(
+            "Use KalmanFilter class instead; it also provides the alpha attribute",
+            DeprecationWarning)
 
         assert alpha >= 1
         assert dim_x > 0
         assert dim_z > 0
         assert dim_u >= 0
-
 
         self.alpha_sq = alpha**2
         self.dim_x = dim_x
@@ -261,6 +270,8 @@ class FadingKalmanFilter(object):
         n = np.size(zs, 0)
         if Rs is None:
             Rs = [None] * n
+
+        #pylint: disable=bad-whitespace
 
         # mean estimates from Kalman Filter
         means   = zeros((n, self.dim_x, 1))

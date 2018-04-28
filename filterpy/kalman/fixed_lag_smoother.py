@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#pylint: disable=too-many-instance-attributes, too-many-locals, invalid-name
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -108,19 +109,19 @@ class FixedLagSmoother(object):
 
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.N     = N
+        self.N = N
 
-        self.x = zeros((dim_x,1)) # state
-        self.x_s = zeros((dim_x,1)) # smoothed state
-        self.P = eye(dim_x)       # uncertainty covariance
-        self.Q = eye(dim_x)       # process uncertainty
-        self.F = 0.               # state transition matrix
-        self.H = 0.               # Measurement function
-        self.R = eye(dim_z)       # state uncertainty
-        self.K = 0.               # kalman gain
+        self.x = zeros((dim_x, 1))   # state
+        self.x_s = zeros((dim_x, 1)) # smoothed state
+        self.P = eye(dim_x)          # uncertainty covariance
+        self.Q = eye(dim_x)          # process uncertainty
+        self.F = eye(dim_x)          # state transition matrix
+        self.H = eye(dim_z, dim_x)   # Measurement function
+        self.R = eye(dim_z)          # state uncertainty
+        self.K = zeros((dim_x, 1))   # kalman gain
         self.y = zeros((dim_z, 1))
         self.B = 0.
-        self.S = 0.
+        self.S = zeros((dim_z, dim_z))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -175,7 +176,7 @@ class FixedLagSmoother(object):
         # predict step of normal Kalman filter
         x_pre = dot(F, x)
         if u is not None:
-            x_pre += dot(B,u)
+            x_pre += dot(B, u)
 
         P = dot(F, P).dot(F.T) + Q
 
@@ -196,11 +197,11 @@ class FixedLagSmoother(object):
 
         #compute invariants
         HTSI = dot(H.T, SI)
-        F_LH = (F - dot(K,H)).T
+        F_LH = (F - dot(K, H)).T
 
         if k >= N:
             PS = P.copy() # smoothed P for step i
-            for i in range (N):
+            for i in range(N):
                 K = dot(PS, HTSI)  # smoothed gain
                 PS = dot(PS, F_LH) # smoothed covariance
 
@@ -210,7 +211,7 @@ class FixedLagSmoother(object):
             # Some sources specify starting the fix lag smoother only
             # after N steps have passed, some don't. I am getting far
             # better results by starting only at step N.
-           self.xSmooth[k] = x.copy()
+            self.xSmooth[k] = x.copy()
 
         self.count += 1
         self.x = x
@@ -266,16 +267,16 @@ class FixedLagSmoother(object):
 
         if x.ndim == 1:
             xSmooth = zeros((len(zs), self.dim_x))
-            xhat    = zeros((len(zs), self.dim_x))
+            xhat = zeros((len(zs), self.dim_x))
         else:
             xSmooth = zeros((len(zs), self.dim_x, 1))
-            xhat    = zeros((len(zs), self.dim_x, 1))
+            xhat = zeros((len(zs), self.dim_x, 1))
         for k, z in enumerate(zs):
 
             # predict step of normal Kalman filter
             x_pre = dot(F, x)
             if us is not None:
-                x_pre += dot(B,us[k])
+                x_pre += dot(B, us[k])
 
             P = dot(F, P).dot(F.T) + Q
 
@@ -292,16 +293,16 @@ class FixedLagSmoother(object):
             I_KH = self._I - dot(K, H)
             P = dot(I_KH, P).dot(I_KH.T) + dot(K, R).dot(K.T)
 
-            xhat[k]    = x.copy()
+            xhat[k] = x.copy()
             xSmooth[k] = x_pre.copy()
 
             #compute invariants
             HTSI = dot(H.T, SI)
-            F_LH = (F - dot(K,H)).T
+            F_LH = (F - dot(K, H)).T
 
             if k >= N:
                 PS = P.copy() # smoothed P for step i
-                for i in range (N):
+                for i in range(N):
                     K = dot(PS, HTSI)  # smoothed gain
                     PS = dot(PS, F_LH) # smoothed covariance
 
@@ -318,19 +319,19 @@ class FixedLagSmoother(object):
 
     def __repr__(self):
         return '\n'.join([
-                'FixedLagSmoother object',
-                pretty_str('dim_x', self.x),
-                pretty_str('dim_z', self.x),
-                pretty_str('N', self.N),
-                pretty_str('x', self.x),
-                pretty_str('x_s', self.x_s),
-                pretty_str('P', self.P),
-                pretty_str('F', self.F),
-                pretty_str('Q', self.Q),
-                pretty_str('R', self.R),
-                pretty_str('H', self.H),
-                pretty_str('K', self.K),
-                pretty_str('y', self.y),
-                pretty_str('S', self.S),
-                pretty_str('B', self.B),
-                ])
+            'FixedLagSmoother object',
+            pretty_str('dim_x', self.x),
+            pretty_str('dim_z', self.x),
+            pretty_str('N', self.N),
+            pretty_str('x', self.x),
+            pretty_str('x_s', self.x_s),
+            pretty_str('P', self.P),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('B', self.B),
+            ])

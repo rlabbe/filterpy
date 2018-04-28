@@ -131,8 +131,9 @@ def _is_inside_ellipse(x, y, ex, ey, orientation, width, height):
 
 
 def do_plot_test():
-
+    import matplotlib.pyplot as plt
     from numpy.random import multivariate_normal as mnormal
+    from filterpy.stats import covariance_ellipse, plot_covariance
 
     p = np.array([[32, 15], [15., 40.]])
 

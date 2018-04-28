@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902
-# disable snake_case warning, too many arguments, too many attributes
+# pylint: disable=invalid-name,too-many-instance-attributes, too-many-arguments
 
 
 """Copyright 2015 Roger R Labbe Jr.
@@ -173,6 +172,7 @@ class ExtendedKalmanFilter(object):
         u : np.array or scalar
             optional control vector input to the filter.
         """
+        #pylint: disable=too-many-locals
 
         if not isinstance(args, tuple):
             args = (args,)

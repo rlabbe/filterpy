@@ -14,7 +14,10 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+#pylint: disable=wildcard-import
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-__all__=["discrete_bayes"]
+__all__ = ["discrete_bayes"]
+
 from .discrete_bayes import *

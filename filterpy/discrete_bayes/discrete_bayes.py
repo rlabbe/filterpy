@@ -123,6 +123,6 @@ def predict(pdf, offset, kernel, mode='wrap', cval=0.):
 
     if mode == 'wrap':
         return convolve(np.roll(pdf, offset), kernel, mode='wrap')
-    else:
-        return convolve(shift(pdf, offset, cval=cval), kernel,
-                        cval=cval, mode='constant')
+
+    return convolve(shift(pdf, offset, cval=cval), kernel,
+                    cval=cval, mode='constant')

@@ -14,14 +14,16 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+#pylint:disable=invalid-name, bad-whitespace
 
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-from numpy import array, zeros, vstack, eye
-from scipy.linalg import expm, inv, block_diag
+from numpy import zeros, vstack, eye
+from numpy.linalg import inv
+from scipy.linalg import expm, block_diag
 
 
 def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
@@ -147,8 +149,8 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
 
 
 def van_loan_discretization(F, G, dt):
-
-    """ Discretizes a linear differential equation which includes white noise
+    """
+    Discretizes a linear differential equation which includes white noise
     according to the method of C. F. van Loan [1]. Given the continuous
     model
 
@@ -161,27 +163,27 @@ def van_loan_discretization(F, G, dt):
     Examples
     --------
 
-        Given y'' + y = 2u(t), we create the continuous state model of
+    Given y'' + y = 2u(t), we create the continuous state model of
 
-        x' = [ 0 1] * x + [0]*u(t)
-             [-1 0]       [2]
+    x' = [ 0 1] * x + [0]*u(t)
+         [-1 0]       [2]
 
-        and a time step of 0.1:
+    and a time step of 0.1:
 
 
-        >>> F = np.array([[0,1],[-1,0]], dtype=float)
-        >>> G = np.array([[0.],[2.]])
-        >>> phi, Q = van_loan_discretization(F, G, 0.1)
+    >>> F = np.array([[0,1],[-1,0]], dtype=float)
+    >>> G = np.array([[0.],[2.]])
+    >>> phi, Q = van_loan_discretization(F, G, 0.1)
 
-        >>> phi
-        array([[ 0.99500417,  0.09983342],
-               [-0.09983342,  0.99500417]])
+    >>> phi
+    array([[ 0.99500417,  0.09983342],
+           [-0.09983342,  0.99500417]])
 
-        >>> Q
-        array([[ 0.00133067,  0.01993342],
-               [ 0.01993342,  0.39866933]])
+    >>> Q
+    array([[ 0.00133067,  0.01993342],
+           [ 0.01993342,  0.39866933]])
 
-        (example taken from Brown[2])
+    (example taken from Brown[2])
 
 
     References
@@ -215,16 +217,16 @@ def van_loan_discretization(F, G, dt):
     return (sigma, Q)
 
 
-def linear_ode_discretation(F, L=None, Q=None, dt=1):
+def linear_ode_discretation(F, L=None, Q=None, dt=1.):
     n = F.shape[0]
 
     if L is None:
         L = eye(n)
 
     if Q is None:
-        Q = zeros((n,n))
+        Q = zeros((n, n))
 
-    A = expm(F*dt)
+    A = expm(F * dt)
 
     phi = zeros((2*n, 2*n))
 
@@ -232,19 +234,12 @@ def linear_ode_discretation(F, L=None, Q=None, dt=1):
     phi[0:n,   n:2*n] = L.dot(Q).dot(L.T)
     phi[n:2*n, n:2*n] = -F.T
 
-    zo = vstack((zeros((n,n)), eye(n)))
+    zo = vstack((zeros((n, n)), eye(n)))
 
     CD = expm(phi*dt).dot(zo)
 
-    C = CD[0:n,:]
-    D = CD[n:2*n,:]
+    C = CD[0:n,  :]
+    D = CD[n:2*n, :]
     q = C.dot(inv(D))
 
     return (A, q)
-
-
-
-
-
-
-

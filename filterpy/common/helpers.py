@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#pylint: disable=invalid-name
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -14,7 +15,6 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
-
 
 
 def runge_kutta4(y, x, dx, f):
@@ -43,16 +43,7 @@ def runge_kutta4(y, x, dx, f):
     return y + (k1 + 2*k2 + 2*k3 + k4) / 6.
 
 
-
-
-
-def pretty_str(label, arr, transpose=True):
-
-    def is_col(a):
-        try:
-            return a.shape[0] > 1 and a.shape[1] == 1
-        except:
-            return False
+def pretty_str(label, arr):
     """
     Generates a pretty printed NumPy array with an assignment. Optionally
     transposes column vectors so they are drawn on one line. Strictly speaking
@@ -70,20 +61,26 @@ def pretty_str(label, arr, transpose=True):
     x = [[1 2 3]].T
     """
 
+    def is_col(a):
+        """ return true if a is a column vector"""
+        try:
+            return a.shape[0] > 1 and a.shape[1] == 1
+        except (AttributeError, IndexError):
+            return False
+
     transposed = False
     if is_col(arr):
         arr = arr.T
         transposed = True
 
     rows = str(arr).split('\n')
-
-    if len(rows) == 0:
+    if not rows:
         return ''
 
     if label is None:
         label = ''
 
-    if len(label) > 0:
+    if label:
         label += ' = '
 
     s = label + rows[0]
@@ -98,7 +95,8 @@ def pretty_str(label, arr, transpose=True):
 
     return s
 
-def pprint(label, arr, transpose=True, **kwargs):
+
+def pprint(label, arr, **kwargs):
     """ pretty prints an NumPy array using the function pretty_str. Keyword
     arguments are passed to the print() function.
 
@@ -113,5 +111,4 @@ def pprint(label, arr, transpose=True, **kwargs):
            [0.1 5. ]]
     """
 
-
-    print(pretty_str(label, arr, transpose), **kwargs)
+    print(pretty_str(label, arr), **kwargs)

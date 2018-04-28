@@ -15,12 +15,15 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
+#pylint: skip-file
+
+
 from numpy.random import randn
-from math import radians, atan2
 
 
 class RadarSim(object):
-    """ Simulates the radar signal returns from an object flying
+    """
+    Simulates the radar signal returns from an object flying
     at a constant altityude and velocity in 1D. Assumes random
     process noise - altitude and velocity varies a bit for each call.
     """
@@ -34,12 +37,13 @@ class RadarSim(object):
 
 
     def get_range(self, process_err_pct=0.05):
-        """ Returns slant range to the object. Call once for each
+        """
+        Returns slant range to the object. Call once for each
         new measurement at dt time from last call.
         """
 
-        vel = self.vel + 5*randn()
-        alt = self.alt + 10*randn()
+        vel = self.vel + 5 * randn()
+        alt = self.alt + 10 * randn()
 
         self.pos += vel*self.dt
 
@@ -47,12 +51,3 @@ class RadarSim(object):
         slant_range = (self.pos**2 + alt**2)**.5 + err
 
         return slant_range
-
-
-    def get_range_bearing(self, angle_sigma_deg=1.):
-        r = self.get_range()
-        a = atan2(self.alt, self.x)
-        a += randn() * radians(angle_sigma_deg)
-
-        return r, a
-

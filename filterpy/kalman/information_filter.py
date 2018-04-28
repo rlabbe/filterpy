@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment
+# pylint: disable=invalid-name, too-many-instance-attributes
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -24,45 +22,84 @@ import math
 import sys
 import numpy as np
 from numpy import dot, zeros, eye
-from scipy.linalg import inv
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str
 
 
 class InformationFilter(object):
+    """
+    Create a linear Information filter. Information filters compute the
+    inverse of the Kalman filter, allowing you to easily denote having
+    no information at initialization.
+
+    You are responsible for setting the various state variables to reasonable
+    values; the defaults below will not give you a functional filter.
+
+    Parameters
+    ----------
+
+    dim_x : int
+        Number of state variables for the  filter. For example, if you
+        are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
+
+        This is used to set the default size of P, Q, and u
+
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dim_u : int (optional)
+        size of the control input, if it is being used.
+        Default value of 0 indicates it is not used.
+
+    self.compute_log_likelihood = compute_log_likelihood
+    self.log_likelihood = math.log(sys.float_info.min)
+
+
+    Attributes
+    ----------
+    x : numpy.array(dim_x, 1)
+        State estimate vector
+
+    P_inv : numpy.array(dim_x, dim_x)
+        inverse state covariance matrix
+
+    R_inv : numpy.array(dim_z, dim_z)
+        inverse of measurement noise matrix
+
+    Q : numpy.array(dim_x, dim_x)
+        Process noise matrix
+
+    H : numpy.array(dim_z, dim_x)
+        Measurement function
+
+    y : numpy.array
+        Residual of the update step. Read only.
+
+    K : numpy.array(dim_x, dim_z)
+        Kalman gain of the update step. Read only.
+
+    S :  numpy.array
+        Systen uncertaintly projected to measurement space. Read only.
+
+    log_likelihood : float
+        log-likelihood of the last measurement. Read only.
+
+    inv : function, default numpy.linalg.inv
+        If you prefer another inverse function, such as the Moore-Penrose
+        pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+
+
+    Examples
+    --------
+
+    See my book Kalman and Bayesian Filters in Python
+    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+    """
+
 
     def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
-        """ Create a Information filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below will
-        not give you a functional filter.
-
-        Parameters
-        ----------
-
-        dim_x : int
-            Number of state variables for the  filter. For example, if you
-            are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
-
-            This is used to set the default size of P, Q, and u
-
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
-
-        dim_u : int (optional)
-            size of the control input, if it is being used.
-            Default value of 0 indicates it is not used.
-
-        self.compute_log_likelihood = compute_log_likelihood
-        self.log_likelihood = math.log(sys.float_info.min)
-
-        Examples
-        --------
-
-        See my book Kalman and Bayesian Filters in Python
-        https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
-        """
 
         assert dim_x > 0
         assert dim_z > 0
@@ -94,6 +131,8 @@ class InformationFilter(object):
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
+
+        self.inv = np.linalg.inv
 
 
     def update(self, z, R_inv=None):
@@ -139,7 +178,7 @@ class InformationFilter(object):
             # S = HPH' + R
             # project system uncertainty into measurement space
             self.S = P_inv + dot(H_T, R_inv).dot(H)
-            self.K = dot(inv(self.S), H_T).dot(R_inv)
+            self.K = dot(self.inv(self.S), H_T).dot(R_inv)
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
@@ -164,12 +203,13 @@ class InformationFilter(object):
         # x = Fx + Bu
 
         A = dot(self._F_inv.T, self.P_inv).dot(self._F_inv)
+        #pylint: disable=bare-except
         try:
-            AI = inv(A)
+            AI = self.inv(A)
             invertable = True
             if self._no_information:
                 try:
-                    self.x = dot(inv(self.P_inv), self.x)
+                    self.x = dot(self.inv(self.P_inv), self.x)
                 except:
                     self.x = dot(0, self.x)
                 self._no_information = False
@@ -179,12 +219,12 @@ class InformationFilter(object):
 
         if invertable:
             self.x = dot(self._F, self.x) + dot(self.B, u)
-            self.P_inv = inv(AI + self.Q)
+            self.P_inv = self.inv(AI + self.Q)
         else:
             I_PF = self._I - dot(self.P_inv, self._F_inv)
-            FTI = inv(self._F.T)
+            FTI = self.inv(self._F.T)
             FTIX = dot(FTI, self.x)
-            AQI = inv(A + self.Q)
+            AQI = self.inv(A + self.Q)
             self.x = dot(FTI, dot(I_PF, AQI).dot(FTIX))
 
 
@@ -219,10 +259,12 @@ class InformationFilter(object):
             `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        raise "this is not implemented yet"
+        raise NotImplementedError("this is not implemented yet")
 
-        ''' this is a copy of the code from kalman_filter, it has not been
-        turned into the information filter yet. DO NOT USE.'''
+        #pylint: disable=unreachable, no-member
+
+        # this is a copy of the code from kalman_filter, it has not been
+        # turned into the information filter yet. DO NOT USE.
 
         n = np.size(zs, 0)
         if Rs is None:
@@ -279,7 +321,7 @@ class InformationFilter(object):
     @F.setter
     def F(self, value):
         self._F = value
-        self._F_inv = inv(self._F)
+        self._F_inv = self.inv(self._F)
 
 
     def __repr__(self):
@@ -300,4 +342,5 @@ class InformationFilter(object):
             pretty_str('S', self.S),
             pretty_str('B', self.B),
             pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('inv', self.inv),
             ])

@@ -1,6 +1,10 @@
 Steps to Create Release
 =======================
 
+* run pytest
+
+* run pylint --disable=similarities filterpy
+
 * update filterpy/filterpy/__init__.py with the version number.
 
 * update filterpy/filterpy/changelog.txt with the changes for this release.
