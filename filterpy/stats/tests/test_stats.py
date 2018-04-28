@@ -19,6 +19,7 @@ from __future__ import division
 from math import exp
 import numpy as np
 from numpy.linalg import inv
+import scipy
 from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
 from filterpy.stats import norm_cdf, multivariate_gaussian, logpdf, mahalanobis
 
@@ -102,7 +103,62 @@ def test_multivariate_gaussian():
           for j in (-1, 0, 1)]
     assert np.allclose(a, b)
 
+    try:
+        multivariate_gaussian(1, 1, -1)
+    except:
+        pass
+    else:
+        assert False, "negative variances are meaningless"
 
+    # test that we get the same results as scipy.stats.multivariate_normal
+    xs = np.random.randn(1000)
+    mean = np.random.randn(1000)
+    var = np.random.random(1000) * 5
+
+    for x, m, v in zip(xs, mean, var):
+        assert abs(multivariate_gaussian(x, m, v) - scipy.stats.multivariate_normal(m, v).pdf(x)) < 1.e-12
+
+
+def _is_inside_ellipse(x, y, ex, ey, orientation, width, height):
+
+    co = np.cos(orientation)
+    so = np.sin(orientation)
+
+    xx = x*co + y*so
+    yy = y*co - x*so
+
+    return (xx / width)**2 + (yy / height)**2 <= 1.
+
+
+def do_plot_test():
+
+    from numpy.random import multivariate_normal as mnormal
+
+    p = np.array([[32, 15], [15., 40.]])
+
+    x, y = mnormal(mean=(0, 0), cov=p, size=5000).T
+    sd = 2
+    a, w, h = covariance_ellipse(p, sd)
+    print(np.degrees(a), w, h)
+
+    count = 0
+    color = []
+    for i in range(len(x)):
+        if _is_inside_ellipse(x[i], y[i], 0, 0, a, w, h):
+            color.append('b')
+            count += 1
+        else:
+            color.append('r')
+    plt.scatter(x, y, alpha=0.2, c=color)
+    plt.axis('equal')
+
+    plot_covariance(mean=(0., 0.),
+                    cov=p,
+                    std=[1,2,3],
+                    alpha=0.3,
+                    facecolor='none')
+
+    print(count / len(x))
 
 def test_norm_cdf():
     # test using the 68-95-99.7 rule
@@ -134,4 +190,27 @@ def test_logpdf():
 
     logpdf([1., 2], [1.1, 2], cov=np.array([[1., 2], [2, 5]]), allow_singular=False)
     logpdf([1., 2], [1.1, 2], cov=np.array([[1., 2], [2, 5]]), allow_singular=True)
+
+
+def covariance_3d_plot_test():
+    import matplotlib.pyplot as plt
+    from filterpy.stats import plot_3d_covariance
+
+    mu = [13456.3,2320,672.5]
+
+    C = np.array([[1.0, .03, .2],
+                  [.03,  4.0, .0],
+                  [.2,  .0, 16.1]])
+
+    sample = np.random.multivariate_normal(mu, C, size=1000)
+
+    fig = plt.gcf()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(xs=sample[:, 0], ys=sample[:, 1], zs=sample[:, 2], s=1)
+    plot_3d_covariance(mu, C, alpha=.4, std=3, limit_xyz=True, ax=ax)
+
+if __name__ == "__main__":
+    covariance_3d_plot_test()
+    plt.figure()
+    do_plot_test()
 

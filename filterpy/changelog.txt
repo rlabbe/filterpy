@@ -1,7 +1,13 @@
+Version 1.2.6
+=============
+
+#113 added plotting of 3D covariance ellipsoid with plot_3d_covariance
+* Fixed bug where multivariate_gaussian accepted negative covariances
+
 Version 1.2.5
 =============
 
-#102 - Bug: UKF uwas sing slow code path when using np.subtract. 
+#102 - Bug: UKF was using slow code path when using np.subtract. 
 
 
 Version 1.2.4
