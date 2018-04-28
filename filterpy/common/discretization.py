@@ -73,7 +73,9 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
     John Wiley & Sons, 2001. Page 274.
     """
 
-    assert dim == 2 or dim == 3 or dim == 4
+    if not (dim == 2 or dim == 3 or dim == 4):
+        assert ValueError("dim must be between 2 and 4")
+
     if dim == 2:
         Q = [[.25*dt**4, .5*dt**3],
              [ .5*dt**3,    dt**2]]
@@ -130,7 +132,9 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
            [0.        , 0.        , 0.        , 0.        , 0.005     , 0.1       ]])
     """
 
-    assert dim == 2 or dim == 3 or dim == 4
+    if not (dim == 2 or dim == 3 or dim == 4):
+        assert ValueError("dim must be between 2 and 4")
+
     if dim == 2:
         Q = [[(dt**3)/3., (dt**2)/2.],
              [(dt**2)/2.,    dt]]

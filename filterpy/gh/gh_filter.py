@@ -93,9 +93,8 @@ class GHFilterOrder(object):
             difference between the measurement and the prediction
         """
 
-
-        assert order >= 0
-        assert order <= 2
+        if order < 0 or order > 2:
+            raise ValueError('order must be between 0 and 2')
 
         if np.isscalar(x0):
             self.x = np.zeros(order+1)
@@ -240,10 +239,6 @@ class GHFilter(object):
         h : float
             filter h gain parameter.
         """
-
-        assert np.isscalar(dt)
-        assert np.isscalar(g)
-        assert np.isscalar(h)
 
         self.x = x
         self.dx = dx
@@ -497,10 +492,6 @@ class GHKFilter(object):
         k : float
             filter k gain parameter.
         """
-
-        assert np.isscalar(dt)
-        assert np.isscalar(g)
-        assert np.isscalar(h)
 
         self.x = x
         self.dx = dx
@@ -899,8 +890,8 @@ def critical_damping_parameters(theta, order=2):
     July, 1975
 
     """
-    assert theta >= 0
-    assert theta <= 1
+    if theta < 0 or theta > 1:
+        raise ValueError('theta must be between 0 and 1')
 
     if order == 2:
         return (1. - theta**2, (1. - theta)**2)
@@ -908,7 +899,7 @@ def critical_damping_parameters(theta, order=2):
     if order == 3:
         return (1. - theta**3, 1.5*(1.-theta**2)*(1.-theta), .5*(1 - theta)**3)
 
-    raise Exception('bad order specified: {}'.format(order))
+    raise ValueError('bad order specified: {}'.format(order))
 
 
 def benedict_bornder_constants(g, critical=False):

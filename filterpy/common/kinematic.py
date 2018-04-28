@@ -30,7 +30,8 @@ def kinematic_state_transition(order, dt):
     step `dt`.
     """
 
-    assert order >= 0 and int(order) == order, "order must be an int >= 0"
+    if not(order >= 0 and int(order) == order):
+        raise ValueError("order must be an int >= 0")
 
     # hard code common cases for computational efficiency
     if order == 0:
@@ -136,9 +137,12 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
         [x y z x' y' z' x'' y'' z'']
     """
 
-    assert dim >= 1
-    assert order >= 0
-    assert dim_z >= 1
+    if dim < 1:
+        raise ValueError("dim must be >= 1")
+    if order < 0:
+        raise ValueError("order must be >= 0")
+    if dim_z < 1:
+        raise ValueError("dim_z must be >= 1")
 
     dim_x = order + 1
 

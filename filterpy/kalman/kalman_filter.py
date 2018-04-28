@@ -207,9 +207,12 @@ class KalmanFilter(object):
             off.
         """
 
-        assert dim_x > 0
-        assert dim_z > 0
-        assert dim_u >= 0
+        if dim_z < 1:
+            raise ValueError('dim_x must be 1 or greater')
+        if dim_z < 1:
+            raise ValueError('dim_x must be 1 or greater')
+        if dim_u < 0:
+            raise ValueError('dim_x must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z
@@ -296,9 +299,6 @@ class KalmanFilter(object):
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
-
-        if self.x.ndim == 2:
-            assert self.x.shape[0] == self.dim_x and self.x.shape[1] == 1
 
         # P = (I-KH)P(I-KH)' + KRK'
         I_KH = self._I - dot(self.K, H)
@@ -489,7 +489,6 @@ class KalmanFilter(object):
         assert F.shape == (self.dim_x, self.dim_x), \
                "Shape of F must be ({},{}), but is {}".format(
                    self.dim_x, self.dim_x, F.shape)
-
 
         assert np.ndim(H) == 2, \
                "Shape of H must be (dim_z, {}), but is {}".format(
@@ -816,7 +815,9 @@ class KalmanFilter(object):
 
         """
 
-        assert len(Xs) == len(Ps)
+        if len(Xs) != len(Ps):
+            raise ValueError('length of Xs and Ps must be the same')
+
         n = Xs.shape[0]
         dim_x = Xs.shape[1]
 
@@ -992,8 +993,9 @@ class KalmanFilter(object):
 
     @alpha.setter
     def alpha(self, value):
-        assert np.isscalar(value)
-        assert value > 0.
+
+        if not np.isscalar(value) or value <= 0:
+            raise ValueError('alpha must be a float greater than 0')
 
         self._alpha_sq = value**2
 
@@ -1457,7 +1459,9 @@ def rts_smoother(Xs, Ps, Fs, Qs):
         (x, P, K, pP) = rts_smoother(mu, cov, kf.F, kf.Q)
     """
 
-    assert len(Xs) == len(Ps)
+    if len(Xs) != len(Ps):
+        raise ValueError('length of Xs and Ps must be the same')
+
     n = Xs.shape[0]
     dim_x = Xs.shape[1]
 

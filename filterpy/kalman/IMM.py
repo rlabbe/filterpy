@@ -70,7 +70,8 @@ class IMMEstimator(object):
 
         """
 
-        assert len(filters) > 1
+        if len(filters) < 1:
+            raise ValueError('filters must contain at least one filter')
 
         self.filters = filters
         self.mu = mu

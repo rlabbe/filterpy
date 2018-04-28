@@ -118,7 +118,11 @@ class EnsembleKalmanFilter(object):
                 f.update(np.asarray([z]))
         """
 
-        assert dim_z > 0
+        if dim_z <= 0:
+            raise ValueError('dim_z must be greater than zero')
+
+        if N <= 0:
+            raise ValueError('N must be greater than zero')
 
         self.dim_x = len(x)
         self.dim_z = dim_z
@@ -152,9 +156,10 @@ class EnsembleKalmanFilter(object):
             covariance of the state
         """
 
-        assert x.ndim == 1
-        self.sigmas = multivariate_normal(mean=x, cov=P, size=self.N)
+        if x.ndim != 1:
+            raise ValueError('x must be a 1D array')
 
+        self.sigmas = multivariate_normal(mean=x, cov=P, size=self.N)
         self.x = x
         self.P = P
 

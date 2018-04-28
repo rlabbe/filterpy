@@ -101,9 +101,12 @@ class InformationFilter(object):
 
     def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
 
-        assert dim_x > 0
-        assert dim_z > 0
-        assert dim_u >= 0
+        if dim_z < 1:
+            raise ValueError('dim_x must be 1 or greater')
+        if dim_z < 1:
+            raise ValueError('dim_x must be 1 or greater')
+        if dim_u < 0:
+            raise ValueError('dim_x must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z

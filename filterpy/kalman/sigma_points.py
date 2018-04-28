@@ -139,8 +139,9 @@ class MerweScaledSigmaPoints(object):
             Ordered by Xi_0, Xi_{1..n}, Xi_{n+1..2n}
         """
 
-        assert self.n == np.size(x), "expected size {}, but size is {}".format(
-            self.n, np.size(x))
+        if self.n != np.size(x):
+            raise ValueError("expected size(x) {}, but size is {}".format(
+                self.n, np.size(x)))
 
         n = self.n
 
@@ -314,7 +315,10 @@ class JulierSigmaPoints(object):
 
         """
 
-        assert self.n == np.size(x)
+        if self.n != np.size(x):
+            raise ValueError("expected size(x) {}, but size is {}".format(
+                self.n, np.size(x)))
+
         n = self.n
 
         if np.isscalar(x):
@@ -461,8 +465,9 @@ class SimplexSigmaPoints(object):
             Ordered by Xi_0, Xi_{1..n}
         """
 
-        assert self.n == np.size(x), "expected size {}, but size is {}".format(
-            self.n, np.size(x))
+        if self.n != np.size(x):
+            raise ValueError("expected size(x) {}, but size is {}".format(
+                self.n, np.size(x)))
 
         n = self.n
 

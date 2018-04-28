@@ -70,11 +70,14 @@ class MMAEFilterBank(object):
         dim_x : float
             number of random variables in the state X
 
-        H :
+        H : Measurement matrix
         """
 
-        assert len(filters) == len(p)
-        assert dim_x > 0
+        if len(filters) != len(p):
+            raise ValueError('length of filters and p must be the same')
+
+        if dim_x < 1:
+            raise ValueError('dim_x must be >= 1')
 
         self.filters = filters
         self.p = np.asarray(p)

@@ -101,9 +101,8 @@ class FadingMemoryFilter(object):
 
     def __init__(self, x0, dt, order, beta):
 
-
-        assert order >= 0
-        assert order <= 2
+        if order < 0 or order > 2:
+            raise ValueError('order must be between 0 and 2')
 
         if np.isscalar(x0):
             self.x = np.zeros(order+1)
