@@ -30,7 +30,7 @@ from filterpy.common import pretty_str
 
 class UnscentedKalmanFilter(object):
     # pylint: disable=too-many-instance-attributes
-    # pylint: disable=C0103
+    # pylint: disable=invalid-name
     r"""
     Implements the Scaled Unscented Kalman filter (UKF) as defined by
     Simon Julier in [1], using the formulation provided by Wan and Merle
@@ -72,16 +72,55 @@ class UnscentedKalmanFilter(object):
 
     inv : function, default numpy.linalg.inv
         If you prefer another inverse function, such as the Moore-Penrose
-        pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+        pseudo inverse, set it to that instead:
 
+        .. code-block:: Python
+
+            kf.inv = np.linalg.pinv
 
 
     Examples
     --------
 
-    See my book Kalman and Bayesian Filters in Python
+    Simple example of a linear order 1 kinematic filter in 2D. There is no
+    need to use a UKF for this example, but it is easy to read.
+
+    >>> def fx(x, dt):
+    >>>     # state transition function - predict next state based
+    >>>     # on constant velocity model x = vt + x_0
+    >>>     F = np.array([[1, dt, 0, 0],
+    >>>                   [0, 1, 0, 0],
+    >>>                   [0, 0, 1, dt],
+    >>>                   [0, 0, 0, 1]], dtype=float)
+    >>>     return np.dot(F, x)
+    >>>
+    >>> def hx(x):
+    >>>    # measurement function - convert state into a measurement
+    >>>    # where measurements are [x_pos, y_pos]
+    >>>    return np.array([x[0], x[2]])
+    >>>
+    >>> dt = 0.1
+    >>> # create sigma points to use in the filter. This is standard for Gaussian processes
+    >>> points = MerweScaledSigmaPoints(4, alpha=.1, beta=2., kappa=-1)
+    >>>
+    >>> kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+    >>> kf.x = np.array([-1., 1., -1., 1]) # initial state
+    >>> kf.P *= 0.2 # initial uncertainty
+    >>> z_std = 0.1
+    >>> kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
+    >>> kf.Q = Q_discrete_white_noise(dim=2, dt=dt, var=0.01**2, block_size=2)
+    >>>
+    >>> zs = [[i+randn()*z_std, i+randn()*z_std] for i in range(50)] # measurements
+    >>> for z in zs:
+    >>>     kf.predict()
+    >>>     kf.update(z)
+    >>>     print(kf.x, 'log-likelihood', kf.log_likelihood)
+
+    For in depth explanations see my book Kalman and Bayesian Filters in Python
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
+    Also see the filterpy/kalman/tests subdirectory for test code that
+    may be illuminating.
 
     References
     ----------
@@ -144,7 +183,7 @@ class UnscentedKalmanFilter(object):
             parameterization. See either of those for the required
             signature of this class if you want to implement your own.
 
-        sqrt_fn : callable(ndarray), default = scipy.linalg.cholesky
+        sqrt_fn : callable(ndarray), default=None (implies scipy.linalg.cholesky)
             Defines how we compute the square root of a matrix, which has
             no unique answer. Cholesky is the default choice due to its
             speed. Typically your alternative choice will be
@@ -158,7 +197,7 @@ class UnscentedKalmanFilter(object):
             If your method returns a triangular matrix it must be upper
             triangular. Do not use numpy.linalg.cholesky - for historical
             reasons it returns a lower triangular matrix. The SciPy version
-            does the right thing.
+            does the right thing as far as this class is concerned.
 
         x_mean_fn : callable  (sigma_points, weights), optional
             Function that computes the mean of the provided sigma points
