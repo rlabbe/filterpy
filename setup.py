@@ -54,14 +54,16 @@ setup(
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.6',
+        
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX',
+        'Operating System :: Unix',
+        'Operating System :: MacOS'
     ],
 
     # What does your project relate to?
@@ -81,7 +83,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'filterpy': ['README.rst', 'filterpy/changelog.txt', 'LICENSE'],
+        'filterpy': ['README.rst', 'filterpy/changelog.txt', 'LICENSE', 'filterpy/kalman/tests/*.py'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may

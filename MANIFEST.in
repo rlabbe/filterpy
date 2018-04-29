@@ -1,3 +1,11 @@
 include filterpy/changelog.txt
 include LICENSE
-recursive-include tests *.py
+recursive-include filterpy/common/tests *.py
+recursive-include filterpy/discrete_bayes/tests *.py
+recursive-include filterpy/gh/tests *.py
+recursive-include filterpy/hinfinity/tests *.py
+recursive-include filterpy/kalman/tests *.py
+recursive-include filterpy/leastsq/tests *.py
+recursive-include filterpy/memory/tests *.py
+recursive-include filterpy/monte_carlo/tests *.py
+recursive-include filterpy/stats/tests *.py
