@@ -24,7 +24,7 @@ from filterpy.kalman import FadingKalmanFilter
 
 DO_PLOT = False
 def test_noisy_1d():
-    f = FadingKalmanFilter (5., dim_x=2, dim_z=1)
+    f = FadingKalmanFilter(5., dim_x=2, dim_z=1)
 
     f.X = np.array([[2.],
                     [0.]])       # initial state (location and velocity)

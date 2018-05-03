@@ -18,7 +18,7 @@ from numpy.random import randn
 import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import EnsembleKalmanFilter as EnKF
-from filterpy.common import Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise, Saver
 from math import cos, sin
 
 DO_PLOT = False
@@ -44,8 +44,8 @@ def test_1d_const_vel():
     measurements = []
     results = []
     ps = []
-
     zs = []
+    s = Saver(f)
     for t in range (0,100):
         # create measurement = t plus white noise
         z = t + randn()*std_noise
@@ -58,6 +58,8 @@ def test_1d_const_vel():
         results.append (f.x[0])
         measurements.append(z)
         ps.append(3*(f.P[0,0]**.5))
+        s.save()
+    s.to_array()
 
     results = np.asarray(results)
     ps = np.asarray(ps)
@@ -116,6 +118,9 @@ def test_circle():
         results.append (f.x)
         measurements.append(z)
 
+    #test that __repr__ doesn't assert
+    str(f)
+
     results = np.asarray(results)
     measurements = np.asarray(measurements)
 
@@ -135,7 +140,7 @@ def test_circle():
 
 if __name__ == '__main__':
     DO_PLOT = True
-    #test_circle ()
+    test_circle ()
     test_1d_const_vel()
 
 

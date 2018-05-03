@@ -26,74 +26,96 @@ from filterpy.common import pretty_str
 class SquareRootKalmanFilter(object):
 
     """
+
+    Create a Kalman filter which uses a square root implementation.
+    This uses the square root of the state covariance matrix, which doubles
+    the numerical precision of the filter, Therebuy reducing the effect
+    of round off errors.
+
+    It is likely that you do not need to use this algorithm; we understand
+    divergence issues very well now. However, if you expect the covariance
+    matrix P to vary by 20 or more orders of magnitude then perhaps this
+    will be useful to you, as the square root will vary by 10 orders
+    of magnitude. From my point of view this is merely a 'reference'
+    algorithm; I have not used this code in real world software. Brown[1]
+    has a useful discussion of when you might need to use the square
+    root form of this algorithm.
+
+    You are responsible for setting the various state variables to
+    reasonable values; the defaults below will not give you a functional
+    filter.
+
+    Parameters
+    ----------
+
+    dim_x : int
+        Number of state variables for the Kalman filter. For example, if
+        you are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
+
+        This is used to set the default size of P, Q, and u
+
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dim_u : int (optional)
+        size of the control input, if it is being used.
+        Default value of 0 indicates it is not used.
+
+
+
     Attributes
     ----------
 
-    x : ndarray (dim_x, 1), default = [0,0,0...0]
-        state of the filter
+    x : numpy.array(dim_x, 1)
+        State estimate
 
-    H : ndarray (dim_z, dim_x)
-        measurement function
+    P : numpy.array(dim_x, dim_x)
+        State covariance matrix
 
-    F : ndarray (dim_x, dim_x)
-        state transistion matrix
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) state estimate
 
-    B : ndarray (dim_x, dim_u), default 0
-        control transition matrix
+    P_prior : numpy.array(dim_x, dim_x)
+        Prior (predicted) state covariance matrix
+
+    R : numpy.array(dim_z, dim_z)
+        Measurement noise matrix
+
+    Q : numpy.array(dim_x, dim_x)
+        Process noise matrix
+
+    F : numpy.array()
+        State Transition matrix
+
+    H : numpy.array(dim_z, dim_x)
+        Measurement function
+
+    y : numpy.array
+        Residual of the update step. Read only.
+
+    K : numpy.array(dim_x, dim_z)
+        Kalman gain of the update step. Read only.
+
+    S :  numpy.array
+        Systen uncertaintly projected to measurement space. Read only.
 
     Examples
     --------
 
     See my book Kalman and Bayesian Filters in Python
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
+
+    References
+    ----------
+
+    [1] Robert Grover Brown. Introduction to Random Signals and Applied
+        Kalman Filtering. Wiley and sons, 2012.
+
     """
 
     def __init__(self, dim_x, dim_z, dim_u=0):
-        """ Create a Kalman filter which uses a square root implementation.
-        This uses the square root of the state covariance matrix, which doubles
-        the numerical precision of the filter, Therebuy reducing the effect
-        of round off errors.
-
-        It is likely that you do not need to use this algorithm; we understand
-        divergence issues very well now. However, if you expect the covariance
-        matrix P to vary by 20 or more orders of magnitude then perhaps this
-        will be useful to you, as the square root will vary by 10 orders
-        of magnitude. From my point of view this is merely a 'reference'
-        algorithm; I have not used this code in real world software. Brown[1]
-        has a useful discussion of when you might need to use the square
-        root form of this algorithm.
-
-        You are responsible for setting the various state variables to
-        reasonable values; the defaults below will not give you a functional
-        filter.
-
-        Parameters
-        ----------
-
-        dim_x : int
-            Number of state variables for the Kalman filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
-
-            This is used to set the default size of P, Q, and u
-
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
-
-        dim_u : int (optional)
-            size of the control input, if it is being used.
-            Default value of 0 indicates it is not used.
-
-
-
-        References
-        ----------
-
-        [1] Robert Grover Brown. Introduction to Random Signals and Applied
-            Kalman Filtering. Wiley and sons, 2012.
-        """
-
         if dim_z < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
@@ -128,6 +150,10 @@ class SquareRootKalmanFilter(object):
         self._I = np.eye(dim_x)
 
         self.M = np.zeros((dim_z + dim_x, dim_z + dim_x))
+
+        # copy prior
+        self.x_prior = self.x[:]
+        self._P1_2_prior = self._P1_2[:]
 
 
     def update(self, z, R2=None):
@@ -178,12 +204,14 @@ class SquareRootKalmanFilter(object):
 
 
     def predict(self, u=0):
-        """ Predict next position.
+        """
+        Predict next state (prior) using the Kalman filter state propagation
+        equations.
 
         Parameters
         ----------
 
-        u : np.array
+        u : np.array, optional
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
         """
@@ -194,6 +222,10 @@ class SquareRootKalmanFilter(object):
         # P = FPF' + Q
         _, P2 = qr(np.hstack([dot(self.F, self._P1_2), self._Q1_2]).T)
         self._P1_2 = P2[:self.dim_x, :self.dim_x].T
+
+        # copy prior
+        self.x_prior = self.x[:]
+        self._P1_2_prior = self._P1_2[:]
 
 
     def residual_of(self, z):
@@ -244,6 +276,11 @@ class SquareRootKalmanFilter(object):
     def P(self):
         """ covariance matrix"""
         return dot(self._P1_2.T, self._P1_2)
+
+    @property
+    def P_prior(self):
+        """ covariance matrix"""
+        return dot(self._P1_2_prior.T, self._P1_2_prior)
 
 
     @property

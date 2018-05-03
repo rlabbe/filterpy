@@ -25,7 +25,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import KalmanFilter, MMAEFilterBank
 from numpy import array
-from filterpy.common import Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise, Saver
 import matplotlib.pyplot as plt
 from numpy.random import randn
 from math import sin, cos, radians
@@ -168,6 +168,7 @@ def test_MMAE2():
 
     xs, probs = [], []
     cvxs, caxs = [], []
+    s = Saver(bank)
     for i, z in enumerate(z_xs):
         bank.predict()
         bank.update(z)
@@ -175,8 +176,9 @@ def test_MMAE2():
         cvxs.append(cv.x[0])
         caxs.append(ca.x[0])
         print(i, cv.likelihood, ca.likelihood, bank.p)
-
+        s.save()
         probs.append(bank.p[0] / bank.p[1])
+    s.to_array()
 
     if DO_PLOT:
         plt.subplot(121)

@@ -17,6 +17,7 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from filterpy.common import Saver
 from filterpy.gh import (GHFilter, GHKFilter, least_squares_parameters,
                          optimal_noise_smoothing, GHFilterOrder)
 from numpy import array
@@ -43,6 +44,9 @@ def test_1d_array():
     f1 = GHFilter (0, 0, 1, .8, .2)
     f2 = GHFilter (array([0]), array([0]), 1, .8, .2)
 
+    str(f1)
+    str(f2)
+
     # test both give same answers, and that we can
     # use a scalar for the measurment
     for i in range(1,10):
@@ -55,14 +59,22 @@ def test_1d_array():
         assert f1.VRF() == f2.VRF()
 
     # test using an array for the measurement
+    s1 = Saver(f1)
+    s2 = Saver(f2)
+
     for i in range(1,10):
         f1.update(i)
         f2.update(array([i]))
+
+        s1.save()
+        s2.save()
 
         assert f1.x == f2.x[0]
         assert f1.dx == f2.dx[0]
 
         assert f1.VRF() == f2.VRF()
+    s1.to_array()
+    s2.to_array()
 
 
 def test_2d_array():

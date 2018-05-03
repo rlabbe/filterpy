@@ -5,7 +5,7 @@ Created on Sun Jun 26 08:03:07 2016
 @author: rlabbe
 """
 
-
+from filterpy.common import Saver
 from filterpy.kalman import CubatureKalmanFilter as CKF
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import MerweScaledSigmaPoints
@@ -91,7 +91,6 @@ def update(h, z, x, P, R):
 
 
 def test_1d():
-
     def fx(x, dt):
         F = np.array([[1., dt],
                       [0,  1]])
@@ -100,7 +99,6 @@ def test_1d():
 
     def hx(x):
         return np.array([[x[0]]])
-
 
 
     ckf = CKF(dim_x=2, dim_z=1, dt=0.1, hx=hx, fx=fx)
@@ -123,7 +121,7 @@ def test_1d():
     kf.R *= 0.05
     kf.Q = np.array([[0., 0], [0., .001]])
 
-
+    s = Saver(kf)
     for i in range(50):
         z = np.array([[i+randn()*0.1]])
         #xx, pp, Sx = predict(f, x, P, Q)
@@ -134,6 +132,8 @@ def test_1d():
         kf.update(z[0])
         assert abs(ckf.x[0] -kf.x[0]) < 1e-10
         assert abs(ckf.x[1] -kf.x[1]) < 1e-10
+        s.save()
+    s.to_array()
 
 
 if __name__ == "__main__":

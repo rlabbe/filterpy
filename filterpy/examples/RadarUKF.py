@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
+
 """Copyright 2015 Roger R Labbe Jr.
 
 FilterPy library.
@@ -19,9 +24,6 @@ for more information.
 """ This is very old code, and no longer runs due to reorgization of the
 UKF code"""
 
-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 import numpy as np
 import scipy.linalg as linalg

@@ -37,8 +37,102 @@ class UnscentedKalmanFilter(object):
     in [2]. This filter scales the sigma points to avoid strong nonlinearities.
 
 
-    You will have to set the following attributes after constructing this
-    object for the filter to perform properly.
+    Parameters
+    ----------
+
+    dim_x : int
+        Number of state variables for the filter. For example, if
+        you are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
+
+
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dt : float
+        Time between steps in seconds.
+
+    hx : function(x)
+        Measurement function. Converts state vector x into a measurement
+        vector of shape (dim_z).
+
+    fx : function(x,dt)
+        function that returns the state x transformed by the
+        state transistion function. dt is the time step in seconds.
+
+    points : class
+        Class which computes the sigma points and weights for a UKF
+        algorithm. You can vary the UKF implementation by changing this
+        class. For example, MerweScaledSigmaPoints implements the alpha,
+        beta, kappa parameterization of Van der Merwe, and
+        JulierSigmaPoints implements Julier's original kappa
+        parameterization. See either of those for the required
+        signature of this class if you want to implement your own.
+
+    sqrt_fn : callable(ndarray), default=None (implies scipy.linalg.cholesky)
+        Defines how we compute the square root of a matrix, which has
+        no unique answer. Cholesky is the default choice due to its
+        speed. Typically your alternative choice will be
+        scipy.linalg.sqrtm. Different choices affect how the sigma points
+        are arranged relative to the eigenvectors of the covariance matrix.
+        Usually this will not matter to you; if so the default cholesky()
+        yields maximal performance. As of van der Merwe's dissertation of
+        2004 [6] this was not a well reseached area so I have no advice
+        to give you.
+
+        If your method returns a triangular matrix it must be upper
+        triangular. Do not use numpy.linalg.cholesky - for historical
+        reasons it returns a lower triangular matrix. The SciPy version
+        does the right thing as far as this class is concerned.
+
+    x_mean_fn : callable  (sigma_points, weights), optional
+        Function that computes the mean of the provided sigma points
+        and weights. Use this if your state variable contains nonlinear
+        values such as angles which cannot be summed.
+
+        .. code-block:: Python
+
+            def state_mean(sigmas, Wm):
+                x = np.zeros(3)
+                sum_sin, sum_cos = 0., 0.
+
+                for i in range(len(sigmas)):
+                    s = sigmas[i]
+                    x[0] += s[0] * Wm[i]
+                    x[1] += s[1] * Wm[i]
+                    sum_sin += sin(s[2])*Wm[i]
+                    sum_cos += cos(s[2])*Wm[i]
+                x[2] = atan2(sum_sin, sum_cos)
+                return x
+
+    z_mean_fn : callable  (sigma_points, weights), optional
+        Same as x_mean_fn, except it is called for sigma points which
+        form the measurements after being passed through hx().
+
+    residual_x : callable (x, y), optional
+    residual_z : callable (x, y), optional
+        Function that computes the residual (difference) between x and y.
+        You will have to supply this if your state variable cannot support
+        subtraction, such as angles (359-1 degreees is 2, not 358). x and y
+        are state vectors, not scalars. One is for the state variable,
+        the other is for the measurement state.
+
+        .. code-block:: Python
+
+            def residual(a, b):
+                y = a[0] - b[0]
+                if y > np.pi:
+                    y -= 2*np.pi
+                if y < -np.pi:
+                    y = 2*np.pi
+                return y
+
+    compute_log_likelihood : bool (default = True)
+        Computes log likelihood by default, but this can be a slow
+        computation, so if you never use it you can turn this computation
+        off.
+
 
     Attributes
     ----------
@@ -48,6 +142,12 @@ class UnscentedKalmanFilter(object):
 
     P : numpy.array(dim_x, dim_x)
         covariance estimate matrix
+
+    x_prior : numpy.array(dim_x)
+        prior (predicted) state estimate vector
+
+    P_prior : numpy.array(dim_x, dim_x)
+        prior (predicted) state estimate covariance
 
     R : numpy.array(dim_z, dim_z)
         measurement noise matrix
@@ -61,14 +161,17 @@ class UnscentedKalmanFilter(object):
     y : numpy.array
         innovation residual
 
-    x : numpy.array(dim_x)
-        predicted/updated state (result of predict()/update())
-
-    P : numpy.array(dim_x, dim_x)
-        predicted/updated covariance matrix (result of predict()/update())
-
     log_likelihood : scalar
         Log likelihood of last measurement update.
+
+    likelihood : float
+        likelihood of last measurment. Read only.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
 
     inv : function, default numpy.linalg.inv
         If you prefer another inverse function, such as the Moore-Penrose
@@ -131,13 +234,29 @@ class UnscentedKalmanFilter(object):
         Online copy:
         https://www.cs.unc.edu/~welch/kalman/media/pdf/ACC02-IEEE1357.PDF
 
-
     .. [2] E. A. Wan and R. Van der Merwe, “The unscented Kalman filter for
         nonlinear estimation,” in Proc. Symp. Adaptive Syst. Signal
         Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
 
         Online Copy:
         https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
+
+    .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
+           the nonlinear transformation of means and covariances in filters
+           and estimators," IEEE Transactions on Automatic Control, 45(3),
+           pp. 477-482 (March 2000).
+
+    .. [4] E. A. Wan and R. Van der Merwe, “The Unscented Kalman filter for
+           Nonlinear Estimation,” in Proc. Symp. Adaptive Syst. Signal
+           Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
+
+           https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
+
+    .. [5] Wan, Merle "The Unscented Kalman Filter," chapter in *Kalman
+           Filtering and Neural Networks*, John Wiley & Sons, Inc., 2001.
+
+    .. [6] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
+           Inference in Dynamic State-Space Models" (Doctoral dissertation)
     """
 
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
@@ -150,129 +269,16 @@ class UnscentedKalmanFilter(object):
         various state variables to reasonable values; the defaults below will
         not give you a functional filter.
 
-        Parameters
-        ----------
-
-        dim_x : int
-            Number of state variables for the filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
-
-
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
-
-        dt : float
-            Time between steps in seconds.
-
-        hx : function(x)
-            Measurement function. Converts state vector x into a measurement
-            vector of shape (dim_z).
-
-        fx : function(x,dt)
-            function that returns the state x transformed by the
-            state transistion function. dt is the time step in seconds.
-
-        points : class
-            Class which computes the sigma points and weights for a UKF
-            algorithm. You can vary the UKF implementation by changing this
-            class. For example, MerweScaledSigmaPoints implements the alpha,
-            beta, kappa parameterization of Van der Merwe, and
-            JulierSigmaPoints implements Julier's original kappa
-            parameterization. See either of those for the required
-            signature of this class if you want to implement your own.
-
-        sqrt_fn : callable(ndarray), default=None (implies scipy.linalg.cholesky)
-            Defines how we compute the square root of a matrix, which has
-            no unique answer. Cholesky is the default choice due to its
-            speed. Typically your alternative choice will be
-            scipy.linalg.sqrtm. Different choices affect how the sigma points
-            are arranged relative to the eigenvectors of the covariance matrix.
-            Usually this will not matter to you; if so the default cholesky()
-            yields maximal performance. As of van der Merwe's dissertation of
-            2004 [6] this was not a well reseached area so I have no advice
-            to give you.
-
-            If your method returns a triangular matrix it must be upper
-            triangular. Do not use numpy.linalg.cholesky - for historical
-            reasons it returns a lower triangular matrix. The SciPy version
-            does the right thing as far as this class is concerned.
-
-        x_mean_fn : callable  (sigma_points, weights), optional
-            Function that computes the mean of the provided sigma points
-            and weights. Use this if your state variable contains nonlinear
-            values such as angles which cannot be summed.
-
-            .. code-block:: Python
-
-                def state_mean(sigmas, Wm):
-                    x = np.zeros(3)
-                    sum_sin, sum_cos = 0., 0.
-
-                    for i in range(len(sigmas)):
-                        s = sigmas[i]
-                        x[0] += s[0] * Wm[i]
-                        x[1] += s[1] * Wm[i]
-                        sum_sin += sin(s[2])*Wm[i]
-                        sum_cos += cos(s[2])*Wm[i]
-                    x[2] = atan2(sum_sin, sum_cos)
-                    return x
-
-        z_mean_fn : callable  (sigma_points, weights), optional
-            Same as x_mean_fn, except it is called for sigma points which
-            form the measurements after being passed through hx().
-
-        residual_x : callable (x, y), optional
-        residual_z : callable (x, y), optional
-            Function that computes the residual (difference) between x and y.
-            You will have to supply this if your state variable cannot support
-            subtraction, such as angles (359-1 degreees is 2, not 358). x and y
-            are state vectors, not scalars. One is for the state variable,
-            the other is for the measurement state.
-
-            .. code-block:: Python
-
-                def residual(a, b):
-                    y = a[0] - b[0]
-                    if y > np.pi:
-                        y -= 2*np.pi
-                    if y < -np.pi:
-                        y = 2*np.pi
-                    return y
-
-        compute_log_likelihood : bool (default = True)
-            Computes log likelihood by default, but this can be a slow
-            computation, so if you never use it you can turn this computation
-            off.
-
-        References
-        ----------
-
-        .. [3] S. Julier, J. Uhlmann, and H. Durrant-Whyte. "A new method for
-               the nonlinear transformation of means and covariances in filters
-               and estimators," IEEE Transactions on Automatic Control, 45(3),
-               pp. 477-482 (March 2000).
-
-        .. [4] E. A. Wan and R. Van der Merwe, “The Unscented Kalman filter for
-               Nonlinear Estimation,” in Proc. Symp. Adaptive Syst. Signal
-               Process., Commun. Contr., Lake Louise, AB, Canada, Oct. 2000.
-
-               https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
-
-        .. [5] Wan, Merle "The Unscented Kalman Filter," chapter in *Kalman
-               Filtering and Neural Networks*, John Wiley & Sons, Inc., 2001.
-
-        .. [6] R. Van der Merwe "Sigma-Point Kalman Filters for Probabilitic
-               Inference in Dynamic State-Space Models" (Doctoral dissertation)
         """
 
         #pylint: disable=too-many-arguments
 
-        self.Q = eye(dim_x)
-        self.R = eye(dim_z)
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
+        self.Q = eye(dim_x)
+        self.R = eye(dim_z)
         self._dim_x = dim_x
         self._dim_z = dim_z
         self.points_fn = points
@@ -285,6 +291,7 @@ class UnscentedKalmanFilter(object):
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
+        self.likelihood = sys.float_info.min
 
         if sqrt_fn is None:
             self.msqrt = cholesky
@@ -310,10 +317,14 @@ class UnscentedKalmanFilter(object):
         self.sigmas_f = zeros((self._num_sigmas, self._dim_x))
         self.sigmas_h = zeros((self._num_sigmas, self._dim_z))
 
-        self.K = 0. # Kalman gain
-        self.y = 0. # residual
+        self.K = np.zeros((dim_x, dim_z)) # Kalman gain
+        self.y = np.zeros((dim_z)) # residual
 
         self.inv = np.linalg.inv
+
+        # save prior
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
 
 
     def predict(self, dt=None, UT=None, fx_args=()):
@@ -354,10 +365,13 @@ class UnscentedKalmanFilter(object):
         # calculate sigma points for given mean and covariance
         self.compute_process_sigmas(dt, *fx_args)
 
-        #and pass sigmas through the unscented transform
+        #and pass sigmas through the unscented transform to compute prior
         self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
                             self.x_mean, self.residual_x)
 
+        # save prior
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
 
 
     def update(self, z, R=None, UT=None, hx_args=()):
@@ -419,6 +433,9 @@ class UnscentedKalmanFilter(object):
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=Pz)
+            self.likelihood = math.exp(self.log_likelihood)
+            if self.likelihood == 0:
+                self.likelihood = sys.float_info.min
 
 
     def cross_variance(self, x, z, sigmas_f, sigmas_h):
@@ -450,27 +467,7 @@ class UnscentedKalmanFilter(object):
             self.sigmas_f[i] = self.fx(s, dt, *fx_args)
 
 
-    @property
-    def likelihood(self):
-        """
-        likelihood of last measurment.
-
-        Computed from the log-likelihood. The log-likelihood can be very
-        small,  meaning a large negative value such as -28000. Taking the
-        exp() of that results in 0.0, which can break typical algorithms
-        which multiply by this value, so by default we always return a
-        number >= sys.float_info.min.
-
-        But really, this is a bad measure because of the scaling that is
-        involved - try to use log-likelihood in your equations!"""
-
-        lh = math.exp(self.log_likelihood)
-        if lh == 0:
-            lh = sys.float_info.min
-        return lh
-
-
-    def batch_filter(self, zs, Rs=None, UT=None):
+    def batch_filter(self, zs, Rs=None, UT=None, saver=None):
         """
         Performs the UKF filter over the list of measurement in `zs`.
 
@@ -491,6 +488,10 @@ class UnscentedKalmanFilter(object):
             points passed through hx. Typically the default function will
             work - you can use x_mean_fn and z_mean_fn to alter the behavior
             of the unscented transform.
+
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
 
         Returns
         -------
@@ -536,6 +537,9 @@ class UnscentedKalmanFilter(object):
             self.update(z, r, UT=UT)
             means[i, :] = self.x
             covariances[i, :, :] = self.P
+
+            if saver is not None:
+                saver.save()
 
         return (means, covariances)
 
@@ -644,11 +648,14 @@ class UnscentedKalmanFilter(object):
             'UnscentedKalmanFilter object',
             pretty_str('x', self.x),
             pretty_str('P', self.P),
+            pretty_str('x_prior', self.x_prior),
+            pretty_str('P_prior', self.P_prior),
             pretty_str('Q', self.Q),
             pretty_str('R', self.R),
             pretty_str('K', self.K),
             pretty_str('y', self.y),
             pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('likelihood', self.likelihood),
             pretty_str('sigmas_f', self.sigmas_f),
             pretty_str('h', self.sigmas_h),
             pretty_str('Wm', self.Wm),

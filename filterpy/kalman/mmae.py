@@ -21,10 +21,27 @@ from filterpy.common import pretty_str
 
 
 class MMAEFilterBank(object):
-    """ Implements the fixed Multiple Model Adaptive Estimator (MMAE). This
+    """
+    Implements the fixed Multiple Model Adaptive Estimator (MMAE). This
     is a bank of independent Kalman filters. This estimator computes the
     likelihood that each filter is the correct one, and blends their state
     estimates weighted by their likelihood to produce the state estimate.
+
+    Parameters
+    ----------
+
+    filters : list of Kalman filters
+        List of Kalman filters.
+
+    p : list-like of floats
+       Initial probability that each filter is the correct one. In general
+       you'd probably set each element to 1./len(p).
+
+    dim_x : float
+        number of random variables in the state X
+
+    H : Measurement matrix
+
 
     Examples
     --------
@@ -55,24 +72,6 @@ class MMAEFilterBank(object):
     """
 
     def __init__(self, filters, p, dim_x, H=None):
-        """ Creates an fixed MMAE Estimator.
-
-        Parameters
-        ----------
-
-        filters : list of Kalman filters
-            List of Kalman filters.
-
-        p : list-like of floats
-           Initial probability that each filter is the correct one. In general
-           you'd probably set each element to 1./len(p).
-
-        dim_x : float
-            number of random variables in the state X
-
-        H : Measurement matrix
-        """
-
         if len(filters) != len(p):
             raise ValueError('length of filters and p must be the same')
 
@@ -82,13 +81,23 @@ class MMAEFilterBank(object):
         self.filters = filters
         self.p = np.asarray(p)
         self.dim_x = dim_x
-        self.x = None
-        self.P = None
-        self.H = H
+        self.H = H[:]
+
+        # try to form a reasonable initial values, but good luck!
+        try:
+            self.z = filters[0].z[:]
+            self.x = filters[0].x[:]
+            self.P = filters[0].P[:]
+
+        except AttributeError:
+            self.z = 0
+            self.x = None
+            self.P = None
 
 
     def predict(self, u=0):
-        """ Predict next position using the Kalman filter state propagation
+        """
+        Predict next position using the Kalman filter state propagation
         equations for each filter in the bank.
 
         Parameters
@@ -151,6 +160,12 @@ class MMAEFilterBank(object):
         for x, f, p in zip(self.x, self.filters, self.p):
             y = f.x - x
             self.P += p*(np.outer(y, y) + f.P)
+
+        try:
+            self.z = z[:]
+        except IndexError:
+            self.z = z
+
 
     def __repr__(self):
         return '\n'.join([

@@ -785,6 +785,7 @@ def plot_covariance_ellipse(
                     xlim=xlim, ylim=ylim, ls=ls)
 
 
+
 def _std_tuple_of(var=None, std=None, interval=None):
     """
     Convienence function for plotting. Given one of var, standard

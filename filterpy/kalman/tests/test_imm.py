@@ -23,9 +23,9 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
-from filterpy.kalman import IMMEstimator, KalmanFilter, MMAEFilterBank
-from numpy import array, asarray
-from filterpy.common import Q_discrete_white_noise
+from filterpy.kalman import IMMEstimator, KalmanFilter
+from numpy import array
+from filterpy.common import Q_discrete_white_noise, Saver
 import matplotlib.pyplot as plt
 from numpy.random import randn
 from math import sin, cos, radians
@@ -229,8 +229,12 @@ def test_imm():
 
     bank = IMMEstimator(filters, (0.5, 0.5), trans)
 
+    # ensure __repr__ doesn't have problems
+    str(bank)
+
     xs, probs = [], []
     cvxs, caxs = [], []
+    s = Saver(bank)
     for i, z in enumerate(zs[0:10]):
         z = np.array([z]).T
         bank.update(z)
@@ -243,6 +247,8 @@ def test_imm():
 
         #print('p', bank.p)
         probs.append(bank.mu.copy())
+        s.save()
+    s.to_array()
 
     if DO_PLOT:
         xs = np.array(xs)

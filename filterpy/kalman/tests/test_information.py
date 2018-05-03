@@ -20,7 +20,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.linalg import inv
+
+from filterpy.common import Saver
 from filterpy.kalman import KalmanFilter, InformationFilter
 
 
@@ -81,8 +82,12 @@ def test_1d_0P():
 
 
 def test_1d():
-    f = KalmanFilter (dim_x=2, dim_z=1)
-    inf = InformationFilter (dim_x=2, dim_z=1)
+    f = KalmanFilter(dim_x=2, dim_z=1)
+    inf = InformationFilter(dim_x=2, dim_z=1)
+
+    # ensure __repr__ doesn't assert
+    str(inf)
+
 
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
@@ -103,9 +108,8 @@ def test_1d():
     m = []
     r = []
     r2 = []
-
-
     zs = []
+    s = Saver(inf)
     for t in range (100):
         # create measurement = t plus white noise
         z = t + random.randn()*20
@@ -122,8 +126,10 @@ def test_1d():
         r.append (f.x[0,0])
         r2.append (inf.x[0,0])
         m.append(z)
+        s.save()
 
         assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12
+
 
     if DO_PLOT:
         plt.plot(m)

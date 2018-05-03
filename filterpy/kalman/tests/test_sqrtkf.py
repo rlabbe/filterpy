@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
+from filterpy.common import Saver
 from filterpy.kalman import SquareRootKalmanFilter, KalmanFilter
 
 DO_PLOT = False
@@ -50,10 +51,15 @@ def test_noisy_1d():
     fsq.R *= 5                    # state uncertainty
     fsq.Q *= 0.0001               # process uncertainty
 
+
+    # does __repr__ work?
+    str(fsq)
+
     measurements = []
     results = []
 
     zs = []
+    s = Saver(fsq)
     for t in range (100):
         # create measurement = t plus white noise
         z = t + random.randn()*20
@@ -72,11 +78,8 @@ def test_noisy_1d():
         # save data
         results.append (f.x[0,0])
         measurements.append(z)
-
-
-    p = f.P - fsq.P
-    print(f.P)
-    print(fsq.P)
+        s.save()
+    s.to_array()
 
     for i in range(f.P.shape[0]):
         assert abs(f.P[i,i] - fsq.P[i,i]) < 0.01

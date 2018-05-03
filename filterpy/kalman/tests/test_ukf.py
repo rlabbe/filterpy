@@ -21,7 +21,6 @@ for more information.
 
 
 
-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -36,7 +35,7 @@ from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints, SimplexSigmaPoints,
                              KalmanFilter)
-from filterpy.common import Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise, Saver
 import filterpy.stats as stats
 
 
@@ -199,6 +198,8 @@ def test_radar():
     sp = JulierSigmaPoints(n=3, kappa=0.)
     # sp = SimplexSigmaPoints(n=3)
     kf = UKF(3, 1, dt, fx=fx, hx=hx, points=sp)
+    assert np.allclose(kf.x, kf.x_prior)
+    assert np.allclose(kf.P, kf.P_prior)
 
     # test __repr__ doesn't crash
     str(kf)
@@ -262,16 +263,13 @@ def test_linear_2d_merwe():
 
 
     kf.x = np.array([-1., 1., -1., 1])
-    kf.P *= 0.0001
+    kf.P *= 1.1
 
 
     # test __repr__ doesn't crash
     str(kf)
 
-    zs = []
-    for i in range(20):
-        z = np.array([i+randn()*0.1, i+randn()*0.1])
-        zs.append(z)
+    zs = [[i+randn()*0.1, i+randn()*0.1] for i in range(20)]
 
     Ms, Ps = kf.batch_filter(zs)
     smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
@@ -901,6 +899,9 @@ def test_linear_rts():
     ukf.x = np.array([0., 1.])
     ukf.R = oc[:]
     ukf.Q = tc[:]
+    s = Saver(ukf)
+    s.save()
+    s.to_array()
 
 
     kf = KalmanFilter(dim_x=2, dim_z=1)
@@ -946,7 +947,49 @@ def test_linear_rts():
     return ukf
 
 
+
+def _test_log_likelihood():
+
+    from filterpy.common import Saver
+
+    def fx(x, dt):
+        F = np.array([[1, dt, 0, 0],
+                      [0, 1, 0, 0],
+                      [0, 0, 1, dt],
+                      [0, 0, 0, 1]], dtype=float)
+
+        return np.dot(F, x)
+
+    def hx(x):
+        return np.array([x[0], x[2]])
+
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(4, .1, 2., -1)
+    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+
+    z_std = 0.1
+    kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
+    kf.Q = Q_discrete_white_noise(dim=2, dt=dt, var=1.1**2, block_size=2)
+
+    kf.x = np.array([-1., 1., -1., 1])
+    kf.P *= 1.
+
+    zs = [[i+randn()*z_std, i+randn()*z_std] for i in range(40)]
+    s = Saver(kf)
+    for z in zs:
+        kf.predict()
+        kf.update(z)
+        print(kf.x, kf.log_likelihood, kf.P.diagonal())
+        s.save()
+    s.to_array()
+    plt.plot(s.x[:, 0], s.x[:, 2])
+
+
+
 if __name__ == "__main__":
+
+    _test_log_likelihood()
 
     test_linear_rts()
 
@@ -990,3 +1033,4 @@ if __name__ == "__main__":
 #    sigma_points ([5,2],9*np.eye(2), 2)
     #plt.legend()
     #plt.show()
+

@@ -111,8 +111,8 @@ def one_run_test_fls():
 
     xs, x = fls.smooth_batch(zs, N)
 
-    M, P, *_ = kf.batch_filter(zs)
-    rts_x, *_ = kf.rts_smoother(M, P)
+    M, P, _, _ = kf.batch_filter(zs)
+    rts_x, _, _, _ = kf.rts_smoother(M, P)
 
     xfl = xs[:,0].T[0]
     xkf = M[:,0].T[0]

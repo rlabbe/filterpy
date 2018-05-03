@@ -19,6 +19,7 @@ for more information.
 """
 
 from __future__ import absolute_import, division
+import copy
 import warnings
 import numpy as np
 from numpy import dot, zeros, eye
@@ -83,6 +84,7 @@ class HInfinityFilter(object):
 
         self.K = 0 # H-infinity gain
         self.y = zeros((dim_z, 1))
+        self.z = zeros((dim_z, 1))
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -133,6 +135,11 @@ class HInfinityFilter(object):
         # force P to be symmetric
         self.P = (self.P + self.P.T) / 2
 
+        try:
+            self.z = z[:]
+        except:
+            self.z = copy.deepcopy(z)
+
 
     def predict(self, u=0):
         """
@@ -149,7 +156,7 @@ class HInfinityFilter(object):
         self.x = dot(self.F, self.x) + dot(self.B, u)
 
 
-    def batch_filter(self, Zs,update_first=False):
+    def batch_filter(self, Zs,update_first=False, saver=False):
         """ Batch processes a sequences of measurements.
 
         Parameters
@@ -161,6 +168,10 @@ class HInfinityFilter(object):
         update_first : bool, default=False, optional,
             controls whether the order of operations is update followed by
             predict, or predict followed by update.
+
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
 
         Returns
         -------
@@ -175,7 +186,6 @@ class HInfinityFilter(object):
 
         n = np.size(Zs, 0)
 
-
         # mean estimates from H-Infinity Filter
         means = zeros((n, self.dim_x, 1))
 
@@ -188,6 +198,9 @@ class HInfinityFilter(object):
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
                 self.predict()
+
+                if saver is not None:
+                    saver.save()
         else:
             for i, z in enumerate(Zs):
                 self.predict()
@@ -195,6 +208,9 @@ class HInfinityFilter(object):
 
                 means[i, :] = self.x
                 covariances[i, :, :] = self.P
+
+                if saver is not None:
+                    saver.save()
 
         return (means, covariances)
 

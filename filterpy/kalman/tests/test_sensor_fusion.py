@@ -150,3 +150,5 @@ if __name__ == "__main__":
     DO_PLOT=True
     sensor_fusion_test(2,4e100)
     single_measurement_test()
+
+    test_fusion()

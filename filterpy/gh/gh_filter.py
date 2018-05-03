@@ -35,62 +35,82 @@ class GHFilterOrder(object):
     filter is called the g-h-k filter. I'm not aware of any filter name
     that encompasses orders 0, 1, and 2 under one name, or I would use it.
 
-    |
-    |
 
-    **Methods**
+    Parameters
+    ----------
+
+    x0 : 1D np.array or scalar
+        Initial value for the filter state. Each value can be a scalar
+        or a np.array.
+
+        You can use a scalar for x0. If order > 0, then 0.0 is assumed
+        for the higher order terms.
+
+        x[0] is the value being tracked
+        x[1] is the first derivative (for order 1 and 2 filters)
+        x[2] is the second derivative (for order 2 filters)
+
+    dt : scalar
+        timestep
+
+    order : int
+        order of the filter. Defines the order of the system
+        0 - assumes system of form x = a_0 + a_1*t
+        1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
+        2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
+
+    g : float
+        filter g gain parameter.
+
+    h : float, optional
+        filter h gain parameter, order 1 and 2 only
+
+    k : float, optional
+        filter k gain parameter, order 2 only
+
+    Atrributes
+    -------
+
+    x : np.array
+        State of the filter.
+
+        x[0] is the value being tracked
+        x[1] is the derivative of x[0] (order 1 and 2 only)
+        x[2] is the 2nd derivative of x[0] (order 2 only)
+
+        This is always an np.array, even for order 0 where you can
+        initialize x0 with a scalar.
+
+    y : np.array
+        Residual - difference between the measurement and the prediction
+
+    dt : scalar
+        timestep
+
+    order : int
+        order of the filter. Defines the order of the system
+        0 - assumes system of form x = a_0 + a_1*t
+        1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
+        2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
+
+    g : float
+        filter g gain parameter.
+
+    h : float
+        filter h gain parameter, order 1 and 2 only
+
+    k : float
+        filter k gain parameter, order 2 only
+
+    z : 1D np.array or scalar
+        measurement passed into update()
+
     """
 
 
     def __init__(self, x0, dt, order, g, h=None, k=None):
         """ Creates a g-h filter of order 0, 1, or 2.
 
-        Parameters
-        ----------
-
-        x0 : 1D np.array or scalar
-            Initial value for the filter state. Each value can be a scalar
-            or a np.array.
-
-            You can use a scalar for x0. If order > 0, then 0.0 is assumed
-            for the higher order terms.
-
-            x[0] is the value being tracked
-            x[1] is the first derivative (for order 1 and 2 filters)
-            x[2] is the second derivative (for order 2 filters)
-
-        dt : scalar
-            timestep
-
-        order : int
-            order of the filter. Defines the order of the system
-            0 - assumes system of form x = a_0 + a_1*t
-            1 - assumes system of form x = a_0 +a_1*t + a_2*t^2
-            2 - assumes system of form x = a_0 +a_1*t + a_2*t^2 + a_3*t^3
-
-        g : float
-            filter g gain parameter.
-
-        h : float, optional
-            filter h gain parameter, order 1 and 2 only
-
-        k : float, optional
-            filter k gain parameter, order 2 only
-
-        Members
-        -------
-
-        self.x : np.array
-            State of the filter.
-            x[0] is the value being tracked
-            x[1] is the derivative of x[0] (order 1 and 2 only)
-            x[2] is the 2nd derivative of x[0] (order 2 only)
-
-            This is always an np.array, even for order 0 where you can
-            initialize x0 with a scalar.
-
-        self.y : np.array
-            difference between the measurement and the prediction
         """
 
         if order < 0 or order > 2:
@@ -108,11 +128,14 @@ class GHFilterOrder(object):
         self.g = g
         self.h = h
         self.k = k
-        self.y = 0.
+        self.y = np.zeros(len(self.x)) # residual
+        self.z = np.zeros(len(self.x)) # last measurement
+
 
 
     def update(self, z, g=None, h=None, k=None):
-        """ update the filter with measurement z. z must be the same type
+        """
+        Update the filter with measurement z. z must be the same type
         or treatable as the same type as self.x[0].
         """
 
@@ -135,6 +158,8 @@ class GHFilterOrder(object):
             self.x[0] = x + dxdt + g*self.y
             self.x[1] = dx       + h*self.y / self.dt
 
+            self.z = z
+
         else: # order == 2
             if g is None:
                 g = self.g
@@ -155,14 +180,85 @@ class GHFilterOrder(object):
             self.x[1] = dx + ddx*self.dt      + h*self.y / self.dt
             self.x[2] = ddx                 + 2*k*self.y / (self.dt**2)
 
+    def __repr__(self):
+        return '\n'.join([
+            'GHFilterOrder object',
+            pretty_str('dt', self.dt),
+            pretty_str('order', self.order),
+            pretty_str('x', self.x),
+            pretty_str('g', self.g),
+            pretty_str('h', self.h),
+            pretty_str('k', self.k),
+            pretty_str('y', self.y),
+            pretty_str('z', self.z)
+            ])
+
 
 class GHFilter(object):
-    """ Implements the g-h filter. The topic is too large to cover in
+    """
+    Implements the g-h filter. The topic is too large to cover in
     this comment. See my book "Kalman and Bayesian Filters in Python" [1]
     or Eli Brookner's "Tracking and Kalman Filters Made Easy" [2].
 
     A few basic examples are below, and the tests in ./gh_tests.py may
     give you more ideas on use.
+
+
+    Parameters
+    ----------
+
+    x : 1D np.array or scalar
+        Initial value for the filter state. Each value can be a scalar
+        or a np.array.
+
+        You can use a scalar for x0. If order > 0, then 0.0 is assumed
+        for the higher order terms.
+
+        x[0] is the value being tracked
+        x[1] is the first derivative (for order 1 and 2 filters)
+        x[2] is the second derivative (for order 2 filters)
+
+    dx : 1D np.array or scalar
+        Initial value for the derivative of the filter state.
+
+    dt : scalar
+        time step
+
+    g : float
+        filter g gain parameter.
+
+    h : float
+        filter h gain parameter.
+
+
+    Attributes
+    ----------
+    x : 1D np.array or scalar
+        filter state
+
+    dx : 1D np.array or scalar
+       derivative of the filter state.
+
+    x_prediction : 1D np.array or scalar
+        predicted filter state
+
+    dx_prediction : 1D np.array or scalar
+       predicted derivative of the filter state.
+
+    dt : scalar
+        time step
+
+    g : float
+        filter g gain parameter.
+
+    h : float
+        filter h gain parameter.
+
+    y : np.array, or scalar
+        residual (difference between measurement and prior)
+
+    z : np.array, or scalar
+        measurement passed into update()
 
     Examples
     --------
@@ -203,43 +299,10 @@ class GHFilter(object):
     [2] Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.
 
-    |
-    |
-
-    **Methods**
     """
 
 
     def __init__(self, x, dx, dt, g, h):
-        """ Creates a g-h filter.
-
-        Parameters
-        ----------
-
-        x : 1D np.array or scalar
-            Initial value for the filter state. Each value can be a scalar
-            or a np.array.
-
-            You can use a scalar for x0. If order > 0, then 0.0 is assumed
-            for the higher order terms.
-
-            x[0] is the value being tracked
-            x[1] is the first derivative (for order 1 and 2 filters)
-            x[2] is the second derivative (for order 2 filters)
-
-        dx : 1D np.array or scalar
-            Initial value for the derivative of the filter state.
-
-        dt : scalar
-            time step
-
-        g : float
-            filter g gain parameter.
-
-        h : float
-            filter h gain parameter.
-        """
-
         self.x = x
         self.dx = dx
         self.dt = dt
@@ -247,12 +310,18 @@ class GHFilter(object):
         self.h = h
         self.dx_prediction = self.dx
         self.x_prediction  = self.x
-        self.y = 0.   # residual
 
+        if np.ndim(x) == 0:
+            self.y = 0.   # residual
+            self.z = 0.
+        else:
+            self.y = np.zeros(len(x))
+            self.z = np.zeros(len(x))
 
 
     def update(self, z, g=None, h=None):
-        """performs the g-h filter predict and update step on the
+        """
+        performs the g-h filter predict and update step on the
         measurement z. Modifies the member variables listed below,
         and returns the state of x and dx as a tuple as a convienence.
 
@@ -308,7 +377,7 @@ class GHFilter(object):
         return (self.x, self.dx)
 
 
-    def batch_filter(self, data, save_predictions=False):
+    def batch_filter(self, data, save_predictions=False, saver=None):
         """
         Given a sequenced list of data, performs g-h filter
         with a fixed g and h. See update() if you need to vary g and/or h.
@@ -329,6 +398,11 @@ class GHFilter(object):
 
         save_predictions : boolean
             the predictions will be saved and returned if this is true
+
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
+
 
         Returns
         -------
@@ -372,6 +446,9 @@ class GHFilter(object):
             if save_predictions:
                 predictions[i] = x_est
 
+            if saver is not None:
+                saver.save()
+
         if save_predictions:
             return results, predictions
 
@@ -379,7 +456,8 @@ class GHFilter(object):
 
 
     def VRF_prediction(self):
-        """ Returns the Variance Reduction Factor of the prediction
+        """
+        Returns the Variance Reduction Factor of the prediction
         step of the filter. The VRF is the
         normalized variance for the filter, as given in the equation below.
 
@@ -401,7 +479,8 @@ class GHFilter(object):
 
 
     def VRF(self):
-        """ Returns the Variance Reduction Factor (VRF) of the state variable
+        """
+        Returns the Variance Reduction Factor (VRF) of the state variable
         of the filter (x) and its derivatives (dx, ddx). The VRF is the
         normalized variance for the filter, as given in the equations below.
 
@@ -439,60 +518,95 @@ class GHFilter(object):
             pretty_str('dx', self.dx),
             pretty_str('x_prediction', self.x_prediction),
             pretty_str('dx_prediction', self.dx_prediction),
-            pretty_str('y', self.y)
+            pretty_str('y', self.y),
+            pretty_str('z', self.z)
             ])
 
+
 class GHKFilter(object):
-    """ Implements the g-h-k filter.
+    """
+    Implements the g-h-k filter.
+
+    Parameters
+    ----------
+
+    x : 1D np.array or scalar
+        Initial value for the filter state. Each value can be a scalar
+        or a np.array.
+
+        You can use a scalar for x0. If order > 0, then 0.0 is assumed
+        for the higher order terms.
+
+        x[0] is the value being tracked
+        x[1] is the first derivative (for order 1 and 2 filters)
+        x[2] is the second derivative (for order 2 filters)
+
+    dx : 1D np.array or scalar
+        Initial value for the derivative of the filter state.
+
+    ddx : 1D np.array or scalar
+        Initial value for the second derivative of the filter state.
+
+    dt : scalar
+        time step
+
+    g : float
+        filter g gain parameter.
+
+    h : float
+        filter h gain parameter.
+
+    k : float
+        filter k gain parameter.
+
+
+
+    Attributes
+    ----------
+    x : 1D np.array or scalar
+        filter state
+
+    dx : 1D np.array or scalar
+       derivative of the filter state.
+
+    ddx : 1D np.array or scalar
+       second derivative of the filter state.
+
+    x_prediction : 1D np.array or scalar
+        predicted filter state
+
+    dx_prediction : 1D np.array or scalar
+       predicted derivative of the filter state.
+
+    ddx_prediction : 1D np.array or scalar
+       second predicted derivative of the filter state.
+
+    dt : scalar
+        time step
+
+    g : float
+        filter g gain parameter.
+
+    h : float
+        filter h gain parameter.
+
+    k : float
+        filter k gain parameter.
+
+    y : np.array, or scalar
+        residual (difference between measurement and prior)
+
+    z : np.array, or scalar
+        measurement passed into update()
 
     References
     ----------
 
     Brookner, "Tracking and Kalman Filters Made Easy". John Wiley and
     Sons, 1998.
-
-    |
-    |
-
-    **Methods**
     """
 
     def __init__(self, x, dx, ddx, dt, g, h, k):
-        """ Creates a g-h filter.
-
-        Parameters
-        ----------
-
-        x : 1D np.array or scalar
-            Initial value for the filter state. Each value can be a scalar
-            or a np.array.
-
-            You can use a scalar for x0. If order > 0, then 0.0 is assumed
-            for the higher order terms.
-
-            x[0] is the value being tracked
-            x[1] is the first derivative (for order 1 and 2 filters)
-            x[2] is the second derivative (for order 2 filters)
-
-        dx : 1D np.array or scalar
-            Initial value for the derivative of the filter state.
-
-        ddx : 1D np.array or scalar
-            Initial value for the second derivative of the filter state.
-
-        dt : scalar
-            time step
-
-        g : float
-            filter g gain parameter.
-
-        h : float
-            filter h gain parameter.
-
-        k : float
-            filter k gain parameter.
-        """
-
         self.x = x
         self.dx = dx
         self.ddx = ddx
@@ -504,11 +618,18 @@ class GHKFilter(object):
         self.g = g
         self.h = h
         self.k = k
-        self.y = 0. # residual
+
+        if np.ndim(x) == 0:
+            self.y = 0.  # residual
+            self.z = 0.
+        else:
+            self.y = np.zeros(len(x))
+            self.z = np.zeros(len(x))
 
 
     def update(self, z, g=None, h=None, k=None):
-        """performs the g-h filter predict and update step on the
+        """
+        Performs the g-h filter predict and update step on the
         measurement z.
 
         On return, self.x, self.dx, self.y, and self.x_prediction
@@ -628,7 +749,8 @@ class GHKFilter(object):
 
 
     def VRF_prediction(self):
-        """ Returns the Variance Reduction Factor for x of the prediction
+        """
+        Returns the Variance Reduction Factor for x of the prediction
         step of the filter.
 
         This implements the equation
@@ -653,7 +775,8 @@ class GHKFilter(object):
 
 
     def bias_error(self, dddx):
-        """ Returns the bias error given the specified constant jerk(dddx)
+        """
+        Returns the bias error given the specified constant jerk(dddx)
 
         Parameters
         ----------
@@ -672,7 +795,8 @@ class GHKFilter(object):
 
 
     def VRF(self):
-        """ Returns the Variance Reduction Factor (VRF) of the state variable
+        """
+        Returns the Variance Reduction Factor (VRF) of the state variable
         of the filter (x) and its derivatives (dx, ddx). The VRF is the
         normalized variance for the filter, as given in the equations below.
 
@@ -725,7 +849,8 @@ class GHKFilter(object):
             pretty_str('x_prediction', self.x_prediction),
             pretty_str('dx_prediction', self.dx_prediction),
             pretty_str('ddx_prediction', self.dx_prediction),
-            pretty_str('y', self.y)
+            pretty_str('y', self.y),
+            pretty_str('z', self.z)
             ])
 
 

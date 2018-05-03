@@ -23,12 +23,13 @@ import sys
 import numpy as np
 from numpy import dot, zeros, eye
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class InformationFilter(object):
     """
-    Create a linear Information filter. Information filters compute the
+    Create a linear Information filter. Information filters
+    compute the
     inverse of the Kalman filter, allowing you to easily denote having
     no information at initialization.
 
@@ -65,6 +66,12 @@ class InformationFilter(object):
     P_inv : numpy.array(dim_x, dim_x)
         inverse state covariance matrix
 
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) dtate estimate vector
+
+    P_inv_prior : numpy.array(dim_x, dim_x)
+        prior (predicted) inverse state covariance matrix
+
     R_inv : numpy.array(dim_z, dim_z)
         inverse of measurement noise matrix
 
@@ -85,6 +92,15 @@ class InformationFilter(object):
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
+
+    likelihood : float
+        likelihood of last measurment. Read only.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
 
     inv : function, default numpy.linalg.inv
         If you prefer another inverse function, such as the Moore-Penrose
@@ -126,6 +142,7 @@ class InformationFilter(object):
         # purposes
         self.K = 0. # kalman gain
         self.y = zeros((dim_z, 1))
+        self.z = zeros((dim_z, 1))
         self.S = 0. # system uncertainty in measurement space
 
         # identity matrix. Do not alter this.
@@ -134,8 +151,13 @@ class InformationFilter(object):
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
+        self.likelihood = sys.float_info.min
 
         self.inv = np.linalg.inv
+
+        # save priors
+        self.x_prior = self.x[:]
+        self.P_inv_prior = self.P_inv[:]
 
 
     def update(self, z, R_inv=None):
@@ -172,6 +194,7 @@ class InformationFilter(object):
             self.x = dot(P_inv, x) + dot(H_T, R_inv).dot(z)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
             self.log_likelihood = math.log(sys.float_info.min)
+            self.likelihood = sys.float_info.min
 
         else:
             # y = z - Hx
@@ -188,8 +211,13 @@ class InformationFilter(object):
             self.x = x + dot(self.K, self.y)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
 
+            self.z = reshape_z(z, self.dim_z, np.ndim(self.x))[:]
+
             if self.compute_log_likelihood:
                 self.log_likelihood = logpdf(x=self.y, cov=self.S)
+                self.likelihood = math.exp(self.log_likelihood)
+                if self.likelihood == 0:
+                    self.likelihood = sys.float_info.min
 
 
     def predict(self, u=0):
@@ -223,6 +251,10 @@ class InformationFilter(object):
         if invertable:
             self.x = dot(self._F, self.x) + dot(self.B, u)
             self.P_inv = self.inv(AI + self.Q)
+            self.P_inv_prior = self.P_inv[:]
+
+            # save priors
+            self.x_prior = self.x[:]
         else:
             I_PF = self._I - dot(self.P_inv, self._F_inv)
             FTI = self.inv(self._F.T)
@@ -230,8 +262,12 @@ class InformationFilter(object):
             AQI = self.inv(A + self.Q)
             self.x = dot(FTI, dot(I_PF, AQI).dot(FTIX))
 
+            # save priors
+            self.x_prior = self.x[:]
+            self.P_inv_prior = AQI[:]
 
-    def batch_filter(self, zs, Rs=None, update_first=False):
+
+    def batch_filter(self, zs, Rs=None, update_first=False, saver=None):
         """ Batch processes a sequences of measurements.
 
         Parameters
@@ -249,6 +285,10 @@ class InformationFilter(object):
         update_first : bool, optional,
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
+
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
 
         Returns
         -------
@@ -285,6 +325,9 @@ class InformationFilter(object):
                 means[i, :] = self.x
                 covariances[i, :, :] = self._P
                 self.predict()
+
+                if saver is not None:
+                    saver.save()
         else:
             for i, (z, r) in enumerate(zip(zs, Rs)):
                 self.predict()
@@ -293,26 +336,10 @@ class InformationFilter(object):
                 means[i, :] = self.x
                 covariances[i, :, :] = self._P
 
+                if saver is not None:
+                    saver.save()
+
         return (means, covariances)
-
-
-    @property
-    def likelihood(self):
-        """
-        likelihood of last measurment.
-
-        Computed from the log-likelihood. The log-likelihood can be very
-        small,  meaning a large negative value such as -28000. Taking the
-        exp() of that results in 0.0, which can break typical algorithms
-        which multiply by this value, so by default we always return a
-        number >= sys.float_info.min.
-
-        But really, this is a bad measure because of the scaling that is
-        involved - try to use log-likelihood in your equations!"""
-
-        lh = math.exp(self.log_likelihood)
-        if lh == 0:
-            lh = sys.float_info.min
 
 
     @property
@@ -335,6 +362,8 @@ class InformationFilter(object):
             pretty_str('dim_u', self.dim_u),
             pretty_str('x', self.x),
             pretty_str('P_inv', self.P_inv),
+            pretty_str('x_prior', self.x_prior),
+            pretty_str('P_inv_prior', self.P_inv_prior),
             pretty_str('F', self.F),
             pretty_str('_F_inv', self._F_inv),
             pretty_str('Q', self.Q),
@@ -342,8 +371,10 @@ class InformationFilter(object):
             pretty_str('H', self.H),
             pretty_str('K', self.K),
             pretty_str('y', self.y),
+            pretty_str('z', self.z),
             pretty_str('S', self.S),
             pretty_str('B', self.B),
             pretty_str('log-likelihood', self.log_likelihood),
-            pretty_str('inv', self.inv),
+            pretty_str('likelihood', self.likelihood),
+            pretty_str('inv', self.inv)
             ])

@@ -22,7 +22,7 @@ from numpy.random import randn
 import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import KalmanFilter, update, predict, batch_filter
-from filterpy.common import Q_discrete_white_noise, kinematic_kf
+from filterpy.common import Q_discrete_white_noise, kinematic_kf, Saver
 from scipy.linalg import block_diag, norm
 
 DO_PLOT = False
@@ -122,7 +122,11 @@ def test_noisy_1d():
     # give slightly different P so result is slightly different
     f.x = np.array([[2.,0]]).T
     f.P = np.eye(2)*100.
-    m,c,_,_ = f.batch_filter(zs,update_first=False)
+    s = Saver(f)
+    m,c,_,_ = f.batch_filter(zs,update_first=False, saver=s)
+    s.to_array()
+    assert len(s.x) == len(zs)
+    assert len(s.x) == len(s)
 
     # plot data
     if DO_PLOT:
@@ -132,13 +136,12 @@ def test_noisy_1d():
         p3, = plt.plot ([0,100],[0,100], 'g') # perfect result
         plt.legend([p1,p2, p3, p4],
                    ["noisy measurement", "KF output", "ideal", "batch"], loc=4)
-
-
         plt.show()
 
 
 def test_1d_vel():
     from scipy.linalg import inv
+    from numpy import dot
     global ks
     dt = 1.
     std_z = 0.0001
@@ -154,7 +157,6 @@ def test_1d_vel():
     Q = np.eye(2)*0.001
 
     measurements = []
-    results = []
 
     xest = []
     ks = []
@@ -164,16 +166,16 @@ def test_1d_vel():
         pos += 100
 
         # perform kalman filtering
-        x = F @ x
-        P = F @ P @ F.T + Q
+        x = dot(F, x)
+        P = dot(dot(F, P), F.T) + Q
 
         P2 = P.copy()
-        P2[0,1] = 0 # force there to be no correlation
-        P2[1,0] = 0
-        S = H @ P2 @ H.T + R
-        K = P2 @ H.T @inv(S)
-        y = z - H@x
-        x = x + K@y
+        P2[0, 1] = 0 # force there to be no correlation
+        P2[1, 0] = 0
+        S = dot(dot(H, P2), H.T) + R
+        K = dot(dot(P2, H.T), inv(S))
+        y = z - dot(H, x)
+        x = x + dot(K, y)
 
         # save data
         xest.append (x.copy())

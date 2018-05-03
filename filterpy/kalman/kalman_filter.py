@@ -113,12 +113,13 @@ Copyright 2014-2018 Roger R Labbe Jr.
 
 from __future__ import absolute_import, division
 import sys
+import warnings
 import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import numpy.linalg as linalg
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 
@@ -136,6 +137,27 @@ class KalmanFilter(object):
     allows the linear algebra to work, but are the wrong shape for the problem
     you are trying to solve.
 
+    Parameters
+    ----------
+    dim_x : int
+        Number of state variables for the Kalman filter. For example, if
+        you are tracking the position and velocity of an object in two
+        dimensions, dim_x would be 4.
+        This is used to set the default size of P, Q, and u
+
+    dim_z : int
+        Number of of measurement inputs. For example, if the sensor
+        provides you with position in (x,y), dim_z would be 2.
+
+    dim_u : int (optional)
+        size of the control input, if it is being used.
+        Default value of 0 indicates it is not used.
+
+    compute_log_likelihood : bool (default = True)
+        Computes log likelihood by default, but this can be a slow
+        computation, so if you never use it you can turn this computation
+        off.
+
     Attributes
     ----------
     x : numpy.array(dim_x, 1)
@@ -143,6 +165,12 @@ class KalmanFilter(object):
 
     P : numpy.array(dim_x, dim_x)
         State covariance matrix
+
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) state estimate
+
+    P_prior : numpy.array(dim_x, dim_x)
+        Prior (predicted) state covariance matrix
 
     R : numpy.array(dim_z, dim_z)
         Measurement noise matrix
@@ -165,8 +193,20 @@ class KalmanFilter(object):
     S :  numpy.array
         Systen uncertaintly projected to measurement space. Read only.
 
+    z : ndarray
+        Last measurement used in update(). Read only.
+
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
+
+    likelihood : float
+        likelihood of last measurment. Read only.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
 
     inv : function, default numpy.linalg.inv
         If you prefer another inverse function, such as the Moore-Penrose
@@ -181,32 +221,6 @@ class KalmanFilter(object):
 
 
     def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
-        """ Create a Kalman filter. You are responsible for setting the
-        various state variables to reasonable values; the defaults below will
-        not give you a functional filter.
-
-        Parameters
-        ----------
-        dim_x : int
-            Number of state variables for the Kalman filter. For example, if
-            you are tracking the position and velocity of an object in two
-            dimensions, dim_x would be 4.
-            This is used to set the default size of P, Q, and u
-
-        dim_z : int
-            Number of of measurement inputs. For example, if the sensor
-            provides you with position in (x,y), dim_z would be 2.
-
-        dim_u : int (optional)
-            size of the control input, if it is being used.
-            Default value of 0 indicates it is not used.
-
-        compute_log_likelihood : bool (default = True)
-            Computes log likelihood by default, but this can be a slow
-            computation, so if you never use it you can turn this computation
-            off.
-        """
-
         if dim_z < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
@@ -228,10 +242,12 @@ class KalmanFilter(object):
         self._alpha_sq = 1.               # fading memory control
         self.M = np.zeros((dim_z, dim_z)) # process-measurement cross correlation
 
+        self.z = reshape_z(zeros((dim_z)), self.dim_z, self.x.ndim)
+
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
-        self.K = np.zeros(self.x.shape) # kalman gain
+        self.K = np.zeros((dim_x, dim_z)) # kalman gain
         self.y = zeros((dim_z, 1))
         self.S = np.zeros((dim_z, dim_z)) # system uncertainty
 
@@ -239,13 +255,62 @@ class KalmanFilter(object):
         self._I = np.eye(dim_x)
 
         # these will always be a copy of x,P after predict() is called
-        self.x_pred = zeros((dim_x, 1))
-        self.P_pred = eye(dim_x)
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
+        self.likelihood = sys.float_info.min
 
         self.inv = np.linalg.inv
+
+
+    def predict(self, u=0, B=None, F=None, Q=None):
+        """
+        Predict next state (prior) using the Kalman filter state propagation
+        equations.
+
+        Parameters
+        ----------
+
+        u : np.array
+            Optional control vector. If non-zero, it is multiplied by B
+            to create the control input into the system.
+
+        B : np.array(dim_x, dim_z), or None
+            Optional control transition matrix; a value of None in
+            any position will cause the filter to use `self.B`.
+
+        F : np.array(dim_x, dim_x), or None
+            Optional state transition matrix; a value of None in
+            any position will cause the filter to use `self.F`.
+
+        Q : np.array(dim_x, dim_x), scalar, or None
+            Optional process noise matrix; a value of None in
+            any position will cause the filter to use `self.Q`.
+        """
+
+        if B is None:
+            B = self.B
+        if F is None:
+            F = self.F
+        if Q is None:
+            Q = self.Q
+        elif isscalar(Q):
+            Q = eye(self.dim_x) * Q
+
+        # x = Fx + Bu
+        if B is not None:
+            self.x = dot(F, self.x) + dot(B, u)
+        else:
+            self.x = dot(F, self.x)
+
+        # P = FPF' + Q
+        self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
+
+        # save prior
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
 
 
     def update(self, z, R=None, H=None):
@@ -271,7 +336,7 @@ class KalmanFilter(object):
         if z is None:
             return
 
-        z = _reshape_z(z, self.dim_z, self.x.ndim)
+        z = reshape_z(z, self.dim_z, self.x.ndim)
 
         if R is None:
             R = self.R
@@ -301,11 +366,53 @@ class KalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
 
         # P = (I-KH)P(I-KH)' + KRK'
+        # This is more numerically stable
+        # and works for non-optimal K vs the equation
+        # P = (I-KH)P usually seen in the literature.
+        
         I_KH = self._I - dot(self.K, H)
         self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
+        self.z = z[:] # save the measurement
+
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
+            self.likelihood = math.exp(self.log_likelihood)
+            if self.likelihood == 0:
+                self.likelihood = sys.float_info.min
+
+
+    def predict_steadystate(self, u=0, B=None):
+        """
+        Predict state (prior) using the Kalman filter state propagation
+        equations. Only x is updated, P is left unchanged. See
+        update_steadstate() for a longer explanation of when to use this
+        method.
+
+        Parameters
+        ----------
+
+        u : np.array
+            Optional control vector. If non-zero, it is multiplied by B
+            to create the control input into the system.
+
+        B : np.array(dim_x, dim_z), or None
+            Optional control transition matrix; a value of None in
+            any position will cause the filter to use `self.B`.
+        """
+
+        if B is None:
+            B = self.B
+
+        # x = Fx + Bu
+        if B is not None:
+            self.x = dot(self.F, self.x) + dot(B, u)
+        else:
+            self.x = dot(self.F, self.x)
+
+        # save prior
+        self.x_prior = self.x[:]
+        self.P_prior = self.P[:]
 
 
     def update_steadystate(self, z):
@@ -355,7 +462,7 @@ class KalmanFilter(object):
         if z is None:
             return
 
-        z = _reshape_z(z, self.dim_z, self.x.ndim)
+        z = reshape_z(z, self.dim_z, self.x.ndim)
 
         # y = z - Hx
         # error (residual) between measurement and prediction
@@ -368,8 +475,13 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
 
+        self.z = z[:] # save the measurement
+
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=S)
+            self.likelihood = math.exp(self.log_likelihood)
+            if self.likelihood == 0:
+                self.likelihood = sys.float_info.min
 
 
     def update_correlated(self, z, R=None, H=None):
@@ -397,7 +509,7 @@ class KalmanFilter(object):
         if z is None:
             return
 
-        z = _reshape_z(z, self.dim_z, self.x.ndim)
+        z = reshape_z(z, self.dim_z, self.x.ndim)
 
         if R is None:
             R = self.R
@@ -435,12 +547,417 @@ class KalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
 
+        self.z = z[:] # save the measurement
+
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
+            self.likelihood = math.exp(self.log_likelihood)
+            if self.likelihood == 0:
+                self.likelihood = sys.float_info.min
 
+
+
+    def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
+                     Rs=None, Bs=None, us=None, update_first=False,
+                     saver=None):
+        """ Batch processes a sequences of measurements.
+
+        Parameters
+        ----------
+
+        zs : list-like
+            list of measurements at each time step `self.dt`. Missing
+            measurements must be represented by `None`.
+
+        Fs : list-like, optional
+            optional list of values to use for the state transition matrix matrix;
+            a value of None in any position will cause the filter
+            to use `self.F` for that time step. If Fs is None then self.F is
+            used for all epochs.
+
+        Qs : list-like, optional
+            optional list of values to use for the process error
+            covariance; a value of None in any position will cause the filter
+            to use `self.Q` for that time step. If Qs is None then self.Q is
+            used for all epochs.
+
+        Hs : list-like, optional
+            optional list of values to use for the measurement matrix;
+            a value of None in any position will cause the filter
+            to use `self.H` for that time step. If Hs is None then self.H is
+            used for all epochs.
+
+        Rs : list-like, optional
+            optional list of values to use for the measurement error
+            covariance; a value of None in any position will cause the filter
+            to use `self.R` for that time step. If Rs is None then self.R is
+            used for all epochs.
+
+        Bs : list-like, optional
+            optional list of values to use for the control transition matrix;
+            a value of None in any position will cause the filter
+            to use `self.B` for that time step. If Bs is None then self.B is
+            used for all epochs.
+
+        us : list-like, optional
+            optional list of values to use for the control input vector;
+            a value of None in any position will cause the filter to use
+            0 for that time step.
+
+        update_first : bool, optional,
+            controls whether the order of operations is update followed by
+            predict, or predict followed by update. Default is predict->update.
+
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
+
+        Returns
+        -------
+
+        means : np.array((n,dim_x,1))
+            array of the state for each time step after the update. Each entry
+            is an np.array. In other words `means[k,:]` is the state at step
+            `k`.
+
+        covariance : np.array((n,dim_x,dim_x))
+            array of the covariances for each time step after the update.
+            In other words `covariance[k,:,:]` is the covariance at step `k`.
+
+        means_predictions : np.array((n,dim_x,1))
+            array of the state for each time step after the predictions. Each
+            entry is an np.array. In other words `means[k,:]` is the state at
+            step `k`.
+
+        covariance_predictions : np.array((n,dim_x,dim_x))
+            array of the covariances for each time step after the prediction.
+            In other words `covariance[k,:,:]` is the covariance at step `k`.
+
+        Examples
+        --------
+
+        .. code-block:: Python
+
+            zs = [t + random.randn()*4 for t in range (40)]
+            Fs = [kf.F for t in range (40)]
+            Hs = [kf.H for t in range (40)]
+
+            (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
+                                              Bs=None, us=None, update_first=False)
+            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+        """
+
+        n = np.size(zs, 0)
+        if Fs is None:
+            Fs = [self.F] * n
+        if Qs is None:
+            Qs = [self.Q] * n
+        if Hs is None:
+            Hs = [self.H] * n
+        if Rs is None:
+            Rs = [self.R] * n
+        if Bs is None:
+            Bs = [self.B] * n
+        if us is None:
+            us = [0] * n
+
+        #pylint: disable=multiple-statements
+        if len(Fs) < n: Fs = [Fs] * n
+        if len(Qs) < n: Qs = [Qs] * n
+        if len(Hs) < n: Hs = [Hs] * n
+        if len(Rs) < n: Rs = [Rs] * n
+        if len(Bs) < n: Bs = [Bs] * n
+        if len(us) < n: us = [us] * n
+
+
+        # mean estimates from Kalman Filter
+        if self.x.ndim == 1:
+            means = zeros((n, self.dim_x))
+            means_p = zeros((n, self.dim_x))
+        else:
+            means = zeros((n, self.dim_x, 1))
+            means_p = zeros((n, self.dim_x, 1))
+
+        # state covariances from Kalman Filter
+        covariances = zeros((n, self.dim_x, self.dim_x))
+        covariances_p = zeros((n, self.dim_x, self.dim_x))
+
+        if update_first:
+            for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
+
+                self.update(z, R=R, H=H)
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
+
+                self.predict(u=u, B=B, F=F, Q=Q)
+                means_p[i, :] = self.x
+                covariances_p[i, :, :] = self.P
+
+                if saver is not None:
+                    saver.save()
+        else:
+            for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
+
+                self.predict(u=u, B=B, F=F, Q=Q)
+                means_p[i, :] = self.x
+                covariances_p[i, :, :] = self.P
+
+                self.update(z, R=R, H=H)
+                means[i, :] = self.x
+                covariances[i, :, :] = self.P
+
+                if saver is not None:
+                    saver.save()
+
+        return (means, covariances, means_p, covariances_p)
+
+
+    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None):
+        """
+        Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        means and covariances computed by a Kalman filter. The usual input
+        would come from the output of `KalmanFilter.batch_filter()`.
+
+        Parameters
+        ----------
+
+        Xs : numpy.array
+           array of the means (state variable x) of the output of a Kalman
+           filter.
+
+        Ps : numpy.array
+            array of the covariances of the output of a kalman filter.
+
+        Fs : list-like collection of numpy.array, optional
+            State transition matrix of the Kalman filter at each time step.
+            Optional, if not provided the filter's self.F will be used
+
+        Qs : list-like collection of numpy.array, optional
+            Process noise of the Kalman filter at each time step. Optional,
+            if not provided the filter's self.Q will be used
+
+        Returns
+        -------
+
+        x : numpy.ndarray
+           smoothed means
+
+        P : numpy.ndarray
+           smoothed state covariances
+
+        K : numpy.ndarray
+            smoother gain at each step
+
+        Pp : numpy.ndarray
+           Predicted state covariances
+
+        Examples
+        --------
+
+        .. code-block:: Python
+
+            zs = [t + random.randn()*4 for t in range (40)]
+
+            (mu, cov, _, _) = kalman.batch_filter(zs)
+            (x, P, K, Pp) = rts_smoother(mu, cov, kf.F, kf.Q)
+
+        """
+
+        if len(Xs) != len(Ps):
+            raise ValueError('length of Xs and Ps must be the same')
+
+        n = Xs.shape[0]
+        dim_x = Xs.shape[1]
+
+        if Fs is None:
+            Fs = [self.F] * n
+        if Qs is None:
+            Qs = [self.Q] * n
+
+        # smoother gain
+        K = zeros((n, dim_x, dim_x))
+
+        x, P, Pp = Xs.copy(), Ps.copy(), Ps.copy()
+        for k in range(n-2, -1, -1):
+            Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
+
+            #pylint: disable=bad-whitespace
+            K[k]  = dot(dot(P[k], Fs[k+1].T), self.inv(Pp[k]))
+            x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
+            P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
+
+        return (x, P, K, Pp)
+
+
+    def get_prediction(self, u=0):
+        """
+        Predicts the next state of the filter and returns it without
+        altering the state of the filter.
+
+        Parameters
+        ----------
+
+        u : np.array
+            optional control input
+
+        Returns
+        -------
+
+        (x, P) : tuple
+            State vector and covariance array of the prediction.
+        """
+
+        x = dot(self.F, self.x) + dot(self.B, u)
+        P = self._alpha_sq * dot(dot(self.F, self.P), self.F.T) + self.Q
+        return (x, P)
+
+
+    def get_update(self, z=None):
+        """
+        Computes the new estimate based on measurement `z` and returns it
+        without altering the state of the filter.
+
+        Parameters
+        ----------
+
+        z : (dim_z, 1): array_like
+            measurement for this update. z can be a scalar if dim_z is 1,
+            otherwise it must be convertible to a column vector.
+
+        Returns
+        -------
+
+        (x, P) : tuple
+            State vector and covariance array of the update.
+       """
+
+        if z is None:
+            return self.x, self.P
+        z = reshape_z(z, self.dim_z, self.x.ndim)
+
+        R = self.R
+        H = self.H
+        P = self.P
+        x = self.x
+
+        # error (residual) between measurement and prediction
+        y = z - dot(H, x)
+
+        # common subexpression for speed
+        PHT = dot(P, H.T)
+
+        # project system uncertainty into measurement space
+        S = dot(H, PHT) + R
+
+        # map system uncertainty into kalman gain
+        K = dot(PHT, self.inv(S))
+
+        # predict new x with residual scaled by the kalman gain
+        x = x + dot(K, y)
+
+        # P = (I-KH)P(I-KH)' + KRK'
+        I_KH = self._I - dot(K, H)
+        P = dot(dot(I_KH, P), I_KH.T) + dot(dot(K, R), K.T)
+
+        return x, P
+
+
+    def residual_of(self, z):
+        """
+        Returns the residual for the given measurement (z). Does not alter
+        the state of the filter.
+        """
+        return z - dot(self.H, self.x_prior)
+
+
+    def measurement_of_state(self, x):
+        """
+        Helper function that converts a state into a measurement.
+
+        Parameters
+        ----------
+
+        x : np.array
+            kalman state vector
+
+        Returns
+        -------
+
+        z : (dim_z, 1): array_like
+            measurement for this update. z can be a scalar if dim_z is 1,
+            otherwise it must be convertible to a column vector.
+        """
+
+        return dot(self.H, x)
+
+
+    @property
+    def alpha(self):
+        """
+        Fading memory setting. 1.0 gives the normal Kalman filter, and
+        values slightly larger than 1.0 (such as 1.02) give a fading
+        memory effect - previous measurements have less influence on the
+        filter's estimates. This formulation of the Fading memory filter
+        (there are many) is due to Dan Simon [1]_.
+
+        References
+        ----------
+
+        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
+           p. 208-212. (2006)
+
+        """
+
+        return self._alpha_sq**.5
+
+
+    def log_likelihood_of(self, z):
+        """
+        log likelihood of the measurement `z`. This should only be called
+        after a call to update(). Calling after predict() will yield an
+        incorrect result."""
+
+        if z is None:
+            return math.log(sys.float_info.min)
+        return logpdf(z, dot(self.H, self.x), self.S)
+
+
+    @alpha.setter
+    def alpha(self, value):
+        if not np.isscalar(value) or value < 1:
+            raise ValueError('alpha must be a float greater than 1')
+
+        self._alpha_sq = value**2
+
+
+    def __repr__(self):
+        return '\n'.join([
+            'KalmanFilter object',
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
+            pretty_str('dim_u', self.dim_u),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('x_prior', self.x_prior),
+            pretty_str('P_prior', self.P_prior),
+            pretty_str('F', self.F),
+            pretty_str('Q', self.Q),
+            pretty_str('R', self.R),
+            pretty_str('H', self.H),
+            pretty_str('K', self.K),
+            pretty_str('y', self.y),
+            pretty_str('S', self.S),
+            pretty_str('M', self.M),
+            pretty_str('B', self.B),
+            pretty_str('z', self.z),
+            pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('alpha', self.alpha),
+            pretty_str('inv', self.inv)
+            ])
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
-        """ Performs a series of asserts to check that the size of everything
+        """
+        Performs a series of asserts to check that the size of everything
         is what it should be. This can help you debug problems in your design.
 
         If you pass in H, R, F, Q those will be used instead of this object's
@@ -540,489 +1057,6 @@ class KalmanFilter(object):
                    shape(Hx), z_shape)
 
 
-    def predict(self, u=0, B=None, F=None, Q=None):
-        """
-        Predict next state (prior) using the Kalman filter state propagation
-        equations.
-
-        Parameters
-        ----------
-
-        u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
-            to create the control input into the system.
-
-        B : np.array(dim_x, dim_z), or None
-            Optional control transition matrix; a value of None in
-            any position will cause the filter to use `self.B`.
-
-        F : np.array(dim_x, dim_x), or None
-            Optional state transition matrix; a value of None in
-            any position will cause the filter to use `self.F`.
-
-        Q : np.array(dim_x, dim_x), scalar, or None
-            Optional process noise matrix; a value of None in
-            any position will cause the filter to use `self.Q`.
-        """
-
-        if B is None:
-            B = self.B
-        if F is None:
-            F = self.F
-        if Q is None:
-            Q = self.Q
-        elif isscalar(Q):
-            Q = eye(self.dim_x) * Q
-
-        # x = Fx + Bu
-        if B is not None:
-            self.x = dot(F, self.x) + dot(B, u)
-        else:
-            self.x = dot(F, self.x)
-
-        # P = FPF' + Q
-        self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
-
-        self.x_pred = self.x[:]
-        self.P_pred = self.P[:]
-
-
-    def predict_steadystate(self, u=0, B=None):
-        """
-        Predict state (prior) using the Kalman filter state propagation
-        equations. Only x is updated, P is left unchanged. See
-        update_steadstate() for a longer explanation of when to use this
-        method.
-
-        Parameters
-        ----------
-
-        u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
-            to create the control input into the system.
-
-        B : np.array(dim_x, dim_z), or None
-            Optional control transition matrix; a value of None in
-            any position will cause the filter to use `self.B`.
-        """
-
-        if B is None:
-            B = self.B
-
-        # x = Fx + Bu
-        if B is not None:
-            self.x = dot(self.F, self.x) + dot(B, u)
-        else:
-            self.x = dot(self.F, self.x)
-        self.x_pred = self.x[:]
-        # strictly speaking not necessary, but if the user initialized k and
-        # P manually, ensure it is properly set
-        self.P_pred = self.P[:]
-
-
-    def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
-                     Rs=None, Bs=None, us=None, update_first=False):
-        """ Batch processes a sequences of measurements.
-
-        Parameters
-        ----------
-
-        zs : list-like
-            list of measurements at each time step `self.dt`. Missing
-            measurements must be represented by `None`.
-
-        Fs : list-like, optional
-            optional list of values to use for the state transition matrix matrix;
-            a value of None in any position will cause the filter
-            to use `self.F` for that time step. If Fs is None then self.F is
-            used for all epochs.
-
-        Qs : list-like, optional
-            optional list of values to use for the process error
-            covariance; a value of None in any position will cause the filter
-            to use `self.Q` for that time step. If Qs is None then self.Q is
-            used for all epochs.
-
-        Hs : list-like, optional
-            optional list of values to use for the measurement matrix;
-            a value of None in any position will cause the filter
-            to use `self.H` for that time step. If Hs is None then self.H is
-            used for all epochs.
-
-        Rs : list-like, optional
-            optional list of values to use for the measurement error
-            covariance; a value of None in any position will cause the filter
-            to use `self.R` for that time step. If Rs is None then self.R is
-            used for all epochs.
-
-        Bs : list-like, optional
-            optional list of values to use for the control transition matrix;
-            a value of None in any position will cause the filter
-            to use `self.B` for that time step. If Bs is None then self.B is
-            used for all epochs.
-
-        us : list-like, optional
-            optional list of values to use for the control input vector;
-            a value of None in any position will cause the filter to use
-            0 for that time step.
-
-        update_first : bool, optional,
-            controls whether the order of operations is update followed by
-            predict, or predict followed by update. Default is predict->update.
-
-        Returns
-        -------
-
-        means : np.array((n,dim_x,1))
-            array of the state for each time step after the update. Each entry
-            is an np.array. In other words `means[k,:]` is the state at step
-            `k`.
-
-        covariance : np.array((n,dim_x,dim_x))
-            array of the covariances for each time step after the update.
-            In other words `covariance[k,:,:]` is the covariance at step `k`.
-
-        means_predictions : np.array((n,dim_x,1))
-            array of the state for each time step after the predictions. Each
-            entry is an np.array. In other words `means[k,:]` is the state at
-            step `k`.
-
-        covariance_predictions : np.array((n,dim_x,dim_x))
-            array of the covariances for each time step after the prediction.
-            In other words `covariance[k,:,:]` is the covariance at step `k`.
-
-        Examples
-        --------
-
-        .. code-block:: Python
-
-            zs = [t + random.randn()*4 for t in range (40)]
-            Fs = [kf.F for t in range (40)]
-            Hs = [kf.H for t in range (40)]
-
-            (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
-                                              Bs=None, us=None, update_first=False)
-            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
-
-        """
-
-        n = np.size(zs, 0)
-        if Fs is None:
-            Fs = [self.F] * n
-        if Qs is None:
-            Qs = [self.Q] * n
-        if Hs is None:
-            Hs = [self.H] * n
-        if Rs is None:
-            Rs = [self.R] * n
-        if Bs is None:
-            Bs = [self.B] * n
-        if us is None:
-            us = [0] * n
-
-        #pylint: disable=multiple-statements
-        if len(Fs) < n: Fs = [Fs] * n
-        if len(Qs) < n: Qs = [Qs] * n
-        if len(Hs) < n: Hs = [Hs] * n
-        if len(Rs) < n: Rs = [Rs] * n
-        if len(Bs) < n: Bs = [Bs] * n
-        if len(us) < n: us = [us] * n
-
-
-        # mean estimates from Kalman Filter
-        if self.x.ndim == 1:
-            means = zeros((n, self.dim_x))
-            means_p = zeros((n, self.dim_x))
-        else:
-            means = zeros((n, self.dim_x, 1))
-            means_p = zeros((n, self.dim_x, 1))
-
-        # state covariances from Kalman Filter
-        covariances = zeros((n, self.dim_x, self.dim_x))
-        covariances_p = zeros((n, self.dim_x, self.dim_x))
-
-        if update_first:
-            for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
-
-                self.update(z, R=R, H=H)
-                means[i, :] = self.x
-                covariances[i, :, :] = self.P
-
-                self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i, :] = self.x
-                covariances_p[i, :, :] = self.P
-        else:
-            for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
-
-                self.predict(u=u, B=B, F=F, Q=Q)
-                means_p[i, :] = self.x
-                covariances_p[i, :, :] = self.P
-
-                self.update(z, R=R, H=H)
-                means[i, :] = self.x
-                covariances[i, :, :] = self.P
-
-        return (means, covariances, means_p, covariances_p)
-
-
-    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None):
-        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
-        means and covariances computed by a Kalman filter. The usual input
-        would come from the output of `KalmanFilter.batch_filter()`.
-
-        Parameters
-        ----------
-
-        Xs : numpy.array
-           array of the means (state variable x) of the output of a Kalman
-           filter.
-
-        Ps : numpy.array
-            array of the covariances of the output of a kalman filter.
-
-        Fs : list-like collection of numpy.array, optional
-            State transition matrix of the Kalman filter at each time step.
-            Optional, if not provided the filter's self.F will be used
-
-        Qs : list-like collection of numpy.array, optional
-            Process noise of the Kalman filter at each time step. Optional,
-            if not provided the filter's self.Q will be used
-
-        Returns
-        -------
-
-        x : numpy.ndarray
-           smoothed means
-
-        P : numpy.ndarray
-           smoothed state covariances
-
-        K : numpy.ndarray
-            smoother gain at each step
-
-        Pp : numpy.ndarray
-           Predicted state covariances
-
-        Examples
-        --------
-
-        .. code-block:: Python
-
-            zs = [t + random.randn()*4 for t in range (40)]
-
-            (mu, cov, _, _) = kalman.batch_filter(zs)
-            (x, P, K, Pp) = rts_smoother(mu, cov, kf.F, kf.Q)
-
-        """
-
-        if len(Xs) != len(Ps):
-            raise ValueError('length of Xs and Ps must be the same')
-
-        n = Xs.shape[0]
-        dim_x = Xs.shape[1]
-
-        if Fs is None:
-            Fs = [self.F] * n
-        if Qs is None:
-            Qs = [self.Q] * n
-
-        # smoother gain
-        K = zeros((n, dim_x, dim_x))
-
-        x, P, Pp = Xs.copy(), Ps.copy(), Ps.copy()
-        for k in range(n-2, -1, -1):
-            Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
-
-            #pylint: disable=bad-whitespace
-            K[k]  = dot(dot(P[k], Fs[k+1].T), self.inv(Pp[k]))
-            x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
-            P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
-
-        return (x, P, K, Pp)
-
-
-    def get_prediction(self, u=0):
-        """ Predicts the next state of the filter and returns it. Does not
-        alter the state of the filter.
-
-        Parameters
-        ----------
-
-        u : np.array
-            optional control input
-
-        Returns
-        -------
-
-        (x, P) : tuple
-            State vector and covariance array of the prediction.
-        """
-
-        x = dot(self.F, self.x) + dot(self.B, u)
-        P = self._alpha_sq * dot(dot(self.F, self.P), self.F.T) + self.Q
-        return (x, P)
-
-
-    def get_update(self, z=None):
-        """ Computes the new estimate based on measurement `z`. Does not
-        alter the state of the filter.
-
-        Parameters
-        ----------
-
-        z : (dim_z, 1): array_like
-            measurement for this update. z can be a scalar if dim_z is 1,
-            otherwise it must be convertible to a column vector.
-
-        Returns
-        -------
-
-        (x, P) : tuple
-            State vector and covariance array of the update.
-
-       """
-
-        if z is None:
-            return self.x, self.P
-        z = _reshape_z(z, self.dim_z, self.x.ndim)
-
-        R = self.R
-        H = self.H
-        P = self.P
-        x = self.x
-
-        # error (residual) between measurement and prediction
-        y = z - dot(H, x)
-
-        # common subexpression for speed
-        PHT = dot(P, H.T)
-
-        # project system uncertainty into measurement space
-        S = dot(H, PHT) + R
-
-        # map system uncertainty into kalman gain
-        K = dot(PHT, self.inv(S))
-
-        # predict new x with residual scaled by the kalman gain
-        x = x + dot(K, y)
-
-        # P = (I-KH)P(I-KH)' + KRK'
-        I_KH = self._I - dot(K, H)
-        P = dot(dot(I_KH, P), I_KH.T) + dot(dot(K, R), K.T)
-
-        return x, P
-
-
-    def residual_of(self, z):
-        """ returns the residual for the given measurement (z). Does not alter
-        the state of the filter.
-        """
-        return z - dot(self.H, self.x_pred)
-
-
-    def measurement_of_state(self, x):
-        """ Helper function that converts a state into a measurement.
-
-        Parameters
-        ----------
-
-        x : np.array
-            kalman state vector
-
-        Returns
-        -------
-
-        z : (dim_z, 1): array_like
-            measurement for this update. z can be a scalar if dim_z is 1,
-            otherwise it must be convertible to a column vector.
-        """
-
-        return dot(self.H, x)
-
-
-    @property
-    def alpha(self):
-        """
-        Fading memory setting. 1.0 gives the normal Kalman filter, and
-        values slightly larger than 1.0 (such as 1.02) give a fading
-        memory effect - previous measurements have less influence on the
-        filter's estimates. This formulation of the Fading memory filter
-        (there are many) is due to Dan Simon [1]_.
-
-        References
-        ----------
-
-        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
-           p. 208-212. (2006)
-
-        """
-
-        return self._alpha_sq**.5
-
-
-    @property
-    def likelihood(self):
-        """
-        likelihood of last measurment.
-
-        Computed from the log-likelihood. The log-likelihood can be very
-        small,  meaning a large negative value such as -28000. Taking the
-        exp() of that results in 0.0, which can break typical algorithms
-        which multiply by this value, so by default we always return a
-        number >= sys.float_info.min.
-
-        But really, this is a bad measure because of the scaling that is
-        involved - try to use log-likelihood in your equations!"""
-
-        lh = math.exp(self.log_likelihood)
-        if lh == 0:
-            lh = sys.float_info.min
-        return lh
-
-
-    def log_likelihood_of(self, z):
-        """
-        log likelihood of the measurement `z`. This should only be called
-        after a call to update(). Calling after predict() will yield an
-        incorrect result."""
-
-        if z is None:
-            return math.log(sys.float_info.min)
-        return logpdf(z, dot(self.H, self.x), self.S)
-
-
-    @alpha.setter
-    def alpha(self, value):
-
-        if not np.isscalar(value) or value <= 0:
-            raise ValueError('alpha must be a float greater than 0')
-
-        self._alpha_sq = value**2
-
-
-    def __repr__(self):
-        return '\n'.join([
-            'KalmanFilter object',
-            pretty_str('dim_x', self.dim_x),
-            pretty_str('dim_z', self.dim_z),
-            pretty_str('dim_u', self.dim_u),
-            pretty_str('x', self.x),
-            pretty_str('P', self.P),
-            pretty_str('F', self.F),
-            pretty_str('Q', self.Q),
-            pretty_str('R', self.R),
-            pretty_str('H', self.H),
-            pretty_str('K', self.K),
-            pretty_str('y', self.y),
-            pretty_str('S', self.S),
-            pretty_str('M', self.M),
-            pretty_str('B', self.B),
-            pretty_str('log-likelihood', self.log_likelihood),
-            pretty_str('alpha', self.alpha),
-            pretty_str('inv', self.inv)
-            ])
-
-
 def update(x, P, z, R, H=None, return_all=False):
     """
     Add a new measurement (z) to the Kalman filter. If z is None, nothing
@@ -1096,7 +1130,7 @@ def update(x, P, z, R, H=None, return_all=False):
         H = np.array([H])
 
     Hx = np.atleast_1d(dot(H, x))
-    z = _reshape_z(z, Hx.shape[0], x.ndim)
+    z = reshape_z(z, Hx.shape[0], x.ndim)
 
     # error (residual) between measurement and prediction
     y = z - Hx
@@ -1184,7 +1218,7 @@ def update_steadystate(x, z, K, H=None):
         H = np.array([H])
 
     Hx = np.atleast_1d(dot(H, x))
-    z = _reshape_z(z, Hx.shape[0], x.ndim)
+    z = reshape_z(z, Hx.shape[0], x.ndim)
 
     # error (residual) between measurement and prediction
     y = z - Hx
@@ -1194,7 +1228,8 @@ def update_steadystate(x, z, K, H=None):
 
 
 def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
-    """ Predict next state (prior) using the Kalman filter state propagation
+    """
+    Predict next state (prior) using the Kalman filter state propagation
     equations.
 
     Parameters
@@ -1246,7 +1281,8 @@ def predict(x, P, F=1, Q=0, u=0, B=1, alpha=1.):
 
 
 def predict_steadystate(x, F=1, u=0, B=1):
-    """ Predict next state (prior) using the Kalman filter state propagation
+    """
+    Predict next state (prior) using the Kalman filter state propagation
     equations. This steady state form only computes x, assuming that the
     covariance is constant.
 
@@ -1284,8 +1320,10 @@ def predict_steadystate(x, F=1, u=0, B=1):
 
 
 
-def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False):
-    """ Batch processes a sequences of measurements.
+def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
+                 update_first=False, saver=None):
+    """
+    Batch processes a sequences of measurements.
 
     Parameters
     ----------
@@ -1322,6 +1360,9 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
         controls whether the order of operations is update followed by
         predict, or predict followed by update. Default is predict->update.
 
+        saver : filterpy.common.Saver, optional
+            filterpy.common.Saver object. If provided, saver.save() will be
+            called after every epoch
 
     Returns
     -------
@@ -1397,6 +1438,8 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
             x, P = predict(x, P, u=u, B=B, F=F, Q=Q)
             means_p[i, :] = x
             covariances_p[i, :, :] = P
+            if saver is not None:
+                saver.save()
     else:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):
 
@@ -1407,13 +1450,16 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None, update_first=False)
             x, P = update(x, P, z, R=R, H=H)
             means[i, :] = x
             covariances[i, :, :] = P
+            if saver is not None:
+                saver.save()
 
     return (means, covariances, means_p, covariances_p)
 
 
 
 def rts_smoother(Xs, Ps, Fs, Qs):
-    """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+    """
+    Runs the Rauch-Tung-Striebal Kalman smoother on a set of
     means and covariances computed by a Kalman filter. The usual input
     would come from the output of `KalmanFilter.batch_filter()`.
 
@@ -1481,7 +1527,10 @@ def rts_smoother(Xs, Ps, Fs, Qs):
 
 
 class Saver(object):
-    """ Helper class to save the states of the KalmanFilter class.
+    """
+    Deprecated. Use filterpy.common.Saver instead.
+
+    Helper class to save the states of the KalmanFilter class.
     Each time you call save() the current states are appended to lists.
     Generally you would do this once per epoch - predict/update.
 
@@ -1513,12 +1562,16 @@ class Saver(object):
         """ Construct the save object, optionally saving the current
         state of the filter"""
 
+        warnings.warn(
+            'Use filterpy.common.Saver instead of this, as it works for any filter clase',
+            DeprecationWarning)
+
         self.xs = []
         self.Ps = []
         self.Ks = []
         self.ys = []
-        self.xs_pred = []
-        self.Ps_pred = []
+        self.xs_prior = []
+        self.Ps_prior = []
         self.kf = kf
         if save_current:
             self.save()
@@ -1532,8 +1585,8 @@ class Saver(object):
         self.Ps.append(kf.P[:])
         self.Ks.append(kf.K[:])
         self.ys.append(kf.y[:])
-        self.xs_pred.append(kf.x_pred[:])
-        self.Ps_pred.append(kf.P_pred[:])
+        self.xs_prior.append(kf.x_prior[:])
+        self.Ps_prior.append(kf.P_prior[:])
 
 
     def to_array(self):
@@ -1543,24 +1596,6 @@ class Saver(object):
         self.Ps = np.array(self.Ps)
         self.Ks = np.array(self.Ks)
         self.ys = np.array(self.ys)
-        self.xs_pred = np.array(self.xs_pred)
-        self.Ps_pred = np.array(self.Ps_pred)
+        self.xs_prior = np.array(self.xs_prior)
+        self.Ps_prior = np.array(self.Ps_prior)
 
-
-def _reshape_z(z, dim_z, ndim):
-    """ ensure z is a (dim_z, 1) shaped vector"""
-
-    z = np.atleast_2d(z)
-    if z.shape[1] == dim_z:
-        z = z.T
-
-    if z.shape != (dim_z, 1):
-        raise ValueError('z must be convertible to shape ({}, 1)'.format(dim_z))
-
-    if ndim == 1:
-        z = z[:, 0]
-
-    if ndim == 0:
-        z = z[0, 0]
-
-    return z

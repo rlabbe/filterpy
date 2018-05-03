@@ -32,7 +32,6 @@ class LeastSquaresFilter(object):
     a constant, order 1 assumes that it moves in a line, and order 2 assumes
     that it is tracking a second order polynomial.
 
-    It is implemented to be directly callable like a function. See examples.
 
     Parameters
     ----------
@@ -74,7 +73,7 @@ class LeastSquaresFilter(object):
 
         while True:
             z = sensor_reading()  # get a measurement
-            x = lsq(z)            # get the filtered estimate.
+            x = lsq.update(z)     # get the filtered estimate.
             print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
 
     References
@@ -82,11 +81,6 @@ class LeastSquaresFilter(object):
 
     .. [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
           Approach." Third Edition. AIAA, 2009.
-
-    |
-    |
-
-    **Methods**
     """
 
 
