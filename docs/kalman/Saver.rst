@@ -5,6 +5,13 @@ This is a helper class designed to allow you to save
 the state of the Kalman filter for each epoch. Each
 instance variable is stored in a list when you call save().
 
+This class is deprecated as of version 1.3.2 and will 
+be deleted soon. Instead, see the class 
+filterpy.common.Saver, which works for any class, not
+just a KalmanFilter object.
+
+
+
 **Example**
 
 .. code::

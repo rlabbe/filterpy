@@ -9,6 +9,12 @@ will find useful when you build your filters.
 
 -----
 
+
+.. autofunction:: Saver
+
+
+-----
+
 .. autofunction:: Q_discrete_white_noise
 
 -----

@@ -135,6 +135,7 @@ class HInfinityFilter(object):
         # force P to be symmetric
         self.P = (self.P + self.P.T) / 2
 
+        # pylint: disable=bare-except
         try:
             self.z = z[:]
         except:

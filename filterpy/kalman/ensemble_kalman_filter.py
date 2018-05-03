@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes
+# pylint: disable=attribute-defined-outside-init
 
 """Copyright 2015 Roger R Labbe Jr.
 

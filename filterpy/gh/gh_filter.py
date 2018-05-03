@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, R0903, W1401
+# pylint: disable=C0103, R0913, R0902, C0326, R0903, W1401, too-many-lines
 # disable snake_case warning, too many arguments, too many attributes,
 # one space before assignment, too few public methods, anomalous backslash
 # in string

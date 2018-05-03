@@ -98,6 +98,7 @@ class Saver(object):
                  ignore=()):
         """ Construct the save object, optionally saving the current
         state of the filter"""
+        #pylint: disable=too-many-arguments
 
         self._kf = kf
         self._DL = defaultdict(list)

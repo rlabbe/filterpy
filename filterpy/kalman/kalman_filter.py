@@ -369,7 +369,7 @@ class KalmanFilter(object):
         # This is more numerically stable
         # and works for non-optimal K vs the equation
         # P = (I-KH)P usually seen in the literature.
-        
+
         I_KH = self._I - dot(self.K, H)
         self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
@@ -647,6 +647,7 @@ class KalmanFilter(object):
             (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
         """
 
+        #pylint: disable=too-many-statements
         n = np.size(zs, 0)
         if Fs is None:
             Fs = [self.F] * n
@@ -1598,4 +1599,3 @@ class Saver(object):
         self.ys = np.array(self.ys)
         self.xs_prior = np.array(self.xs_prior)
         self.Ps_prior = np.array(self.Ps_prior)
-
