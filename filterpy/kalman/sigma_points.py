@@ -122,7 +122,7 @@ class MerweScaledSigmaPoints(object):
         Parameters
         ----------
 
-        X An array-like object of the means of length n
+        x : An array-like object of the means of length n
             Can be a scalar if 1D.
             examples: 1, [1,2], np.array([1,2])
 
@@ -254,7 +254,7 @@ class JulierSigmaPoints(object):
         Sensor Fusion, and Target Recognition VI, 182 (July 28, 1997)
    """
 
-    def __init__(self, n, kappa, sqrt_method=None, subtract=None):
+    def __init__(self, n, kappa=0., sqrt_method=None, subtract=None):
 
         self.n = n
         self.kappa = kappa
@@ -286,7 +286,7 @@ class JulierSigmaPoints(object):
         Parameters
         ----------
 
-        X : array-like object of the means of length n
+        x : array-like object of the means of length n
             Can be a scalar if 1D.
             examples: 1, [1,2], np.array([1,2])
 
