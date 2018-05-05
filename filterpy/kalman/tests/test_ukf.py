@@ -65,10 +65,10 @@ def test_sigma_plot():
     str(sp2)
     str(sp3)
 
-    w0, _ = sp0.weights()
-    w1, _ = sp1.weights()
-    w2, _ = sp2.weights()
-    w3, _ = sp3.weights()
+    w0 = sp0.Wm
+    w1 = sp1.Wm
+    w2 = sp2.Wm
+    w3 = sp3.Wm
 
     Xi0 = sp0.sigma_points(x, P)
     Xi1 = sp1.sigma_points(x, P)
@@ -89,10 +89,10 @@ def test_sigma_plot():
             plt.scatter((Xi1[i, 0]-x[0, 0]) * w1[i] + x[0, 0],
                         (Xi1[i, 1]-x[0, 1]) * w1[i] + x[0, 1],
                         color='green', label='Julier high $\kappa$')
-        # for i in range(Xi2.shape[0]):
-        #     plt.scatter((Xi2[i, 0] - x[0, 0]) * w2[i] + x[0, 0],
-        #                 (Xi2[i, 1] - x[0, 1]) * w2[i] + x[0, 1],
-        #                 color='red')
+        for i in range(Xi2.shape[0]):
+            plt.scatter((Xi2[i, 0] - x[0, 0]) * w2[i] + x[0, 0],
+                        (Xi2[i, 1] - x[0, 1]) * w2[i] + x[0, 1],
+                        color='red')
         for i in range(Xi3.shape[0]):
             plt.scatter((Xi3[i, 0] - x[0, 0]) * w3[i] + x[0, 0],
                         (Xi3[i, 1] - x[0, 1]) * w3[i] + x[0, 1],
@@ -107,9 +107,8 @@ def test_scaled_weights():
             for beta in range(2):
                 for kappa in range(2):
                     sp = MerweScaledSigmaPoints(n, alpha, 0, 3-n)
-                    Wm, Wc = sp.weights()
-                    assert abs(sum(Wm) - 1) < 1.e-1
-                    assert abs(sum(Wc) - 1) < 1.e-1
+                    assert abs(sum(sp.Wm) - 1) < 1.e-1
+                    assert abs(sum(sp.Wc) - 1) < 1.e-1
 
 
 def test_julier_sigma_points_1D():
@@ -117,7 +116,7 @@ def test_julier_sigma_points_1D():
 
     kappa = 0.
     sp = JulierSigmaPoints(1, kappa)
-    Wm, Wc = sp.weights()
+    Wm, Wc = sp.Wm, sp.Wc
     assert np.allclose(Wm, Wc, 1e-12)
     assert len(Wm) == 3
 
@@ -146,7 +145,7 @@ def test_simplex_sigma_points_1D():
 
     #ukf = UKF(dim_x=1, dim_z=1, dt=0.1, hx=None, fx=None, kappa=kappa)
 
-    Wm, Wc = sp.weights()
+    Wm, Wc = sp.Wm, sp.Wc
     assert np.allclose(Wm, Wc, 1e-12)
     assert len(Wm) == 2
 
@@ -989,27 +988,29 @@ def _test_log_likelihood():
 
 if __name__ == "__main__":
 
+    plt.close('all')
+    test_scaled_weights()
     _test_log_likelihood()
 
     test_linear_rts()
 
     DO_PLOT = True
-    #test_sigma_plot()
-    # test_linear_1d()
-    # test_batch_missing_data()
+    test_sigma_plot()
+    test_linear_1d()
+    test_batch_missing_data()
     #
-    # test_linear_2d()
-    # test_julier_sigma_points_1D()
-    #test_simplex_sigma_points_1D()
-    # test_fixed_lag()
+    #est_linear_2d()
+    test_julier_sigma_points_1D()
+    test_simplex_sigma_points_1D()
+    test_fixed_lag()
     # DO_PLOT = True
-    # test_rts()
-    # kf_circle()
-    # test_circle()
+    test_rts()
+    kf_circle()
+    test_circle()
 
 
     '''test_1D_sigma_points()
-    #plot_sigma_test ()
+    plot_sigma_test ()
 
     x = np.array([[1,2]])
     P = np.array([[2, 1.2],
@@ -1020,11 +1021,9 @@ if __name__ == "__main__":
 
     xi,w = sigma_points (x,P,kappa)
     xm, cov = unscented_transform(xi, w)'''
-    #test_radar()
-    # test_sigma_plot()
-    # test_julier_weights()
-    # test_scaled_weights()
-    # test_simplex_weights()
+    test_radar()
+    test_sigma_plot()
+    test_scaled_weights()
     #print('xi=\n',Xi)
     """
     xm, cov = unscented_transform(Xi, W)

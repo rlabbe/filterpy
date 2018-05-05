@@ -299,7 +299,7 @@ class UnscentedKalmanFilter(object):
             self.msqrt = sqrt_fn
 
         # weights for the means and covariances.
-        self.Wm, self.Wc = self.points_fn.weights()
+        self.Wm, self.Wc = points.Wm, points.Wc
 
         if residual_x is None:
             self.residual_x = np.subtract

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, too-many-instance-attributes
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -71,6 +71,15 @@ class MerweScaledSigmaPoints(object):
         subtraction, such as angles (359-1 degreees is 2, not 358). x and y
         are state vectors, not scalars.
 
+    Attributes
+    ----------
+
+    Wm : np.array
+        weight for each sigma point for the mean
+
+    Wc : np.array
+        weight for each sigma point for the covariance
+
     Examples
     --------
 
@@ -103,6 +112,8 @@ class MerweScaledSigmaPoints(object):
             self.subtract = np.subtract
         else:
             self.subtract = subtract
+
+        self._compute_weights()
 
 
     def num_sigmas(self):
@@ -166,33 +177,23 @@ class MerweScaledSigmaPoints(object):
         return sigmas
 
 
-    def weights(self):
+    def _compute_weights(self):
         """ Computes the weights for the scaled unscented Kalman filter.
 
-        Returns
-        -------
-
-        Wm : ndarray[2n+1]
-            weights for mean
-
-        Wc : ndarray[2n+1]
-            weights for the covariances
         """
 
         n = self.n
         lambda_ = self.alpha**2 * (n +self.kappa) - n
 
         c = .5 / (n + lambda_)
-        Wc = np.full(2*n + 1, c)
-        Wm = np.full(2*n + 1, c)
-        Wc[0] = lambda_ / (n + lambda_) + (1 - self.alpha**2 + self.beta)
-        Wm[0] = lambda_ / (n + lambda_)
+        self.Wc = np.full(2*n + 1, c)
+        self.Wm = np.full(2*n + 1, c)
+        self.Wc[0] = lambda_ / (n + lambda_) + (1 - self.alpha**2 + self.beta)
+        self.Wm[0] = lambda_ / (n + lambda_)
 
-        return Wm, Wc
 
 
     def __repr__(self):
-        Wm, Wc = self.weights()
 
         return '\n'.join([
             'MerweScaledSigmaPoints object',
@@ -200,8 +201,8 @@ class MerweScaledSigmaPoints(object):
             pretty_str('alpha', self.alpha),
             pretty_str('beta', self.beta),
             pretty_str('kappa', self.kappa),
-            pretty_str('Wm', Wm),
-            pretty_str('Wc', Wc),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
             pretty_str('subtract', self.subtract),
             pretty_str('sqrt', self.sqrt)
             ])
@@ -246,6 +247,15 @@ class JulierSigmaPoints(object):
         You will have to supply this if your state variable cannot support
         subtraction, such as angles (359-1 degreees is 2, not 358). x and y
 
+    Attributes
+    ----------
+
+    Wm : np.array
+        weight for each sigma point for the mean
+
+    Wc : np.array
+        weight for each sigma point for the covariance
+
     References
     ----------
 
@@ -267,6 +277,8 @@ class JulierSigmaPoints(object):
             self.subtract = np.subtract
         else:
             self.subtract = subtract
+
+        self._compute_weights()
 
 
     def num_sigmas(self):
@@ -345,37 +357,27 @@ class JulierSigmaPoints(object):
         return sigmas
 
 
-    def weights(self):
+    def _compute_weights(self):
         """ Computes the weights for the unscented Kalman filter. In this
         formulation the weights for the mean and covariance are the same.
-
-        Returns
-        -------
-
-        Wm : ndarray[2n+1]
-            weights for mean
-
-        Wc : ndarray[2n+1]
-            weights for the covariances
         """
 
         n = self.n
         k = self.kappa
 
-        W = np.full(2*n+1, .5 / (n + k))
-        W[0] = k / (n+k)
-        return W, W
+        self.Wm = np.full(2*n+1, .5 / (n + k))
+        self.Wm[0] = k / (n+k)
+        self.Wc = self.Wm
 
 
     def __repr__(self):
-        Wm, Wc = self.weights()
 
         return '\n'.join([
             'JulierSigmaPoints object',
             pretty_str('n', self.n),
             pretty_str('kappa', self.kappa),
-            pretty_str('Wm', Wm),
-            pretty_str('Wc', Wc),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
             pretty_str('subtract', self.subtract),
             pretty_str('sqrt', self.sqrt)
             ])
@@ -410,6 +412,15 @@ class SimplexSigmaPoints(object):
         subtraction, such as angles (359-1 degreees is 2, not 358). x and y
         are state vectors, not scalars.
 
+    Attributes
+    ----------
+
+    Wm : np.array
+        weight for each sigma point for the mean
+
+    Wc : np.array
+        weight for each sigma point for the covariance
+
     References
     ----------
 
@@ -432,6 +443,8 @@ class SimplexSigmaPoints(object):
         else:
             self.subtract = subtract
 
+        self._compute_weights()
+
 
     def num_sigmas(self):
         """ Number of sigma points for each variable in the state x"""
@@ -439,7 +452,8 @@ class SimplexSigmaPoints(object):
 
 
     def sigma_points(self, x, P):
-        """ Computes the implex sigma points for an unscented Kalman filter
+        """
+        Computes the implex sigma points for an unscented Kalman filter
         given the mean (x) and covariance(P) of the filter.
         Returns tuple of the sigma points and weights.
 
@@ -498,34 +512,22 @@ class SimplexSigmaPoints(object):
         return sigmas.T
 
 
-    def weights(self):
-        """ Computes the weights for the scaled unscented Kalman filter.
-
-        Returns
-        -------
-
-        Wm : ndarray[n+1]
-            weights for mean
-
-        Wc : ndarray[n+1]
-            weights for the covariances
-        """
+    def _compute_weights(self):
+        """ Computes the weights for the scaled unscented Kalman filter. """
 
         n = self.n
         c = 1. / (n + 1)
-        W = np.full(n + 1, c)
+        self.Wm = np.full(n + 1, c)
+        self.Wc = self.Wm
 
-        return W, W
 
     def __repr__(self):
-        Wm, Wc = self.weights()
-
         return '\n'.join([
             'SimplexSigmaPoints object',
             pretty_str('n', self.n),
             pretty_str('alpha', self.alpha),
-            pretty_str('Wm', Wm),
-            pretty_str('Wc', Wc),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
             pretty_str('subtract', self.subtract),
             pretty_str('sqrt', self.sqrt)
             ])
