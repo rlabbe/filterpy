@@ -151,7 +151,7 @@ class MerweScaledSigmaPoints(object):
         if  np.isscalar(P):
             P = np.eye(n)*P
         else:
-            P = np.asarray(P)
+            P = np.atleast_2d(P)
 
         lambda_ = self.alpha**2 * (n + self.kappa) - n
         U = self.sqrt((lambda_ + n)*P)
@@ -327,7 +327,9 @@ class JulierSigmaPoints(object):
         n = np.size(x)  # dimension of problem
 
         if np.isscalar(P):
-            P = np.eye(n)*P
+            P = np.eye(n) * P
+        else:
+            P = np.atleast_2d(P)
 
         sigmas = np.zeros((2*n+1, n))
 
@@ -474,10 +476,11 @@ class SimplexSigmaPoints(object):
         if np.isscalar(x):
             x = np.asarray([x])
         x = x.reshape(-1, 1)
+
         if np.isscalar(P):
-            P = np.eye(n)*P
+            P = np.eye(n) * P
         else:
-            P = np.asarray(P)
+            P = np.atleast_2d(P)
 
         U = self.sqrt(P)
 
