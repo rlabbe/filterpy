@@ -1,3 +1,12 @@
+Version 1.4
+
+* UKF refactor. This is a (mildly) breaking change. Passing data to
+h(x) and f(x) is now done by kwargs, not tuples. The sigma point
+classes now have attributes Wm and Wc, and weights() was deleted.
+
+I also fixed a bug that did not provide a default value for `kappa`
+for the JulierSigmaPoints class.
+
 Version 1.3.2
 =============
 
