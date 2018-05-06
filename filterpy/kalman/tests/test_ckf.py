@@ -98,7 +98,7 @@ def test_1d():
         return np.dot(F, x)
 
     def hx(x):
-        return np.array([[x[0]]])
+        return x[0:1]
 
 
     ckf = CKF(dim_x=2, dim_z=1, dt=0.1, hx=hx, fx=fx)

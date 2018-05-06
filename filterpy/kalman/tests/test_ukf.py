@@ -31,7 +31,7 @@ import numpy.random as random
 from numpy.random import randn
 from numpy import asarray
 import numpy as np
-from filterpy.kalman import UnscentedKalmanFilter as UKF
+from filterpy.kalman import UnscentedKalmanFilter
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints, SimplexSigmaPoints,
                              KalmanFilter)
@@ -190,13 +190,12 @@ def test_radar():
         return A.dot(x)
 
     def hx(x):
-        return np.sqrt(x[0]**2 + x[2]**2)
+        return [np.sqrt(x[0]**2 + x[2]**2)]
 
     dt = 0.05
 
     sp = JulierSigmaPoints(n=3, kappa=0.)
-    # sp = SimplexSigmaPoints(n=3)
-    kf = UKF(3, 1, dt, fx=fx, hx=hx, points=sp)
+    kf = UnscentedKalmanFilter(3, 1, dt, fx=fx, hx=hx, points=sp)
     assert np.allclose(kf.x, kf.x_prior)
     assert np.allclose(kf.P, kf.P_prior)
 
@@ -258,7 +257,7 @@ def test_linear_2d_merwe():
 
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
-    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
 
 
     kf.x = np.array([-1., 1., -1., 1])
@@ -300,7 +299,7 @@ def test_linear_2d_simplex():
 
     dt = 0.1
     points = SimplexSigmaPoints(n=4)
-    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
 
 
     kf.x = np.array([-1., 1., -1., 1])
@@ -338,7 +337,7 @@ def test_linear_1d():
 
     dt = 0.1
     points = MerweScaledSigmaPoints(2, .1, 2., -1)
-    kf = UKF(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    kf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
 
 
     kf.x = np.array([1, 2])
@@ -381,7 +380,7 @@ def test_batch_missing_data():
 
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
-    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
 
 
     kf.x = np.array([-1., 1., -1., 1])
@@ -407,12 +406,12 @@ def test_rts():
         return f
 
     def hx(x):
-        return np.sqrt(x[0]**2 + x[2]**2)
+        return [np.sqrt(x[0]**2 + x[2]**2)]
 
     dt = 0.05
 
     sp = JulierSigmaPoints(n=3, kappa=1.)
-    kf = UKF(3, 1, dt, fx=fx, hx=hx, points=sp)
+    kf = UnscentedKalmanFilter(3, 1, dt, fx=fx, hx=hx, points=sp)
 
     kf.Q *= 0.01
     kf.R = 10
@@ -471,13 +470,13 @@ def test_fixed_lag():
         return f
 
     def hx(x):
-        return np.sqrt(x[0]**2 + x[2]**2)
+        return [np.sqrt(x[0]**2 + x[2]**2)]
 
     dt = 0.05
 
     sp = JulierSigmaPoints(n=3, kappa=0)
 
-    kf = UKF(3, 1, dt, fx=fx, hx=hx, points=sp)
+    kf = UnscentedKalmanFilter(3, 1, dt, fx=fx, hx=hx, points=sp)
 
     kf.Q *= 0.01
     kf.R = 10
@@ -558,7 +557,7 @@ def test_circle():
     std_noise = .1
 
     sp = JulierSigmaPoints(n=3, kappa=0.)
-    f = UKF(dim_x=3, dim_z=2, dt=.01, hx=hx, fx=fx, points=sp)
+    f = UnscentedKalmanFilter(dim_x=3, dim_z=2, dt=.01, hx=hx, fx=fx, points=sp)
     f.x = np.array([50., 90., 0])
     f.P *= 100
     f.R = np.eye(2)*(std_noise**2)
@@ -894,7 +893,7 @@ def test_linear_rts():
     tc = Q_discrete_white_noise(dim=2, dt=dt, var=sig_t**2)
     points = MerweScaledSigmaPoints(n=2, alpha=.1, beta=2., kappa=1)
 
-    ukf = UKF(dim_x=2, dim_z=1, dt=dt, hx=o_func, fx=t_func, points=points)
+    ukf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, hx=o_func, fx=t_func, points=points)
     ukf.x = np.array([0., 1.])
     ukf.R = oc[:]
     ukf.Q = tc[:]
@@ -965,7 +964,7 @@ def _test_log_likelihood():
 
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
-    kf = UKF(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
 
     z_std = 0.1
     kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
