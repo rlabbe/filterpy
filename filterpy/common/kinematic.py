@@ -144,6 +144,7 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
     if dim_z < 1:
         raise ValueError("dim_z must be >= 1")
 
+    import filterpy.kalman
     dim_x = order + 1
 
     kf = filterpy.kalman.KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
