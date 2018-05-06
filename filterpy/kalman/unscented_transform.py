@@ -98,12 +98,15 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
 
     kmax, n = sigmas.shape
 
-
-    if mean_fn is None:
-        # new mean is just the sum of the sigmas * weight
-        x = np.dot(Wm, sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
-    else:
-        x = mean_fn(sigmas, Wm)
+    try:
+        if mean_fn is None:
+            # new mean is just the sum of the sigmas * weight
+            x = np.dot(Wm, sigmas)    # dot = \Sigma^n_1 (W[k]*Xi[k])
+        else:
+            x = mean_fn(sigmas, Wm)
+    except:
+        print(sigmas)
+        raise
 
 
     # new covariance is the sum of the outer product of the residuals
