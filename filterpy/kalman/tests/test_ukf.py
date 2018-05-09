@@ -270,7 +270,7 @@ def test_linear_2d_merwe():
     zs = [[i+randn()*0.1, i+randn()*0.1] for i in range(20)]
 
     Ms, Ps = kf.batch_filter(zs)
-    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
+    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dts=dt)
 
     if DO_PLOT:
         plt.figure()
@@ -311,7 +311,7 @@ def test_linear_2d_simplex():
         zs.append(z)
 
     Ms, Ps = kf.batch_filter(zs)
-    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
+    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dts=dt)
 
     if DO_PLOT:
         zs = np.asarray(zs)

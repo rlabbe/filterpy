@@ -20,6 +20,7 @@ for more information.
 from __future__ import print_function
 from collections import defaultdict
 import copy
+from itertools import repeat
 import numpy as np
 
 
@@ -289,3 +290,16 @@ def reshape_z(z, dim_z, ndim):
         z = z[0, 0]
 
     return z
+
+
+def repeated_array(val, N):
+    """ User can specify either a single value, or a list/array of N values.
+    If a single value, create an iterable list to return that value
+    repeatedly.
+    """
+
+    shape = np.shape(val)
+    if len(shape) > 1 and shape[0] == N:
+            return val
+
+    return repeat(val, N)
