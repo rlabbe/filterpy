@@ -152,8 +152,8 @@ class SquareRootKalmanFilter(object):
         self.M = np.zeros((dim_z + dim_x, dim_z + dim_x))
 
         # copy prior
-        self.x_prior = self.x[:]
-        self._P1_2_prior = self._P1_2[:]
+        self.x_prior = np.copy(self.x)
+        self._P1_2_prior = np.copy(self._P1_2)
 
 
     def update(self, z, R2=None):
@@ -224,8 +224,8 @@ class SquareRootKalmanFilter(object):
         self._P1_2 = P2[:self.dim_x, :self.dim_x].T
 
         # copy prior
-        self.x_prior = self.x[:]
-        self._P1_2_prior = self._P1_2[:]
+        self.x_prior = np.copy(self.x)
+        self._P1_2_prior = np.copy(self._P1_2)
 
 
     def residual_of(self, z):

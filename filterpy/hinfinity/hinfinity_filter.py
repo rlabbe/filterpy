@@ -137,7 +137,7 @@ class HInfinityFilter(object):
 
         # pylint: disable=bare-except
         try:
-            self.z = z[:]
+            self.z = np.copy(z)
         except:
             self.z = copy.deepcopy(z)
 

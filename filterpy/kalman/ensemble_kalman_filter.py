@@ -194,8 +194,8 @@ class EnsembleKalmanFilter(object):
         self.sigmas = multivariate_normal(mean=x, cov=P, size=self.N)
         self.x = x
         self.P = P
-        self.x_prior = x[:]
-        self.P_prior = P[:]
+        self.x_prior = np.copy(x)
+        self.P_prior = np.copy(P)
 
 
 
@@ -272,8 +272,8 @@ class EnsembleKalmanFilter(object):
         self.P = P / (N-1)
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def __repr__(self):

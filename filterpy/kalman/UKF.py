@@ -282,8 +282,8 @@ class UnscentedKalmanFilter(object):
 
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
         self.Q = eye(dim_x)
         self.R = eye(dim_z)
         self._dim_x = dim_x
@@ -330,8 +330,8 @@ class UnscentedKalmanFilter(object):
         self.inv = np.linalg.inv
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def predict(self, dt=None, UT=None, fx=None, **fx_args):
@@ -377,8 +377,8 @@ class UnscentedKalmanFilter(object):
                             self.x_mean, self.residual_x)
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def update(self, z, R=None, UT=None, hx=None, **hx_args):

@@ -156,8 +156,8 @@ class InformationFilter(object):
         self.inv = np.linalg.inv
 
         # save priors
-        self.x_prior = self.x[:]
-        self.P_inv_prior = self.P_inv[:]
+        self.x_prior = np.copy(self.x)
+        self.P_inv_prior = np.copy(self.P_inv)
 
 
     def update(self, z, R_inv=None):
@@ -211,7 +211,7 @@ class InformationFilter(object):
             self.x = x + dot(self.K, self.y)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
 
-            self.z = reshape_z(z, self.dim_z, np.ndim(self.x))[:]
+            self.z = np.copy(reshape_z(z, self.dim_z, np.ndim(self.x)))
 
             if self.compute_log_likelihood:
                 self.log_likelihood = logpdf(x=self.y, cov=self.S)
@@ -251,10 +251,10 @@ class InformationFilter(object):
         if invertable:
             self.x = dot(self._F, self.x) + dot(self.B, u)
             self.P_inv = self.inv(AI + self.Q)
-            self.P_inv_prior = self.P_inv[:]
+            self.P_inv_prior = np.copy(self.P_inv)
 
             # save priors
-            self.x_prior = self.x[:]
+            self.x_prior = np.copy(self.x)
         else:
             I_PF = self._I - dot(self.P_inv, self._F_inv)
             FTI = self.inv(self._F.T)
@@ -263,8 +263,8 @@ class InformationFilter(object):
             self.x = dot(FTI, dot(I_PF, AQI).dot(FTIX))
 
             # save priors
-            self.x_prior = self.x[:]
-            self.P_inv_prior = AQI[:]
+            self.x_prior = np.copy(self.x)
+            self.P_inv_prior = np.copy(AQI)
 
 
     def batch_filter(self, zs, Rs=None, update_first=False, saver=None):

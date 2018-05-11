@@ -256,8 +256,8 @@ class KalmanFilter(object):
         self._I = np.eye(dim_x)
 
         # these will always be a copy of x,P after predict() is called
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
@@ -310,8 +310,8 @@ class KalmanFilter(object):
         self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def update(self, z, R=None, H=None):
@@ -374,7 +374,7 @@ class KalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
-        self.z = z[:] # save the measurement
+        self.z = np.copy(z) # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
@@ -412,8 +412,8 @@ class KalmanFilter(object):
             self.x = dot(self.F, self.x)
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def update_steadystate(self, z):
@@ -447,14 +447,14 @@ class KalmanFilter(object):
         >>> for i in range(100):
         >>>     cv.predict()
         >>>     cv.update([i, i, i])
-        >>> saved_k = cv.K[:]
-        >>> saved_P = cv.P[:]
+        >>> saved_k = np.copy(cv.K)
+        >>> saved_P = np.copy(cv.P)
 
         later on:
 
         >>> cv = kinematic_kf(dim=3, order=2) # 3D const velocity filter
-        >>> cv.K = saved_K[:]
-        >>> cv.P = saved_P[:]
+        >>> cv.K = np.copy(saved_K)
+        >>> cv.P = np.copy(saved_P)
         >>> for i in range(100):
         >>>     cv.predict_steadystate()
         >>>     cv.update_steadystate([i, i, i])
@@ -476,7 +476,7 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
 
-        self.z = z[:] # save the measurement
+        self.z = np.copy(z) # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=S)
@@ -548,7 +548,7 @@ class KalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
 
-        self.z = z[:] # save the measurement
+        self.z = np.copy(z) # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
@@ -1632,12 +1632,12 @@ class Saver(object):
         """ save the current state of the Kalman filter"""
 
         kf = self.kf
-        self.xs.append(kf.x[:])
-        self.Ps.append(kf.P[:])
-        self.Ks.append(kf.K[:])
-        self.ys.append(kf.y[:])
-        self.xs_prior.append(kf.x_prior[:])
-        self.Ps_prior.append(kf.P_prior[:])
+        self.xs.append(np.copy(kf.x))
+        self.Ps.append(np.copy(kf.P))
+        self.Ks.append(np.copy(kf.K))
+        self.ys.append(np.copy(kf.y))
+        self.xs_prior.append(np.copy(kf.x_prior))
+        self.Ps_prior.append(np.copy(kf.P_prior))
 
 
     def to_array(self):
