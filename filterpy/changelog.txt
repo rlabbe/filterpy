@@ -1,8 +1,15 @@
-Version
+Version 1.4.1
+=============
 
 
 * GitHub 125: used itertools.repeat() instead of [x]*n to get
 iterable list of constant values
+
+* Fixed bug using [:] to copy data instead of np.copy(), which is 
+a deep copy
+
+* fixed import bug in common.kinematic_kf()
+
 
 Version 1.4
 ===========
