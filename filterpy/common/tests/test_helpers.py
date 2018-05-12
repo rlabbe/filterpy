@@ -14,7 +14,7 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from filterpy.common import kinematic_kf, Saver
+from filterpy.common import kinematic_kf, Saver, inv_diagonal
 
 import numpy as np
 from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
@@ -142,12 +142,24 @@ def test_saver_ekf():
     assert len(s.K) == 3
 
 
+def test_inv_diagonal():
+
+    for i in range(10000):
+
+        n = np.random.randint(1, 50)
+        if i == 0:
+            n = 1 # test 1x1 matrix as special case
+
+        S = np.diag(np.random.randn(n))
+
+        assert np.allclose(inv_diagonal(S), np.linalg.inv(S))
 
 
 if __name__ == "__main__":
 
     test_saver_kf()
     test_saver_ekf()
+    test_inv_diagonal()
 
     ITERS = 1000000
     #test_mahalanobis()

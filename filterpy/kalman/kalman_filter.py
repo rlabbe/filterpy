@@ -213,6 +213,10 @@ class KalmanFilter(object):
         If you prefer another inverse function, such as the Moore-Penrose
         pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
 
+        This is only used to invert self.S. If you know it is diagonal, you
+        might choose to set it to filterpy.common.inv_diagonal, which is
+        several times faster than numpy.linalg.inv for diagonal matrices.
+
     Examples
     --------
 
@@ -762,7 +766,7 @@ class KalmanFilter(object):
         return (means, covariances, means_p, covariances_p)
 
 
-    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None):
+    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, inv=np.linalg.inv):
         """
         Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by a Kalman filter. The usual input
@@ -785,6 +789,11 @@ class KalmanFilter(object):
         Qs : list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
+
+        inv : function, default numpy.linalg.inv
+            If you prefer another inverse function, such as the Moore-Penrose
+            pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+
 
         Returns
         -------
@@ -832,7 +841,7 @@ class KalmanFilter(object):
             Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
             #pylint: disable=bad-whitespace
-            K[k]  = dot(dot(P[k], Fs[k+1].T), self.inv(Pp[k]))
+            K[k]  = dot(dot(P[k], Fs[k+1].T), inv(Pp[k]))
             x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
             P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
 
