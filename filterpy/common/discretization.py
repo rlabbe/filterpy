@@ -27,7 +27,7 @@ from scipy.linalg import expm, block_diag
 
 
 
-def order_by_derivative(Q, dim, order):
+def order_by_derivative(Q, dim, block_size):
     """
     Given a matrix Q, ordered assuming state space
         [x y z x' y' z' x'' y'' z''...]
@@ -46,13 +46,13 @@ def order_by_derivative(Q, dim, order):
 
        number of independent state variables. 3 for x, y, z
 
-    order : int >= 0
-        order of derivatives. 2 implies second derivative.
+    block_size : int >= 0
+        Size of derivatives. Second derivative would be a block size of 3
+        (x, x', x'')
 
 
     """
 
-    block_size = order + 1
     N = dim * block_size
 
     D = zeros((N, N))
