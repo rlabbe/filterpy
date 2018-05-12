@@ -137,6 +137,7 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
         [x y z x' y' z' x'' y'' z'']
     """
 
+    from filterpy.kalman import KalmanFilter
     if dim < 1:
         raise ValueError("dim must be >= 1")
     if order < 0:
@@ -146,7 +147,7 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
 
     dim_x = order + 1
 
-    kf = filterpy.kalman.KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
+    kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim)
     F = kinematic_state_transition(order, dt)
     if order_by_dim:
         diag = [F] * dim
