@@ -70,15 +70,17 @@ def _validate_vector(u, dtype=None):
 def mahalanobis(x, mean, cov):
     """
     Computes the Mahalanobis distance between the state vector x from the
-    Gaussian  `mean` with covariance `cov`.
+    Gaussian `mean` with covariance `cov`. This can be thought as the number
+    of standard deviations x is from the mean, i.e. a return value of 3 means
+    x is 3 std from mean.
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (N,) array_like, or float
         Input state vector
-    mean : (N,) array_like
+    mean : (N,) array_like, or float
         mean of multivariate Gaussian
-    cov : ndarray
+    cov : (N,N) array_like  or float
         covariance of the multivariate Gaussian
 
     Returns
@@ -90,6 +92,10 @@ def mahalanobis(x, mean, cov):
     --------
     >>> mahalanobis(x=3., mean=3.5, cov=4.**2) # univariate case
     0.125
+
+    >>> mahalanobis(x=3., mean=6, cov=1) # univariate, 3 std away
+    3.0
+
     >>> mahalanobis([1., 2], [1.1, 3.5], [[1., .1],[.1, 13]])
     0.42533327058913922
     """
