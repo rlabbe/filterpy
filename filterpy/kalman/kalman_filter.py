@@ -260,8 +260,8 @@ class KalmanFilter(object):
         self._I = np.eye(dim_x)
 
         # these will always be a copy of x,P after predict() is called
-        self.x_prior = np.copy(self.x)
-        self.P_prior = np.copy(self.P)
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
@@ -314,8 +314,8 @@ class KalmanFilter(object):
         self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
 
         # save prior
-        self.x_prior = np.copy(self.x)
-        self.P_prior = np.copy(self.P)
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
 
     def update(self, z, R=None, H=None):
@@ -378,7 +378,7 @@ class KalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
-        self.z = np.copy(z) # save the measurement
+        self.z = z.copy() # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
@@ -416,8 +416,8 @@ class KalmanFilter(object):
             self.x = dot(self.F, self.x)
 
         # save prior
-        self.x_prior = np.copy(self.x)
-        self.P_prior = np.copy(self.P)
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
 
     def update_steadystate(self, z):
@@ -480,7 +480,7 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
 
-        self.z = np.copy(z) # save the measurement
+        self.z = z.copy() # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=S)
@@ -552,7 +552,7 @@ class KalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
 
-        self.z = np.copy(z) # save the measurement
+        self.z = z.copy() # save the measurement
 
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
