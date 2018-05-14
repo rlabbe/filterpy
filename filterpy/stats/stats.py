@@ -78,9 +78,11 @@ def mahalanobis(x, mean, cov):
     ----------
     x : (N,) array_like, or float
         Input state vector
+
     mean : (N,) array_like, or float
         mean of multivariate Gaussian
-    cov : (N,N) array_like  or float
+
+    cov : (N, N) array_like  or float
         covariance of the multivariate Gaussian
 
     Returns
