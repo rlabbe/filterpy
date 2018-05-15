@@ -18,7 +18,7 @@ prediction is called the *prior*, which you can think of collequally
 as the estimate prior to incorporating the measurement.
 
 The update step, implemented with the method or function `update()`,
-incoporates the measurement z with covariance R, into the state
+incorporates the measurement z with covariance R, into the state
 estimate (x, P). The class stores the system uncertainty in S,
 the innovation (residual between prediction and measurement in
 measurement space) in y, and the Kalman gain in k. The procedural
@@ -26,7 +26,7 @@ form returns these variables to you. In Bayesian terms this computes
 the *posterior* - the estimate after the information from the
 measurement is incorporated.
 
-Whether you use the OO form or procedureal form is up to you. If
+Whether you use the OO form or procedural form is up to you. If
 matrices such as H, R, and F are changing each epoch, you'll probably
 opt to use the procedural form. If they are unchanging, the OO
 form is perhaps easier to use since you won't need to keep track
@@ -192,7 +192,7 @@ class KalmanFilter(object):
         Kalman gain of the update step. Read only.
 
     S :  numpy.array
-        Systen uncertaintly projected to measurement space. Read only.
+        System uncertainty projected to measurement space. Read only.
 
     z : ndarray
         Last measurement used in update(). Read only.
@@ -201,7 +201,7 @@ class KalmanFilter(object):
         log-likelihood of the last measurement. Read only.
 
     likelihood : float
-        likelihood of last measurment. Read only.
+        likelihood of last measurement. Read only.
 
         Computed from the log-likelihood. The log-likelihood can be very
         small,  meaning a large negative value such as -28000. Taking the
@@ -226,12 +226,12 @@ class KalmanFilter(object):
 
 
     def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
-        if dim_z < 1:
+        if dim_x < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
-            raise ValueError('dim_x must be 1 or greater')
+            raise ValueError('dim_z must be 1 or greater')
         if dim_u < 0:
-            raise ValueError('dim_x must be 0 or greater')
+            raise ValueError('dim_u must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z
