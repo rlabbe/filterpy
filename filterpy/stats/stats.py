@@ -829,7 +829,8 @@ def _std_tuple_of(var=None, std=None, interval=None):
 
 def plot_covariance(
         mean, cov=None, variance=1.0, std=None, interval=None,
-        ellipse=None, title=None, axis_equal=True, show_semiaxis=False,
+        ellipse=None, title=None, axis_equal=True,
+        show_semiaxis=False, show_center=True,
         facecolor=None, edgecolor=None,
         fc='none', ec='#004080',
         alpha=1.0, xlim=None, ylim=None,
@@ -893,6 +894,9 @@ def plot_covariance(
     show_semiaxis: bool, default=False
         Draw the semiaxis of the ellipse
 
+    show_center: bool, default=True
+        Mark the center of the ellipse with a cross
+
     facecolor, fc: color, default=None
         If specified, fills the ellipse with the specified color. `fc` is an
         allowed abbreviation
@@ -951,7 +955,9 @@ def plot_covariance(
                     lw=2, ls=ls)
         ax.add_patch(e)
     x, y = mean
-    plt.scatter(x, y, marker='+', color=edgecolor) # mark the center
+    if show_center:
+        plt.scatter(x, y, marker='+', color=edgecolor)
+
     if xlim is not None:
         ax.set_xlim(xlim)
 
