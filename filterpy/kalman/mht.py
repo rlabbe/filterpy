@@ -51,8 +51,8 @@ class Node(object):
         else:
             zstr = '{:4f}'.format(self.z)
 
-        return 'Node {}: uid {:3d} parent {:3d} depth {:3d} score {:.2f} z {}'.format(
-                hex(id(self)), self.uid, pid, self.depth, self.score, zstr)
+        return 'Node {:3d}: parent {:3d} depth {:3d} score {:.2f} z {}'.format(
+                self.uid, pid, self.depth, self.score, zstr)
 
     def copy(self, z=None):
         return Node(deepcopy(self.kf), z)
@@ -198,8 +198,31 @@ class Tree(object):
 
 
 def print_tree(t, level):
+    if level is None:
+        return
+
+    try:
+        level[0]
+        if len(level) == 0:
+            return
+
+    except TypeError:
+        level = [level]
+    except IndexError:
+        return # 0 length list
+
+    try:
+        print('level', level[0].depth)
+    except:
+        print('fuck', level)
+        1/0
+    children = []
     for node in level:
-        pprint(node)
+        print(node, node.kf.x_post.T)
+        children.extend(node.children)
+
+    print_tree(t, children)
+
 
 if __name__ == '__main__':
     from filterpy.stats import mahalanobis
@@ -282,8 +305,9 @@ if __name__ == '__main__':
 
     from pprint import pprint
     pprint(ptree(t))
+    print()
 
-
+    print_tree(t, t.head)
 
 
 
