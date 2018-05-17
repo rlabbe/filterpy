@@ -4,14 +4,19 @@ Created on Sun May  6 08:58:16 2018
 
 @author: rlabbe
 """
-
-
+from copy import deepcopy
+import numpy as np
+from filterpy.kalman import KalmanFilter
+from filterpy.common import kinematic_kf
 
 class Node(object):
-    def __init__(self, kf):
-
+    _last_id = 1
+    def __init__(self, kf, z=None):
         self.kf = kf
         self.score = 1.0
+        self.uid = Node._last_id
+        Node._last_id += 1
+        self.z = z
 
         self.clear_ref()
 
@@ -35,6 +40,23 @@ class Node(object):
     def delete_children(self):
         self.children = set()
 
+    def __repr__(self):
+        if self.parent is None:
+            pid = 0
+        else:
+            pid = self.parent.uid
+
+        if self.z is None:
+            zstr = 'None'
+        else:
+            zstr = '{:4f}'.format(self.z)
+
+        return 'Node {}: uid {:3d} parent {:3d} depth {:3d} score {:.2f} z {}'.format(
+                hex(id(self)), self.uid, pid, self.depth, self.score, zstr)
+
+    def copy(self, z=None):
+        return Node(deepcopy(self.kf), z)
+
 
     def branch(self):
         """
@@ -53,9 +75,6 @@ class Node(object):
 
         return list(reversed(nodes))
 
-
-    def __repr__(self):
-        return 'Node: ' + hex(id(self)) + ' ' + str(self.kf)
 
 
 # broken into separate tree and nodes so we can keep a master list
@@ -80,6 +99,8 @@ class Tree(object):
         # handy reference - keeps all the leaves so we don't have
         # to search
         self.leaves = set()
+
+        self.uids = {}
         self.head = None
 
 
@@ -110,13 +131,13 @@ class Tree(object):
         self.nodes.add(node)
         self.leaves.add(node)
         self.head = node
+        self.uids[node.uid] = node
 
 
     def add_child(self, parent, child):
 
         assert child not in self.nodes
         assert child not in self.leaves
-        assert child.parent is None
 
         assert len(child.children) == 0
         assert parent is not None
@@ -129,6 +150,7 @@ class Tree(object):
 
         # add to nodes for easy look up
         self.nodes.add(child)
+        self.uids[child.uid] = child
 
         if child.is_leaf():
             self.leaves.add(child)
@@ -167,33 +189,20 @@ class Tree(object):
         if parent.is_leaf():
             self.leaves.add(parent)
 
+        del self.uids[node.uid]
+
 
     def __len__(self):
         return len(self.nodes)
 
 
 
-# for now this is 1 tree
-class MultipleHypothesisTracker(object):
-
-    def __init__(self):
-        self.id = 0
-        self.head = None
-
-        self.tree = dict()
-
-
-    def create(self, kf):
-        pass
-
-
-
-    def predict():
-        pass
-
-
+def print_tree(t, level):
+    for node in level:
+        pprint(node)
 
 if __name__ == '__main__':
+    from filterpy.stats import mahalanobis
 
     '''from filterpy.common import kinematic_kf
 
@@ -204,12 +213,12 @@ if __name__ == '__main__':
 
     mht.create(kf)'''
 
-    t = Tree()
-    n = Node(1)
+    '''t = Tree()
+    n = Node(kinematic_kf(1, 1))
 
     t.create(n)
 
-    n2 = Node(2)
+    n2 = State(2, 1)
     t.add_child(n, n2)
 
     assert len(n2.branch()) == 2
@@ -222,14 +231,57 @@ if __name__ == '__main__':
     assert n2.is_leaf()
 
     assert n.depth == 1
-    assert n2.depth == 2
+    assert n2.depth == 2'''
+
+    def ptree(tree):
+        return sorted(tree.nodes, key=lambda x : x.uid)
 
 
+    N = 4
+    zs = [i + .01*np.random.randn() for i in (range(N))]
+    zs2 =[i + 2*np.random.randn() for i in (range(N))]
 
+    t = Tree()
+    for z1, z2 in zip(zs, zs2):
+        associated = False
+        add =[]
+        for leaf in t.leaves:
+            leaf.kf.predict()
+            d = mahalanobis(z1, leaf.kf.x[0], leaf.kf.P[0,0])
+            print('maha', d)
+            if d < 3.: #std
+                associated = True
+                child = leaf.copy(z1)
+                child.kf.update(z1)
+                child.score = np.exp(-child.kf.mahalanobis)
+                add.append((leaf, child))
+                print('adding leaf', child.uid, 'to', leaf.uid)
 
+            child = leaf.copy()
+            print(child.score)
+            add.append((leaf, child))
 
+        if not associated:
+            print(z1, 'is trash')
+            if len(t) == 0:
+                kf = kinematic_kf(1, 1)
+                kf.x[0] = z1
+                kf.update(z1) # compute reasonable log_likelihood
+                t.create(Node(kf))
+                print('making a tree with', z1)
+        # add no match prediction
+        # this makes a
 
+        for c in add:
+            t.add_child(*c)
 
+    branch = child.branch()
+
+    for b in branch:
+        print(f'{b.kf.z[0,0]:.4f}, {b.kf.x_post.T}, {b.kf.log_likelihood:.4f}, {b.kf.mahalanobis:.4f}')
+
+    from pprint import pprint
+    pprint(ptree(t))
 
 
 
