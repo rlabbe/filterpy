@@ -14,7 +14,7 @@ uses the state transition matrix F to predict the state in the next
 time period (epoch). The state is stored as a gaussian (x, P), where
 x is the state (column) vector, and P is its covariance. Covariance
 matrix Q specifies the process covariance. In Bayesian terms, this
-prediction is called the *prior*, which you can think of collequally
+prediction is called the *prior*, which you can think of colloquially
 as the estimate prior to incorporating the measurement.
 
 The update step, implemented with the method or function `update()`,
@@ -220,6 +220,20 @@ class KalmanFilter(object):
         might choose to set it to filterpy.common.inv_diagonal, which is
         several times faster than numpy.linalg.inv for diagonal matrices.
 
+    alpha : float 
+        Fading memory setting. 1.0 gives the normal Kalman filter, and
+        values slightly larger than 1.0 (such as 1.02) give a fading
+        memory effect - previous measurements have less influence on the
+        filter's estimates. This formulation of the Fading memory filter
+        (there are many) is due to Dan Simon [1]_.
+
+        References
+        ----------
+
+        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
+           p. 208-212. (2006)
+
+    
     Examples
     --------
 
@@ -228,7 +242,7 @@ class KalmanFilter(object):
     """
 
     def __init__(self, dim_x, dim_z, dim_u=0):
-        if dim_z < 1:
+        if dim_x < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
             raise ValueError('dim_z must be 1 or greater')
