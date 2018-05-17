@@ -627,6 +627,22 @@ def test_z_checks():
 
 
 
+def test_stats():
+    import sys
+    kf = KalmanFilter(dim_x=3, dim_z=1)
+
+    assert kf._mahalanobis is None
+    assert kf._likelihood == sys.float_info.min
+
+    kf.update(0.)
+    assert kf.mahalanobis == 0.0
+    assert kf._log_likelihood is None
+    assert kf._likelihood is None
+
+    kf.likelihood
+    assert kf.likelihood > 0
+    assert kf.log_likelihood < 0
+
 
 if __name__ == "__main__":
     DO_PLOT = True
