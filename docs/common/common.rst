@@ -41,3 +41,7 @@ will find useful when you build your filters.
 
 .. autofunction:: runge_kutta4
 
+-----
+
+.. autofunction:: inv_diagonal
+

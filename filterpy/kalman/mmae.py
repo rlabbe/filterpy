@@ -81,13 +81,16 @@ class MMAEFilterBank(object):
         self.filters = filters
         self.p = np.asarray(p)
         self.dim_x = dim_x
-        self.H = H[:]
+        if H is None:
+            self.H = None
+        else:
+            self.H = np.copy(H)
 
         # try to form a reasonable initial values, but good luck!
         try:
-            self.z = filters[0].z[:]
-            self.x = filters[0].x[:]
-            self.P = filters[0].P[:]
+            self.z = np.copy(filters[0].z)
+            self.x = np.copy(filters[0].x)
+            self.P = np.copy(filters[0].P)
 
         except AttributeError:
             self.z = 0
@@ -162,7 +165,7 @@ class MMAEFilterBank(object):
             self.P += p*(np.outer(y, y) + f.P)
 
         try:
-            self.z = z[:]
+            self.z = np.copy(z)
         except IndexError:
             self.z = z
 

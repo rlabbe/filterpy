@@ -270,7 +270,7 @@ def test_linear_2d_merwe():
     zs = [[i+randn()*0.1, i+randn()*0.1] for i in range(20)]
 
     Ms, Ps = kf.batch_filter(zs)
-    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
+    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dts=dt)
 
     if DO_PLOT:
         plt.figure()
@@ -311,7 +311,7 @@ def test_linear_2d_simplex():
         zs.append(z)
 
     Ms, Ps = kf.batch_filter(zs)
-    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dt=dt)
+    smooth_x, _, _ = kf.rts_smoother(Ms, Ps, dts=dt)
 
     if DO_PLOT:
         zs = np.asarray(zs)
@@ -895,8 +895,8 @@ def test_linear_rts():
 
     ukf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, hx=o_func, fx=t_func, points=points)
     ukf.x = np.array([0., 1.])
-    ukf.R = oc[:]
-    ukf.Q = tc[:]
+    ukf.R = np.copy(oc)
+    ukf.Q = np.copy(tc)
     s = Saver(ukf)
     s.save()
     s.to_array()
@@ -904,10 +904,10 @@ def test_linear_rts():
 
     kf = KalmanFilter(dim_x=2, dim_z=1)
     kf.x = np.array([[0., 1]]).T
-    kf.R = oc[:]
-    kf.Q = tc[:]
-    kf.H = H[:]
-    kf.F = F[:]
+    kf.R = np.copy(oc)
+    kf.Q = np.copy(tc)
+    kf.H = np.copy(H)
+    kf.F = np.copy(F)
 
 
     mu_ukf, cov_ukf = ukf.batch_filter(X_obs)

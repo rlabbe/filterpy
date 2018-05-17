@@ -146,8 +146,8 @@ class ExtendedKalmanFilter(object):
         self.likelihood = sys.float_info.min
 
         # Priors. Will always be a copy of x, P after predict() is called.
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def predict_update(self, z, HJacobian, Hx, args=(), hx_args=(), u=0):
@@ -207,8 +207,8 @@ class ExtendedKalmanFilter(object):
         P = dot(F, P).dot(F.T) + Q
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
         # update step
         PHT = dot(P, H.T)
@@ -335,8 +335,8 @@ class ExtendedKalmanFilter(object):
         self.P = dot(self.F, self.P).dot(self.F.T) + self.Q
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def __repr__(self):

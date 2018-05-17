@@ -70,15 +70,19 @@ def _validate_vector(u, dtype=None):
 def mahalanobis(x, mean, cov):
     """
     Computes the Mahalanobis distance between the state vector x from the
-    Gaussian  `mean` with covariance `cov`.
+    Gaussian `mean` with covariance `cov`. This can be thought as the number
+    of standard deviations x is from the mean, i.e. a return value of 3 means
+    x is 3 std from mean.
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (N,) array_like, or float
         Input state vector
-    mean : (N,) array_like
+
+    mean : (N,) array_like, or float
         mean of multivariate Gaussian
-    cov : ndarray
+
+    cov : (N, N) array_like  or float
         covariance of the multivariate Gaussian
 
     Returns
@@ -90,6 +94,10 @@ def mahalanobis(x, mean, cov):
     --------
     >>> mahalanobis(x=3., mean=3.5, cov=4.**2) # univariate case
     0.125
+
+    >>> mahalanobis(x=3., mean=6, cov=1) # univariate, 3 std away
+    3.0
+
     >>> mahalanobis([1., 2], [1.1, 3.5], [[1., .1],[.1, 13]])
     0.42533327058913922
     """
@@ -821,7 +829,8 @@ def _std_tuple_of(var=None, std=None, interval=None):
 
 def plot_covariance(
         mean, cov=None, variance=1.0, std=None, interval=None,
-        ellipse=None, title=None, axis_equal=True, show_semiaxis=False,
+        ellipse=None, title=None, axis_equal=True,
+        show_semiaxis=False, show_center=True,
         facecolor=None, edgecolor=None,
         fc='none', ec='#004080',
         alpha=1.0, xlim=None, ylim=None,
@@ -885,6 +894,9 @@ def plot_covariance(
     show_semiaxis: bool, default=False
         Draw the semiaxis of the ellipse
 
+    show_center: bool, default=True
+        Mark the center of the ellipse with a cross
+
     facecolor, fc: color, default=None
         If specified, fills the ellipse with the specified color. `fc` is an
         allowed abbreviation
@@ -943,7 +955,9 @@ def plot_covariance(
                     lw=2, ls=ls)
         ax.add_patch(e)
     x, y = mean
-    plt.scatter(x, y, marker='+', color=edgecolor) # mark the center
+    if show_center:
+        plt.scatter(x, y, marker='+', color=edgecolor)
+
     if xlim is not None:
         ax.set_xlim(xlim)
 

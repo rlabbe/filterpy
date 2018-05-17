@@ -18,7 +18,7 @@ prediction is called the *prior*, which you can think of collequally
 as the estimate prior to incorporating the measurement.
 
 The update step, implemented with the method or function `update()`,
-incoporates the measurement z with covariance R, into the state
+incorporates the measurement z with covariance R, into the state
 estimate (x, P). The class stores the system uncertainty in S,
 the innovation (residual between prediction and measurement in
 measurement space) in y, and the Kalman gain in k. The procedural
@@ -26,7 +26,7 @@ form returns these variables to you. In Bayesian terms this computes
 the *posterior* - the estimate after the information from the
 measurement is incorporated.
 
-Whether you use the OO form or procedureal form is up to you. If
+Whether you use the OO form or procedural form is up to you. If
 matrices such as H, R, and F are changing each epoch, you'll probably
 opt to use the procedural form. If they are unchanging, the OO
 form is perhaps easier to use since you won't need to keep track
@@ -112,6 +112,7 @@ Copyright 2014-2018 Roger R Labbe Jr.
 """
 
 from __future__ import absolute_import, division
+
 import sys
 import warnings
 import math
@@ -119,7 +120,7 @@ import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import numpy.linalg as linalg
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str, reshape_z
+from filterpy.common import pretty_str, reshape_z, repeated_array
 
 
 
@@ -191,7 +192,7 @@ class KalmanFilter(object):
         Kalman gain of the update step. Read only.
 
     S :  numpy.array
-        Systen uncertaintly projected to measurement space. Read only.
+        System uncertainty projected to measurement space. Read only.
 
     z : ndarray
         Last measurement used in update(). Read only.
@@ -200,7 +201,7 @@ class KalmanFilter(object):
         log-likelihood of the last measurement. Read only.
 
     likelihood : float
-        likelihood of last measurment. Read only.
+        likelihood of last measurement. Read only.
 
         Computed from the log-likelihood. The log-likelihood can be very
         small,  meaning a large negative value such as -28000. Taking the
@@ -215,6 +216,10 @@ class KalmanFilter(object):
         If you prefer another inverse function, such as the Moore-Penrose
         pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
 
+        This is only used to invert self.S. If you know it is diagonal, you
+        might choose to set it to filterpy.common.inv_diagonal, which is
+        several times faster than numpy.linalg.inv for diagonal matrices.
+
     Examples
     --------
 
@@ -222,14 +227,13 @@ class KalmanFilter(object):
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
-
     def __init__(self, dim_x, dim_z, dim_u=0):
         if dim_z < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
-            raise ValueError('dim_x must be 1 or greater')
+            raise ValueError('dim_z must be 1 or greater')
         if dim_u < 0:
-            raise ValueError('dim_x must be 0 or greater')
+            raise ValueError('dim_u must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z
@@ -287,16 +291,16 @@ class KalmanFilter(object):
             to create the control input into the system.
 
         B : np.array(dim_x, dim_z), or None
-            Optional control transition matrix; a value of None in
-            any position will cause the filter to use `self.B`.
+            Optional control transition matrix; a value of None
+            will cause the filter to use `self.B`.
 
         F : np.array(dim_x, dim_x), or None
-            Optional state transition matrix; a value of None in
-            any position will cause the filter to use `self.F`.
+            Optional state transition matrix; a value of None
+            will cause the filter to use `self.F`.
 
         Q : np.array(dim_x, dim_x), scalar, or None
-            Optional process noise matrix; a value of None in
-            any position will cause the filter to use `self.Q`.
+            Optional process noise matrix; a value of None will cause the
+            filter to use `self.Q`.
         """
 
         if B is None:
@@ -318,8 +322,8 @@ class KalmanFilter(object):
         self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
 
     def update(self, z, R=None, H=None):
@@ -424,8 +428,8 @@ class KalmanFilter(object):
             to create the control input into the system.
 
         B : np.array(dim_x, dim_z), or None
-            Optional control transition matrix; a value of None in
-            any position will cause the filter to use `self.B`.
+            Optional control transition matrix; a value of None
+            will cause the filter to use `self.B`.
         """
 
         if B is None:
@@ -438,8 +442,8 @@ class KalmanFilter(object):
             self.x = dot(self.F, self.x)
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
 
     def update_steadystate(self, z):
@@ -473,14 +477,14 @@ class KalmanFilter(object):
         >>> for i in range(100):
         >>>     cv.predict()
         >>>     cv.update([i, i, i])
-        >>> saved_k = cv.K[:]
-        >>> saved_P = cv.P[:]
+        >>> saved_k = np.copy(cv.K)
+        >>> saved_P = np.copy(cv.P)
 
         later on:
 
         >>> cv = kinematic_kf(dim=3, order=2) # 3D const velocity filter
-        >>> cv.K = saved_K[:]
-        >>> cv.P = saved_P[:]
+        >>> cv.K = np.copy(saved_K)
+        >>> cv.P = np.copy(saved_P)
         >>> for i in range(100):
         >>>     cv.predict_steadystate()
         >>>     cv.update_steadystate([i, i, i])
@@ -500,7 +504,7 @@ class KalmanFilter(object):
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
 
-        self.z = z.copy # save the measurement
+        self.z = z.copy() # save the measurement
 
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
@@ -576,7 +580,6 @@ class KalmanFilter(object):
         self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
 
         self.z = z.copy() # save the measurement
-
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
@@ -584,7 +587,6 @@ class KalmanFilter(object):
         self._log_likelihood = None
         self._likelihood = None
         self._mahalanobis = None
-
 
 
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
@@ -599,42 +601,88 @@ class KalmanFilter(object):
             list of measurements at each time step `self.dt`. Missing
             measurements must be represented by `None`.
 
-        Fs : list-like, optional
-            optional list of values to use for the state transition matrix matrix;
-            a value of None in any position will cause the filter
-            to use `self.F` for that time step. If Fs is None then self.F is
-            used for all epochs.
+        Fs : None, np.array or list-like, default=None
+            optional value or list of values to use for the state transition
+            matrix F.
 
-        Qs : list-like, optional
-            optional list of values to use for the process error
-            covariance; a value of None in any position will cause the filter
-            to use `self.Q` for that time step. If Qs is None then self.Q is
-            used for all epochs.
+            If Fs is None then self.F is used for all epochs.
 
-        Hs : list-like, optional
-            optional list of values to use for the measurement matrix;
-            a value of None in any position will cause the filter
-            to use `self.H` for that time step. If Hs is None then self.H is
-            used for all epochs.
+            If Fs contains a single matrix, then it is used as F for all
+            epochs.
 
-        Rs : list-like, optional
+            If it is a list of matrices or a 3D array where
+            len(Fs) == len(zs), then it is treated as a list of F values, one
+            per epoch. This allows you to have varying F per epoch.
+
+        Qs : None, np.array or list-like, default=None
+            optional value or list of values to use for the process error
+            covariance Q.
+
+            If Qs is None then self.Q is used for all epochs.
+
+            If Qs contains a single matrix, then it is used as Q for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Qs) == len(zs), then it is treated as a list of Q values, one
+            per epoch. This allows you to have varying Q per epoch.
+
+
+        Hs : None, np.array or list-like, default=None
+            optional list of values to use for the measurement matrix H.
+
+            If Hs is None then self.H is used for all epochs.
+
+            If Hs contains a single matrix, then it is used as H for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Hs) == len(zs), then it is treated as a list of H values, one
+            per epoch. This allows you to have varying H per epoch.
+
+
+        Rs : None, np.array or list-like, default=None
             optional list of values to use for the measurement error
-            covariance; a value of None in any position will cause the filter
-            to use `self.R` for that time step. If Rs is None then self.R is
-            used for all epochs.
+            covariance R.
 
-        Bs : list-like, optional
-            optional list of values to use for the control transition matrix;
-            a value of None in any position will cause the filter
-            to use `self.B` for that time step. If Bs is None then self.B is
-            used for all epochs.
+            If Rs is None then self.R is used for all epochs.
 
-        us : list-like, optional
+            If Rs contains a single matrix, then it is used as H for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Rs) == len(zs), then it is treated as a list of R values, one
+            per epoch. This allows you to have varying R per epoch.
+
+
+        Bs : None, np.array or list-like, default=None
+            optional list of values to use for the control transition matrix B.
+
+            If Bs is None then self.B is used for all epochs.
+
+            If Bs contains a single matrix, then it is used as B for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Bs) == len(zs), then it is treated as a list of B values, one
+            per epoch. This allows you to have varying B per epoch.
+
+
+        us : None, np.array or list-like, default=None
             optional list of values to use for the control input vector;
-            a value of None in any position will cause the filter to use
-            0 for that time step.
 
-        update_first : bool, optional,
+            If us is None then None is used for all epochs (equivalent to 0,
+            or no control input).
+
+            If us contains a single matrix, then it is used as H for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Rs) == len(zs), then it is treated as a list of R values, one
+            per epoch. This allows you to have varying R per epoch.
+
+
+        update_first : bool, optional, default=False
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
@@ -668,37 +716,39 @@ class KalmanFilter(object):
 
         .. code-block:: Python
 
-            zs = [t + random.randn()*4 for t in range (40)]
-            Fs = [kf.F for t in range (40)]
-            Hs = [kf.H for t in range (40)]
+            # this example demonstrates tracking a measurement where the time
+            # between measurement varies, as stored in dts. This requires
+            # that F be recomputed for each epoch. The output is then smoothed
+            # with an RTS smoother.
 
-            (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
-                                              Bs=None, us=None, update_first=False)
-            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+            zs = [t + random.randn()*4 for t in range (40)]
+            Fs = [np.array([[1., dt], [0, 1]] for dt in dts]
+
+            (mu, cov, _, _) = kf.batch_filter(zs, Fs=Fs)
+            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs)
         """
 
         #pylint: disable=too-many-statements
         n = np.size(zs, 0)
         if Fs is None:
-            Fs = [self.F] * n
+            Fs = self.F
         if Qs is None:
-            Qs = [self.Q] * n
+            Qs = self.Q
         if Hs is None:
-            Hs = [self.H] * n
+            Hs = self.H
         if Rs is None:
-            Rs = [self.R] * n
+            Rs = self.R
         if Bs is None:
-            Bs = [self.B] * n
+            Bs = self.B
         if us is None:
-            us = [0] * n
+            us = 0
 
-        #pylint: disable=multiple-statements
-        if len(Fs) < n: Fs = [Fs] * n
-        if len(Qs) < n: Qs = [Qs] * n
-        if len(Hs) < n: Hs = [Hs] * n
-        if len(Rs) < n: Rs = [Rs] * n
-        if len(Bs) < n: Bs = [Bs] * n
-        if len(us) < n: us = [us] * n
+        Fs = repeated_array(Fs, n)
+        Qs = repeated_array(Qs, n)
+        Hs = repeated_array(Hs, n)
+        Rs = repeated_array(Rs, n)
+        Bs = repeated_array(Bs, n)
+        us = repeated_array(us, n)
 
 
         # mean estimates from Kalman Filter
@@ -743,7 +793,7 @@ class KalmanFilter(object):
         return (means, covariances, means_p, covariances_p)
 
 
-    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None):
+    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, inv=np.linalg.inv):
         """
         Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by a Kalman filter. The usual input
@@ -766,6 +816,11 @@ class KalmanFilter(object):
         Qs : list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
+
+        inv : function, default numpy.linalg.inv
+            If you prefer another inverse function, such as the Moore-Penrose
+            pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
+
 
         Returns
         -------
@@ -813,7 +868,7 @@ class KalmanFilter(object):
             Pp[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
             #pylint: disable=bad-whitespace
-            K[k]  = dot(dot(P[k], Fs[k+1].T), self.inv(Pp[k]))
+            K[k]  = dot(dot(P[k], Fs[k+1].T), inv(Pp[k]))
             x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
             P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
 
@@ -1003,6 +1058,7 @@ class KalmanFilter(object):
             pretty_str('alpha', self.alpha),
             pretty_str('inv', self.inv)
             ])
+
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
         """
@@ -1469,12 +1525,12 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
         Bs = [0.] * n
 
     #pylint: disable=multiple-statements
-    if len(Fs) < n: Fs = [Fs]*n
-    if len(Qs) < n: Qs = [Qs]*n
-    if len(Hs) < n: Hs = [Hs]*n
-    if len(Rs) < n: Rs = [Rs]*n
-    if len(Bs) < n: Bs = [Bs]*n
-    if len(us) < n: us = [us]*n
+    Fs = repeated_array(Fs, n)
+    Qs = repeated_array(Qs, n)
+    Hs = repeated_array(Hs, n)
+    Rs = repeated_array(Rs, n)
+    Bs = repeated_array(Bs, n)
+    us = repeated_array(us, n)
 
 
     if update_first:
@@ -1630,12 +1686,12 @@ class Saver(object):
         """ save the current state of the Kalman filter"""
 
         kf = self.kf
-        self.xs.append(kf.x[:])
-        self.Ps.append(kf.P[:])
-        self.Ks.append(kf.K[:])
-        self.ys.append(kf.y[:])
-        self.xs_prior.append(kf.x_prior[:])
-        self.Ps_prior.append(kf.P_prior[:])
+        self.xs.append(np.copy(kf.x))
+        self.Ps.append(np.copy(kf.P))
+        self.Ks.append(np.copy(kf.K))
+        self.ys.append(np.copy(kf.y))
+        self.xs_prior.append(np.copy(kf.x_prior))
+        self.Ps_prior.append(np.copy(kf.P_prior))
 
 
     def to_array(self):

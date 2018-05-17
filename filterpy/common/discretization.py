@@ -21,12 +21,54 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
-from numpy import zeros, vstack, eye
+from numpy import zeros, vstack, eye, array
 from numpy.linalg import inv
 from scipy.linalg import expm, block_diag
 
 
-def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
+
+def order_by_derivative(Q, dim, block_size):
+    """
+    Given a matrix Q, ordered assuming state space
+        [x y z x' y' z' x'' y'' z''...]
+
+    return a reordered matrix assuming an ordering of
+       [ x x' x'' y y' y'' z z' y'']
+
+    This works for any covariance matrix or state transition function
+
+    Parameters
+    ----------
+    Q : np.array, square
+        The matrix to reorder
+
+    dim : int >= 1
+
+       number of independent state variables. 3 for x, y, z
+
+    block_size : int >= 0
+        Size of derivatives. Second derivative would be a block size of 3
+        (x, x', x'')
+
+
+    """
+
+    N = dim * block_size
+
+    D = zeros((N, N))
+
+    Q = array(Q)
+    for i, x in enumerate(Q.ravel()):
+        f = eye(block_size) * x
+
+        ix, iy = (i // dim) * block_size, (i % dim) * block_size
+        D[ix:ix+block_size, iy:iy+block_size] = f
+
+    return D
+
+
+
+def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1, order_by_dim=True):
     """
     Returns the Q matrix for the Discrete Constant White Noise
     Model. dim may be either 2, 3, or 4 dt is the time step, and sigma
@@ -53,6 +95,16 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
         If your state variable contains more than one dimension, such as
         a 3d constant velocity model [x x' y y' z z']^T, then Q must be
         a block diagonal matrix.
+
+    order_by_dim : bool, default=True
+        Defines ordering of variables in the state vector. `True` orders
+        by keeping all derivatives of each dimensions)
+
+        [x x' x'' y y' y'']
+
+        whereas `False` interleaves the dimensions
+
+        [x y z x' y' z' x'' y'' z'']
 
 
     Examples
@@ -89,11 +141,18 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1):
              [(dt**4)/6,  (dt**3)/2,   dt**2,     dt],
              [(dt**3)/6,  (dt**2)/2 ,  dt,        1.]]
 
-    return block_diag(*[Q]*block_size) * var
+
+
+    if order_by_dim:
+        return block_diag(*[Q]*block_size) * var
+
+    else:
+        return order_by_derivative(array(Q), dim, block_size) * var
+
 
 
 def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
-                             block_size=1):
+                             block_size=1, order_by_dim=True):
     """
     Returns the Q matrix for the Discretized Continuous White Noise
     Model. dim may be either 2, 3, 4, dt is the time step, and sigma is the
@@ -118,6 +177,16 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
         If your state variable contains more than one dimension, such as
         a 3d constant velocity model [x x' y y' z z']^T, then Q must be
         a block diagonal matrix.
+
+    order_by_dim : bool, default=True
+        Defines ordering of variables in the state vector. `True` orders
+        by keeping all derivatives of each dimensions)
+
+        [x x' x'' y y' y'']
+
+        whereas `False` interleaves the dimensions
+
+        [x y z x' y' z' x'' y'' z'']
 
     Examples
     --------
@@ -149,7 +218,10 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
              [(dt**5)/30.,  (dt**4)/8.,  (dt**3)/3.,  (dt**2)/2.],
              [(dt**4)/24.,  (dt**3)/6.,  (dt**2/2.),   dt]]
 
-    return block_diag(*[Q]*block_size) * spectral_density
+    if order_by_dim:
+        return block_diag(*[Q]*block_size) * spectral_density
+    else:
+        return order_by_derivative(array(Q), dim, block_size) * spectral_density
 
 
 def van_loan_discretization(F, G, dt):

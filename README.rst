@@ -50,7 +50,7 @@ amazing to 2.0 and someone really begs, I might backport it; more
 likely I would accept a pull request with the feature backported
 to 1.x. But to be honest I don't forsee this happening.
 
-Why 3.5+, and not 3.3+? 3.5 introduced the matrix multiply symbol,
+Why 3.5+, and not 3.4+? 3.5 introduced the matrix multiply symbol,
 and I want my code to take advantage of it. Plus, to be honest,
 I'm being selfish. I don't want to spend my life supporting this
 package, and moving as far into the present as possible means

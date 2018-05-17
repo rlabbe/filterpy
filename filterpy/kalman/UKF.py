@@ -25,7 +25,7 @@ from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, repeated_array
 
 
 class UnscentedKalmanFilter(object):
@@ -282,8 +282,8 @@ class UnscentedKalmanFilter(object):
 
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
         self.Q = eye(dim_x)
         self.R = eye(dim_z)
         self._dim_x = dim_x
@@ -330,8 +330,8 @@ class UnscentedKalmanFilter(object):
         self.inv = np.linalg.inv
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def predict(self, dt=None, UT=None, fx=None, **fx_args):
@@ -361,7 +361,6 @@ class UnscentedKalmanFilter(object):
 
         **fx_args : keyword arguments
             optional keyword arguments to be passed into f(x).
- variable.
         """
 
         if dt is None:
@@ -378,8 +377,8 @@ class UnscentedKalmanFilter(object):
                             self.x_mean, self.residual_x)
 
         # save prior
-        self.x_prior = self.x[:]
-        self.P_prior = self.P[:]
+        self.x_prior = np.copy(self.x)
+        self.P_prior = np.copy(self.P)
 
 
     def update(self, z, R=None, UT=None, hx=None, **hx_args):
@@ -496,13 +495,30 @@ class UnscentedKalmanFilter(object):
             list of measurements at each time step `self._dt` Missing
             measurements must be represented by 'None'.
 
-        Rs : list-like, optional
+        Rs : None, np.array or list-like, default=None
             optional list of values to use for the measurement error
-            covariance; a value of None in any position will cause the filter
-            to use `self.R` for that time step.
+            covariance R.
 
-        dts : list-like, optional
-            optional list of delta time to be passed into predict.
+            If Rs is None then self.R is used for all epochs.
+
+            If Rs contains a single matrix, then it is used as H for all
+            epochs.
+
+            If it is a list of matrices or a 3D array where
+            len(Rs) == len(zs), then it is treated as a list of R values, one
+            per epoch. This allows you to have varying R per epoch.
+
+        dts : None, scalar or list-like, default=None
+            optional value or list of delta time to be passed into predict.
+
+            If dtss is None then self.dt is used for all epochs.
+
+            If dts contains a single matrix, then it is used as dt for all
+            epochs.
+
+            If it is a list where len(dts) == len(zs), then it is treated as a
+            list of dt values, one per epoch. This allows you to have varying
+            epoch durations.
 
         UT : function(sigmas, Wm, Wc, noise_cov), optional
             Optional function to compute the unscented transform for the sigma
@@ -525,6 +541,21 @@ class UnscentedKalmanFilter(object):
         covariance: ndarray((n,dim_x,dim_x))
             array of the covariances for each time step after the update.
             In other words `covariance[k,:,:]` is the covariance at step `k`.
+
+        Examples
+        --------
+
+        .. code-block:: Python
+
+            # this example demonstrates tracking a measurement where the time
+            # between measurement varies, as stored in dts The output is then smoothed
+            # with an RTS smoother.
+
+            zs = [t + random.randn()*4 for t in range (40)]
+
+            (mu, cov, _, _) = ukf.batch_filter(zs, dts=dts)
+            (xs, Ps, Ks) = ukf.rts_smoother(mu, cov)
+
         """
         #pylint: disable=too-many-arguments
 
@@ -543,10 +574,13 @@ class UnscentedKalmanFilter(object):
 
         z_n = np.size(zs, 0)
         if Rs is None:
-            Rs = [None] * z_n
+            Rs = self.R
 
         if dts is None:
-            dts = [self._dt] * z_n
+            dts = self._dt
+
+        Rs = repeated_array(Rs, z_n)
+        dts = repeated_array(dts, z_n)
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
@@ -569,7 +603,7 @@ class UnscentedKalmanFilter(object):
         return (means, covariances)
 
 
-    def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
+    def rts_smoother(self, Xs, Ps, Qs=None, dts=None):
         """
         Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by the UKF. The usual input
@@ -624,10 +658,10 @@ class UnscentedKalmanFilter(object):
 
         n, dim_x = Xs.shape
 
-        if dt is None:
-            dt = [self._dt] * n
-        elif isscalar(dt):
-            dt = [dt] * n
+        if dts is None:
+            dts = [self._dt] * n
+        elif isscalar(dts):
+            dts = [dts] * n
 
         if Qs is None:
             Qs = [self.Q] * n
@@ -644,7 +678,7 @@ class UnscentedKalmanFilter(object):
             # create sigma points from state estimate, pass through state func
             sigmas = self.points_fn.sigma_points(xs[k], ps[k])
             for i in range(num_sigmas):
-                sigmas_f[i] = self.fx(sigmas[i], dt[k])
+                sigmas_f[i] = self.fx(sigmas[i], dts[k])
 
             xb, Pb = unscented_transform(
                 sigmas_f, self.Wm, self.Wc, self.Q,

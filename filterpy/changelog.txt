@@ -1,4 +1,27 @@
+Version 1.4.x
+=============
+
+* added a fast inverse of a diagonal matrix function common.inv_diagonal()
+
+* added ability to order Q matrix by dimension or derivative with the helper 
+functions
+
+
+Version 1.4.1
+=============
+
+
+* GitHub 125: used itertools.repeat() instead of [x]*n to get
+iterable list of constant values
+
+* Fixed bug using [:] to copy data instead of np.copy(), which is
+a deep copy
+
+* fixed import bug in common.kinematic_kf()
+
+
 Version 1.4
+===========
 
 * UKF refactor. This is a (mildly) breaking change. Passing data to
 h(x) and f(x) is now done by kwargs, not tuples. The sigma point

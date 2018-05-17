@@ -20,6 +20,7 @@ for more information.
 from __future__ import print_function
 from collections import defaultdict
 import copy
+from itertools import repeat
 import numpy as np
 
 
@@ -289,3 +290,58 @@ def reshape_z(z, dim_z, ndim):
         z = z[0, 0]
 
     return z
+
+
+def repeated_array(val, N):
+    """
+    User can specify either a single value, or a list/array of N values.
+    If a single value, create an iterable list to return that value
+    repeatedly.
+    """
+
+    shape = np.shape(val)
+    if len(shape) > 1 and shape[0] == N:
+            return val
+
+    return repeat(val, N)
+
+
+def inv_diagonal(S):
+    """
+    Computes the inverse of a diagonal NxN np.array S. In general this will
+    be much faster than calling np.linalg.inv().
+
+    However, does NOT check if the off diagonal elements are non-zero. So long
+    as S is truly diagonal, the output is identical to np.linalg.inv().
+
+    Parameters
+    ----------
+    S : np.array
+        diagonal NxN array to take inverse of
+
+    Returns
+    -------
+    S_inv : np.array
+        inverse of S
+
+
+    Examples
+    --------
+
+    This is meant to be used as a replacement inverse function for
+    the KalmanFilter class when you know the system covariance S is
+    diagonal. It just makes the filter run faster, there is
+
+    >>> kf = KalmanFilter(dim_x=3, dim_z=1)
+    >>> kf.inv = inv_diagonal  # S is 1x1, so safely diagonal
+    """
+
+    S = np.asarray(S)
+
+    if S.ndim != 2 or S.shape[0] != S.shape[1]:
+        raise ValueError('S must be a square Matrix')
+
+    si = np.zeros(S.shape)
+    for i in range(len(S)):
+        si[i, i] = 1. / S[i, i]
+    return si
