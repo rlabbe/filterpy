@@ -185,7 +185,12 @@ class Tree(object):
 
     def delete(self, node):
         # sanity check
-        assert node in self.nodes
+        assert node.uid in self.nodes
+
+        del self.nodes[node.uid]
+
+        if node.uid in self.leaves:
+            del self.leaves[node.uid]
 
         # if I am the root, just delete everything!
         if node.is_root():
@@ -203,12 +208,11 @@ class Tree(object):
         parent = node.parent
         del parent.children[node.uid]
 
-        self.leaves.remove(node)
         # parent may have become a new leaf
         if parent.is_leaf():
-            self.leaves.add(parent)
+            self.leaves[parent.uid] = parent
 
-        del self.uids[node.uid]
+
 
 
     def __len__(self):

@@ -16,9 +16,20 @@ def test_tree():
     n = Node(kinematic_kf(1, 1))
 
     t.create(n)
+    assert len(t) == 1
+    assert n.is_leaf()
+
+    assert n.uid in t.leaves
 
     n2 = Node(kinematic_kf(1, 1))
     t.add_child(n, n2)
+    assert not n.is_leaf()
+
+    assert not n.uid in t.leaves
+    assert n2.uid in t.leaves
+
+    assert n.uid in t.nodes
+    assert n2.uid in t.nodes
 
     assert len(n2.branch()) == 2
     assert len(n.branch()) == 1
@@ -28,9 +39,18 @@ def test_tree():
     assert not n.is_leaf()
     assert not n2.is_root()
     assert n2.is_leaf()
+    assert n2.uid in n.children
 
     assert n.depth == 1
     assert n2.depth == 2
+
+    t.delete(n2)
+
+    assert not n2.uid in t.leaves
+    assert not n2.uid in t.nodes
+    assert n.uid in t.leaves
+    assert n.uid in t.nodes
+    assert not n2.uid in n.children
 
 
 if __name__ == '__main__':
