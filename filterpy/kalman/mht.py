@@ -211,15 +211,16 @@ def print_tree(t, level):
     except IndexError:
         return # 0 length list
 
-    try:
-        print('level', level[0].depth)
-    except:
-        print('fuck', level)
-        1/0
     children = []
     for node in level:
-        print(node, node.kf.x_post.T)
-        children.extend(node.children)
+        #print(node, node.kf.x_post.T)
+        children.extend(sorted(node.children, key=lambda n : n.uid))
+
+    if len(children) > 0:
+        print()
+        print('level {}'.format(children[0].depth))
+    for child in children:
+        print(child, child.kf.x_post.T)
 
     print_tree(t, children)
 
@@ -227,38 +228,8 @@ def print_tree(t, level):
 if __name__ == '__main__':
     from filterpy.stats import mahalanobis
 
-    '''from filterpy.common import kinematic_kf
-
-    mht = MultipleHypothesisTracker()
-
-
-    kf = kinematic_kf(dim=1, order=1, dt=1, dim_z=1)
-
-    mht.create(kf)'''
-
-    '''t = Tree()
-    n = Node(kinematic_kf(1, 1))
-
-    t.create(n)
-
-    n2 = State(2, 1)
-    t.add_child(n, n2)
-
-    assert len(n2.branch()) == 2
-    assert len(n.branch()) == 1
-
-    assert n.parent == None
-    assert n.is_root()
-    assert not n.is_leaf()
-    assert not n2.is_root()
-    assert n2.is_leaf()
-
-    assert n.depth == 1
-    assert n2.depth == 2'''
-
     def ptree(tree):
         return sorted(tree.nodes, key=lambda x : x.uid)
-
 
     N = 4
     zs = [i + .01*np.random.randn() for i in (range(N))]
