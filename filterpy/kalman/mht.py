@@ -25,9 +25,15 @@ class Node(object):
         """ Empty out parent and children, and set depth to one. """
 
         self.parent = None  # if None, I'm the root of the tree!
-        self.children = set()
+        self.children = {}
         self.depth = 1
         self.score = 1.0
+
+
+    def add_child(self, child):
+        child.depth = self.depth + 1
+        self.children[child.uid] = child
+
 
     def is_root(self):
         return self.parent is None
@@ -40,6 +46,11 @@ class Node(object):
     def delete_children(self):
         self.children = set()
 
+
+    def delete_child(self, uid):
+        del self.children[uid]
+
+
     def __repr__(self):
         if self.parent is None:
             pid = 0
@@ -47,12 +58,13 @@ class Node(object):
             pid = self.parent.uid
 
         if self.z is None:
-            zstr = 'None'
+            zstr = 'None    '
         else:
             zstr = '{:4f}'.format(self.z)
 
         return 'Node {:3d}: parent {:3d} depth {:3d} score {:.2f} z {}'.format(
                 self.uid, pid, self.depth, self.score, zstr)
+
 
     def copy(self, z=None):
         return Node(deepcopy(self.kf), z)
@@ -145,8 +157,8 @@ class Tree(object):
         child.parent = parent
 
         # add to parent
-        parent.children.add(child)
-        child.depth = parent.depth + 1
+        parent.add_child(child)
+
 
         # add to nodes for easy look up
         self.nodes.add(child)
@@ -207,14 +219,16 @@ def print_tree(t, level):
             return
 
     except TypeError:
+        print('Level 1')
+        print(level)
         level = [level]
     except IndexError:
         return # 0 length list
 
     children = []
     for node in level:
-        #print(node, node.kf.x_post.T)
-        children.extend(sorted(node.children, key=lambda n : n.uid))
+        leaves = list(node.children.values())
+        children.extend(sorted(leaves, key=lambda n : n.uid))
 
     if len(children) > 0:
         print()
