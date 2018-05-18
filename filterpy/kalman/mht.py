@@ -44,7 +44,7 @@ class Node(object):
 
 
     def delete_children(self):
-        self.children = set()
+        self.children = {}
 
 
     def delete_child(self, uid):
