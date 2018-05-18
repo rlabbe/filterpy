@@ -108,11 +108,10 @@ class Tree(object):
 
         self.nodes = set()
 
-        # handy reference - keeps all the leaves so we don't have
-        # to search
-        self.leaves = set()
+        # handy reference - keeps all the current leaves so we don't have
+        # to search to find them
+        self.leaves = {}
 
-        self.uids = {}
         self.head = None
 
 
@@ -141,9 +140,8 @@ class Tree(object):
         node.parent = None
 
         self.nodes.add(node)
-        self.leaves.add(node)
+        self.leaves[node.uid] = node
         self.head = node
-        self.uids[node.uid] = node
 
 
     def add_child(self, parent, child):
@@ -162,10 +160,10 @@ class Tree(object):
 
         # add to nodes for easy look up
         self.nodes.add(child)
-        self.uids[child.uid] = child
+
 
         if child.is_leaf():
-            self.leaves.add(child)
+            self.leaves[child.uid] = child
 
         # parent cannot be a leaf, so remove from leaf list
         if parent in self.leaves:
@@ -253,7 +251,8 @@ if __name__ == '__main__':
     for z1, z2 in zip(zs, zs2):
         associated = False
         add =[]
-        for leaf in t.leaves:
+        for leaf in t.leaves.values():
+            print(type(leaf))
             leaf.kf.predict()
             d = mahalanobis(z1, leaf.kf.x[0], leaf.kf.P[0,0])
             print('maha', d)
