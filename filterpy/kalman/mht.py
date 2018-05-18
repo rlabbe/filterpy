@@ -95,6 +95,29 @@ class Node(object):
 
 class Tree(object):
 
+    """
+
+    Attributes
+    ----------
+
+    head : Node, or Node, read_only
+
+        Head of the tree.
+
+    leaves : dict{Node}, read_only
+        Stores all nodes that are currently in the bottom of the tree.
+        This lets us avoid tree traversal when we add measurements.
+
+        Indexed by Node.uid.
+
+     nodes : dict{Node}, read_only
+         Stores every Node in the tree. This is not strictly needed, it is
+         just a handy way to get all the nodes without having to traverse
+         the tree.
+
+         Indexed by Node.uid
+    """
+
     def __init__(self, node=None):
         """ Create a Tree with an optional top node"""
 
@@ -106,21 +129,14 @@ class Tree(object):
     def clear(self):
         """ Delete everything in the tree """
 
-        self.nodes = set()
-
-        # handy reference - keeps all the current leaves so we don't have
-        # to search to find them
+        self.nodes = {}
         self.leaves = {}
-
         self.head = None
 
 
     def is_empty(self):
         """ Returns true if the tree contains no nodes"""
-
-        # check for leaves is strictly not necessary, but ends up being
-        # a code consistentcy check as it can only assert if there is a bug
-        return len(self.nodes) == 0 and len(self.leaves) == 0
+        return self.head is None
 
 
     def create(self, node):
@@ -128,7 +144,6 @@ class Tree(object):
         Creates a tree with the head tree `node`. Will destroy all data
         currently stored in the tree
         """
-
         self.clear()
 
         # if thsese asserts are not True then node must belong to another
@@ -139,7 +154,7 @@ class Tree(object):
         node.depth = 1
         node.parent = None
 
-        self.nodes.add(node)
+        self.nodes[node.uid] = node
         self.leaves[node.uid] = node
         self.head = node
 
@@ -157,18 +172,15 @@ class Tree(object):
         # add to parent
         parent.add_child(child)
 
-
         # add to nodes for easy look up
-        self.nodes.add(child)
-
+        self.nodes[child.uid] = child
 
         if child.is_leaf():
             self.leaves[child.uid] = child
 
         # parent cannot be a leaf, so remove from leaf list
         if parent in self.leaves:
-            self.leaves.remove(parent)
-
+            del self.leaves[parent.uid]
 
 
     def delete(self, node):
@@ -181,18 +193,15 @@ class Tree(object):
             self.clear()
             return
 
-
         # recursively delete children; have to do this to ensure they
         # are all removed from self.nodes and self.leaves
         for n in node.children:
             self.delete(n)
 
         # now node is a leaf, so delete it and remove from parent
-
         assert node.is_leaf()
-
         parent = node.parent
-        parent.children.remove(node)
+        del parent.children[node.uid]
 
         self.leaves.remove(node)
         # parent may have become a new leaf
@@ -204,7 +213,6 @@ class Tree(object):
 
     def __len__(self):
         return len(self.nodes)
-
 
 
 def print_tree(t, level):
@@ -241,7 +249,7 @@ if __name__ == '__main__':
     from filterpy.stats import mahalanobis
 
     def ptree(tree):
-        return sorted(tree.nodes, key=lambda x : x.uid)
+        return sorted(tree.nodes.values(), key=lambda x : x.uid)
 
     N = 4
     zs = [i + .01*np.random.randn() for i in (range(N))]
@@ -264,6 +272,7 @@ if __name__ == '__main__':
                 add.append((leaf, child))
                 print('adding leaf', child.uid, 'to', leaf.uid)
 
+            # add no match prediction
             child = leaf.copy()
             print(child.score)
             add.append((leaf, child))
@@ -276,8 +285,6 @@ if __name__ == '__main__':
                 kf.update(z1) # compute reasonable log_likelihood
                 t.create(Node(kf))
                 print('making a tree with', z1)
-        # add no match prediction
-        # this makes a
 
         for c in add:
             t.add_child(*c)
