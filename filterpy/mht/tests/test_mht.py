@@ -8,7 +8,7 @@ Created on Fri May 18 06:21:31 2018
 from filterpy.stats import mahalanobis
 
 from filterpy.common import kinematic_kf
-from filterpy.kalman.mht import Tree, Node
+from filterpy.mht import Tree, Node
 
 
 def test_tree():
