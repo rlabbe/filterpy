@@ -5,6 +5,7 @@ Created on Sun May  6 08:58:16 2018
 @author: rlabbe
 """
 from copy import deepcopy
+import math
 import numpy as np
 from filterpy.kalman import KalmanFilter
 from filterpy.common import kinematic_kf
@@ -12,13 +13,17 @@ from filterpy.common import kinematic_kf
 class Node(object):
     _last_id = 1
     def __init__(self, kf, z=None):
+        self.clear_ref()
+
         self.kf = kf
-        self.score = 1.0
         self.uid = Node._last_id
         Node._last_id += 1
-        self.z = z
 
-        self.clear_ref()
+        self.num_updates = 0
+        self.probability = 0
+        self.score = 0.0
+        self.z = z
+        self.update(z) # safe even if z is None
 
 
     def clear_ref(self):
@@ -27,7 +32,23 @@ class Node(object):
         self.parent = None  # if None, I'm the root of the tree!
         self.children = {}
         self.depth = 1
-        self.score = 1.0
+        self.score = 0.0
+        self.z = None
+
+
+    def update(self, z):
+        if z is None:
+            return
+
+        self.z = z
+        self.kf.update(z)
+
+        p = math.exp(-self.kf.mahalanobis)
+        if p > 0:
+            self.probability *= p
+
+        self.score = (self.score * self.num_updates + p) / (self.num_updates + 1)
+        self.num_updates += 1
 
 
     def add_child(self, child):
@@ -67,7 +88,9 @@ class Node(object):
 
 
     def copy(self, z=None):
-        return Node(deepcopy(self.kf), z)
+        n = Node(deepcopy(self.kf), z)
+        n.parent = None
+        return n
 
 
     def branch(self):
@@ -212,11 +235,12 @@ class Tree(object):
         if parent.is_leaf():
             self.leaves[parent.uid] = parent
 
-
-
+    def highest_score(self):
+        return max(self.leaves.values(), key=lambda leaf: leaf.score)
 
     def __len__(self):
         return len(self.nodes)
+
 
 
 def print_tree(t, level):
@@ -264,8 +288,8 @@ if __name__ == '__main__':
     t = Tree()
     kf = kinematic_kf(1, 1)
     kf.x[0] = zs[0]
-    kf.update(zs[0]) # compute reasonable log_likelihood
-    t.create(Node(kf))
+    t.create(Node(kf, zs[0]))
+
     print('making a tree with', zs[0])
     for i, z in enumerate(zs[1:]):
         print(i)
@@ -280,9 +304,8 @@ if __name__ == '__main__':
             print('maha', d)
             if d < 3.: #std
                 associated = True
-                child = leaf.copy(z)
-                child.kf.update(z)
-                child.score = np.exp(-child.kf.mahalanobis)
+                child = leaf.copy()
+                child.update(z)
                 add.append((leaf, child))
                 print(i, 'adding leaf', child.uid, 'to', leaf.uid)
                 assert len(child.children) == 0
@@ -298,13 +321,11 @@ if __name__ == '__main__':
         for c in add:
             t.add_child(*c)
 
-    branch = child.branch()
-
-    for b in branch:
-        print(f'{b.kf.z[0,0]:.4f}, {b.kf.x_post.T}, {b.kf.log_likelihood:.4f}, {b.kf.mahalanobis:.4f}')
-
 
     print_tree(t, t.head)
 
+    print()
+    branch = t.highest_score().branch()
+    pprint(branch)
 
 
