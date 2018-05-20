@@ -64,6 +64,10 @@ class Node(object):
             self.num_updates += 1
 
 
+    def predict(self):
+        self.kf.predict()
+
+
     def add_child(self, child):
         child.depth = self.depth + 1
         self.children[child.uid] = child

@@ -141,6 +141,12 @@ class Tree(object):
 
         return max(self.leaves.values(), key=lambda leaf: leaf.score)
 
+
+    def predict(self):
+        for leaf in self.leaves.values():
+            leaf.predict()
+
+
     def __len__(self):
         return len(self.nodes)
 
@@ -206,8 +212,10 @@ if __name__ == '__main__':
         print('level', lvl+1)
 
         add =[]
+
+        t.predict()
         for leaf in t.leaves.values():
-            leaf.kf.predict()
+
 
             for i, z in enumerate(zs):
                 associated = False
