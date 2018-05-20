@@ -5,110 +5,10 @@ Created on Sun May  6 08:58:16 2018
 @author: rlabbe
 """
 from copy import deepcopy
-import math
 import numpy as np
 from filterpy.kalman import KalmanFilter
-from filterpy.common import kinematic_kf
-
-class Node(object):
-    _last_id = 1
-    def __init__(self, kf, z=None):
-        self.clear_ref()
-
-        self.kf = kf
-        self.uid = Node._last_id
-        Node._last_id += 1
-
-        self.num_updates = 0
-        self.probability = 0
-        self.score = 0.0
-        self.z = z
-        self.update(z) # safe even if z is None
-
-
-    def clear_ref(self):
-        """ Empty out parent and children, and set depth to one. """
-
-        self.parent = None  # if None, I'm the root of the tree!
-        self.children = {}
-        self.depth = 1
-        self.score = 0.0
-        self.z = None
-
-
-    def update(self, z):
-        if z is None:
-            return
-
-        self.z = z
-        self.kf.update(z)
-
-        p = math.exp(-self.kf.mahalanobis)
-        if p > 0:
-            self.probability *= p
-
-        self.score = (self.score * self.num_updates + p) / (self.num_updates + 1)
-        self.num_updates += 1
-
-
-    def add_child(self, child):
-        child.depth = self.depth + 1
-        self.children[child.uid] = child
-
-
-    def is_root(self):
-        return self.parent is None
-
-
-    def is_leaf(self):
-        return len(self.children) == 0
-
-
-    def delete_children(self):
-        self.children = {}
-
-
-    def delete_child(self, uid):
-        del self.children[uid]
-
-
-    def __repr__(self):
-        if self.parent is None:
-            pid = 0
-        else:
-            pid = self.parent.uid
-
-        if self.z is None:
-            zstr = 'None    '
-        else:
-            zstr = '{:4f}'.format(self.z)
-
-        return 'Node {:3d}: parent {:3d} # children {:3d} depth {:3d} score {:.2f} z {}'.format(
-                self.uid, pid, len(self.children), self.depth, self.score, zstr)
-
-
-    def copy(self, z=None):
-        n = Node(deepcopy(self.kf), z)
-        n.parent = None
-        return n
-
-
-    def branch(self):
-        """
-        Generate a list of all of the nodes up to the root,
-        ordered from the head to this node
-
-        node_id will typically be a leaf node, but it doesn't have to be.
-        """
-
-        nodes = [self]
-
-        node = self.parent
-        while node is not None:
-            nodes.append(node)
-            node = node.parent
-
-        return list(reversed(nodes))
+from filterpy.common import kinematic_kf, Q_discrete_white_noise
+from node import Node
 
 
 
@@ -236,11 +136,13 @@ class Tree(object):
             self.leaves[parent.uid] = parent
 
     def highest_score(self):
+        if len(t.leaves) == 0:
+            return None
+
         return max(self.leaves.values(), key=lambda leaf: leaf.score)
 
     def __len__(self):
         return len(self.nodes)
-
 
 
 def print_tree(t, level):
@@ -265,8 +167,8 @@ def print_tree(t, level):
         children.extend(sorted(leaves, key=lambda n : n.uid))
 
     if len(children) > 0:
-        print()
-        print('level {}'.format(children[0].depth))
+        print('------------------------------------------------------------------')
+        #print('level {}'.format(children[0].depth))
     for child in children:
         print(child, child.kf.x_post.T)
 
@@ -280,44 +182,58 @@ if __name__ == '__main__':
     def ptree(tree):
         return sorted(tree.nodes.values(), key=lambda x : x.uid)
 
-    N = 3
-    zs = [i + .01*np.random.randn() for i in (range(N))]
-    zs2 =[i + 2*np.random.randn() for i in (range(N))]
+    N = 5
+    z_std = 0.01
+    zs1 = [i+1 + 5*z_std*np.random.randn() for i in (range(N))]
+    zs2 = [i+1 + 2*np.random.randn() for i in (range(N))]
 
+    measurements = list(zip(zs1, zs2))
 
     t = Tree()
-    kf = kinematic_kf(1, 1)
-    kf.x[0] = zs[0]
-    t.create(Node(kf, zs[0]))
+    kf = kinematic_kf(1, 1, dt=1.)
+    kf.P *= .05
+    kf.Q = Q_discrete_white_noise(2, dt=1., var=0.1)
+    kf.R *= z_std**2
 
-    print('making a tree with', zs[0])
-    for i, z in enumerate(zs[1:]):
-        print(i)
-        pprint(t.leaves)
+    kf.x[0] = 0.
+    kf.x[1] = 1.
+    t.create(Node(kf, 0))
+
+
+    print('making a tree with', 0)
+    for lvl, zs in enumerate(measurements):
         print()
+        print('level', lvl+1)
 
-        associated = False
         add =[]
         for leaf in t.leaves.values():
             leaf.kf.predict()
-            d = mahalanobis(z, leaf.kf.x[0], leaf.kf.P[0,0])
-            print('maha', d)
-            if d < 3.: #std
-                associated = True
-                child = leaf.copy()
-                child.update(z)
-                add.append((leaf, child))
-                print(i, 'adding leaf', child.uid, 'to', leaf.uid)
-                assert len(child.children) == 0
+
+            for i, z in enumerate(zs):
+                associated = False
+
+                d = mahalanobis(z, leaf.kf.x[0], leaf.kf.P[0,0])
+                print(f'z={z:.4f}  maha {d:.3f}')
+                if d < 3.: #std
+                    associated = True
+                    child = leaf.copy()
+
+                    child.update(z)
+                    add.append((leaf, child))
+                    print(i, 'adding leaf', child.uid, 'to', leaf.uid)
+                    assert len(child.children) == 0
 
             # add no match prediction
-            child = leaf.copy()
-            print(child.score)
-            add.append((leaf, child))
+            if True or leaf.depth > 1: # never predict on head
+                child = leaf.copy()
+                child.update(None)
+                print('adding prediction', child.uid, 'to leaf', leaf.uid)
+                add.append((leaf, child))
 
-        if not associated:
-            print(z, 'is trash')
+            if not associated:
+                print(z, 'is trash')
 
+        #print('adding', add)
         for c in add:
             t.add_child(*c)
 
@@ -327,5 +243,3 @@ if __name__ == '__main__':
     print()
     branch = t.highest_score().branch()
     pprint(branch)
-
-

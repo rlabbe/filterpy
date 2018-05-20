@@ -126,7 +126,7 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1, order_by_dim=True):
     """
 
     if not (dim == 2 or dim == 3 or dim == 4):
-        assert ValueError("dim must be between 2 and 4")
+        raise ValueError("dim must be between 2 and 4")
 
     if dim == 2:
         Q = [[.25*dt**4, .5*dt**3],
@@ -202,7 +202,7 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
     """
 
     if not (dim == 2 or dim == 3 or dim == 4):
-        assert ValueError("dim must be between 2 and 4")
+        raise ValueError("dim must be between 2 and 4")
 
     if dim == 2:
         Q = [[(dt**3)/3., (dt**2)/2.],

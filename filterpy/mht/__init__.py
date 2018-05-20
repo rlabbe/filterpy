@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #pylint: disable=wildcard-import
 
-"""Copyright 2015 Roger R Labbe Jr.
+"""Copyright 2018 Roger R Labbe Jr.
 
 FilterPy library.
 http://github.com/rlabbe/filterpy
@@ -16,7 +16,6 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 from .mht import *
+from .node import Node
