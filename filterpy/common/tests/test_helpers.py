@@ -155,7 +155,43 @@ def test_inv_diagonal():
         assert np.allclose(inv_diagonal(S), np.linalg.inv(S))
 
 
+
+def test_save_properties():
+    global f, s
+
+    class Foo(object):
+        aa = 3
+
+        def __init__(self):
+            self.x = 7.
+            self.a = None
+
+
+        @property
+        def ll(self):
+            self.a = Foo.aa
+            Foo.aa += 1
+            return self.a
+
+    f = Foo()
+    assert f.a is None
+    s = Saver(f)
+    s.save() # try to trigger property writing to Foo.a
+
+    assert s.a[0] == f.a
+    assert s.ll[0] == f.a
+    assert f.a == 3
+
+    s.save()
+    assert s.a[1] == f.a
+    assert s.ll[1] == f.a
+    assert f.a == 4
+
+
+
+
 if __name__ == "__main__":
+    test_save_properties()
 
     test_saver_kf()
     test_saver_ekf()
