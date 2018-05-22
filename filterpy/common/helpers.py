@@ -20,6 +20,7 @@ for more information.
 from __future__ import print_function
 from collections import defaultdict
 import copy
+import inspect
 from itertools import repeat
 import numpy as np
 
@@ -108,6 +109,11 @@ class Saver(object):
         self._ignore = ignore
         self._len = 0
 
+        # need to save all properties since it is possible that the property
+        # is computed only on access. I use this trick a lot to minimize
+        # computing unused information.
+        self.properties = inspect.getmembers(kf, lambda o: isinstance(o, property))
+
         if save_current:
             self.save()
 
@@ -115,7 +121,18 @@ class Saver(object):
     def save(self):
         """ save the current state of the Kalman filter"""
 
+
         kf = self._kf
+
+        # force all attributes to be computed. this is only necessary
+        # if the class uses properties that compute data only when
+        # accessed
+        for prop in self.properties:
+            try:
+                getattr(kf, prop[0])
+            except:
+                pass
+
         v = copy.deepcopy(kf.__dict__)
 
         if self._skip_private:
@@ -174,7 +191,7 @@ class Saver(object):
                 self.__dict__.update(self._DL)
 
                 raise ValueError("could not convert {} into np.array".format(key))
-
+                
 
 def runge_kutta4(y, x, dx, f):
     """computes 4th order Runge-Kutta for dy/dx.
