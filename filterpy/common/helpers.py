@@ -112,7 +112,7 @@ class Saver(object):
         # need to save all properties since it is possible that the property
         # is computed only on access. I use this trick a lot to minimize
         # computing unused information.
-        self.properties = inspect.getmembers(kf, lambda o: isinstance(o, property))
+        self.properties = inspect.getmembers(type(kf), lambda o: isinstance(o, property))
 
         if save_current:
             self.save()
@@ -128,10 +128,7 @@ class Saver(object):
         # if the class uses properties that compute data only when
         # accessed
         for prop in self.properties:
-            try:
-                getattr(kf, prop[0])
-            except:
-                pass
+            self._DL[prop[0]].append(getattr(kf, prop[0]))
 
         v = copy.deepcopy(kf.__dict__)
 
@@ -191,7 +188,7 @@ class Saver(object):
                 self.__dict__.update(self._DL)
 
                 raise ValueError("could not convert {} into np.array".format(key))
-                
+
 
 def runge_kutta4(y, x, dx, f):
     """computes 4th order Runge-Kutta for dy/dx.
