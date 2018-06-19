@@ -206,15 +206,107 @@ def gaussian(x, mean, var):
 
 def mul(mean1, var1, mean2, var2):
     """
-    Multiply Gaussians (mean1, var1) with (mean2, var2) and return the
-    results as a tuple (mean,var).
+    Multiply Gaussian (mean1, var1) with (mean2, var2) and return the
+    results as a tuple (mean, var).
 
-    var1 and var2 are variances - sigma squared in the usual parlance.
+    Strictly speaking the product of two Gaussian PDFs is a Gaussian
+    function, not Gaussian PDF. It is, however, proportional to a Gaussian
+    PDF, so it is safe to treat the output as a PDF for any filter using
+    Bayes equation, which normalizes the result anyway.
+
+    Parameters
+    ----------
+    mean1 : scalar
+         mean of first Gaussian
+
+    var1 : scalar
+         variance of first Gaussian
+
+    mean2 : scalar
+         mean of second Gaussian
+
+    var2 : scalar
+         variance of second Gaussian
+
+    Returns
+    -------
+    mean : scalar
+        mean of product
+
+    var : scalar
+        variance of product
+
+    Examples
+    --------
+    >>> mul(1, 2, 3, 4)
+    (1.6666666666666667, 1.3333333333333333)
+
+    References
+    ----------
+    Bromily. "Products and Convolutions of Gaussian Probability Functions",
+    Tina Memo No. 2003-003.
+    http://www.tina-vision.net/docs/memos/2003-003.pdf
     """
 
     mean = (var1*mean2 + var2*mean1) / (var1 + var2)
     var = 1 / (1/var1 + 1/var2)
     return (mean, var)
+
+
+def mul_pdf(mean1, var1, mean2, var2):
+    """
+    Multiply Gaussian (mean1, var1) with (mean2, var2) and return the
+    results as a tuple (mean, var, scale_factor).
+
+    Strictly speaking the product of two Gaussian PDFs is a Gaussian
+    function, not Gaussian PDF. It is, however, proportional to a Gaussian
+    PDF. `scale_factor` provides this proportionality constant
+
+    Parameters
+    ----------
+    mean1 : scalar
+         mean of first Gaussian
+
+    var1 : scalar
+         variance of first Gaussian
+
+    mean2 : scalar
+         mean of second Gaussian
+
+    var2 : scalar
+         variance of second Gaussian
+
+    Returns
+    -------
+    mean : scalar
+        mean of product
+
+    var : scalar
+        variance of product
+
+    scale_factor : scalar
+        proportionality constant
+
+
+    Examples
+    --------
+    >>> mul(1, 2, 3, 4)
+    (1.6666666666666667, 1.3333333333333333)
+
+    References
+    ----------
+    Bromily. "Products and Convolutions of Gaussian Probability Functions",
+    Tina Memo No. 2003-003.
+    http://www.tina-vision.net/docs/memos/2003-003.pdf
+    """
+
+    mean = (var1*mean2 + var2*mean1) / (var1 + var2)
+    var = 1. / (1./var1 + 1./var2)
+
+    S = math.exp(-(mean1 - mean2)**2 / (2*(var1 + var2))) / \
+                 math.sqrt(2 * math.pi * (var1 + var2))
+
+    return mean, var, S
 
 
 def add(mean1, var1, mean2, var2):
