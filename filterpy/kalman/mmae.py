@@ -15,7 +15,9 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
+from __future__ import absolute_import, division
 
+from copy import deepcopy
 import numpy as np
 from filterpy.common import pretty_str
 
@@ -42,6 +44,35 @@ class MMAEFilterBank(object):
 
     H : Measurement matrix
 
+    Attributes
+    ----------
+    x : numpy.array(dim_x, 1)
+        Current state estimate. Any call to update() or predict() updates
+        this variable.
+
+    P : numpy.array(dim_x, dim_x)
+        Current state covariance matrix. Any call to update() or predict()
+        updates this variable.
+
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
+
+    P_prior : numpy.array(dim_x, dim_x)
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
+
+    filters : list of Kalman filters
+        List of Kalman filters.
 
     Examples
     --------
@@ -97,6 +128,14 @@ class MMAEFilterBank(object):
             self.x = None
             self.P = None
 
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
+
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
+
 
     def predict(self, u=0):
         """
@@ -114,6 +153,9 @@ class MMAEFilterBank(object):
         for f in self.filters:
             f.predict(u)
 
+        # save prior
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
     def update(self, z, R=None, H=None):
         """
@@ -164,11 +206,11 @@ class MMAEFilterBank(object):
             y = f.x - x
             self.P += p*(np.outer(y, y) + f.P)
 
-        try:
-            self.z = np.copy(z)
-        except IndexError:
-            self.z = z
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def __repr__(self):
         return '\n'.join([

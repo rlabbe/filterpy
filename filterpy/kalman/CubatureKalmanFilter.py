@@ -19,6 +19,7 @@ for more information.
 
 from __future__ import (absolute_import, division)
 
+from copy import deepcopy
 import math
 from math import sqrt
 import sys
@@ -190,6 +191,20 @@ class CubatureKalmanFilter(object):
     P : numpy.array(dim_x, dim_x)
         covariance estimate matrix
 
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
+
+    P_prior : numpy.array(dim_x, dim_x)
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only
+
     R : numpy.array(dim_z, dim_z)
         measurement noise matrix
 
@@ -201,6 +216,9 @@ class CubatureKalmanFilter(object):
 
     y : numpy.array
         innovation residual. Read only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
@@ -234,8 +252,8 @@ class CubatureKalmanFilter(object):
         self.x = zeros(dim_x)
         self.P = eye(dim_x)
         self.K = 0
-        self._dim_x = dim_x
-        self._dim_z = dim_z
+        self.dim_x = dim_x
+        self.dim_z = dim_z
         self._dt = dt
         self._num_sigmas = 2*dim_x
         self.hx = hx
@@ -243,6 +261,7 @@ class CubatureKalmanFilter(object):
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
         self.y = 0
+        self.z = np.array([[None]*self.dim_z]).T
 
 
         if residual_x is None:
@@ -257,13 +276,20 @@ class CubatureKalmanFilter(object):
 
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
-        self.sigmas_f = zeros((2*self._dim_x, self._dim_x))
-        self.sigmas_h = zeros((2*self._dim_x, self._dim_z))
+        self.sigmas_f = zeros((2*self.dim_x, self.dim_x))
+        self.sigmas_h = zeros((2*self.dim_x, self.dim_z))
 
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
         self.likelihood = sys.float_info.min
 
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
+
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict(self, dt=None, fx_args=()):
         r""" Performs the predict step of the CKF. On return, self.x and
@@ -298,6 +324,9 @@ class CubatureKalmanFilter(object):
 
         self.x, self.P = ckf_transform(self.sigmas_f, self.Q)
 
+        # save prior
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
     def update(self, z, R=None, hx_args=()):
         """ Update the CKF with the given measurements. On return,
@@ -319,6 +348,9 @@ class CubatureKalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         if not isinstance(hx_args, tuple):
@@ -327,7 +359,7 @@ class CubatureKalmanFilter(object):
         if R is None:
             R = self.R
         elif isscalar(R):
-            R = eye(self._dim_z) * R
+            R = eye(self.dim_z) * R
 
         for k in range(self._num_sigmas):
             self.sigmas_h[k] = self.hx(self.sigmas_f[k], *hx_args)
@@ -337,7 +369,7 @@ class CubatureKalmanFilter(object):
         zp, Pz = ckf_transform(self.sigmas_h, R)
 
         # compute cross variance of the state and the measurements
-        Pxz = zeros((self._dim_x, self._dim_z))
+        Pxz = zeros((self.dim_x, self.dim_z))
         m = self._num_sigmas  # literaure uses m for scaling factor
         xf = self.x.flatten()
         zpf = zp.flatten()
@@ -360,12 +392,16 @@ class CubatureKalmanFilter(object):
             if self.likelihood == 0:
                 self.likelihood = sys.float_info.min
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def __repr__(self):
         return '\n'.join([
             'CubatureKalmanFilter object',
-            pretty_str('dim_x', self._dim_x),
-            pretty_str('dim_z', self._dim_z),
+            pretty_str('dim_x', self.dim_x),
+            pretty_str('dim_z', self.dim_z),
             pretty_str('dt', self._dt),
             pretty_str('x', self.x),
             pretty_str('P', self.P),

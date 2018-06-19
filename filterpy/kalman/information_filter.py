@@ -18,6 +18,7 @@ for more information.
 
 
 from __future__ import (absolute_import, division)
+from copy import deepcopy
 import math
 import sys
 import numpy as np
@@ -67,10 +68,21 @@ class InformationFilter(object):
         inverse state covariance matrix
 
     x_prior : numpy.array(dim_x, 1)
-        Prior (predicted) dtate estimate vector
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
 
     P_inv_prior : numpy.array(dim_x, dim_x)
-        prior (predicted) inverse state covariance matrix
+        Inverse prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_inv_post : numpy.array(dim_x, dim_x)
+        Inverse posterior (updated) state covariance matrix. Read Only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
 
     R_inv : numpy.array(dim_z, dim_z)
         inverse of measurement noise matrix
@@ -136,6 +148,7 @@ class InformationFilter(object):
         self._F_inv = 0.          # state transition matrix
         self.H = np.zeros((dim_z, dim_x)) # Measurement function
         self.R_inv = eye(dim_z)   # state uncertainty
+        self.z = np.array([[None]*self.dim_z]).T
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -155,9 +168,11 @@ class InformationFilter(object):
 
         self.inv = np.linalg.inv
 
-        # save priors
+        # save priors and posteriors
         self.x_prior = np.copy(self.x)
         self.P_inv_prior = np.copy(self.P_inv)
+        self.x_post = np.copy(self.x)
+        self.P_inv_post = np.copy(self.P_inv)
 
 
     def update(self, z, R_inv=None):
@@ -177,6 +192,9 @@ class InformationFilter(object):
         """
 
         if z is None:
+            self.z = None
+            self.x_post = self.x.copy()
+            self.P_inv_post = self.P_inv.copy()
             return
 
         if R_inv is None:
@@ -219,6 +237,10 @@ class InformationFilter(object):
                 if self.likelihood == 0:
                     self.likelihood = sys.float_info.min
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_inv_post = self.P_inv.copy()
 
     def predict(self, u=0):
         """ Predict next position.
@@ -251,9 +273,9 @@ class InformationFilter(object):
         if invertable:
             self.x = dot(self._F, self.x) + dot(self.B, u)
             self.P_inv = self.inv(AI + self.Q)
-            self.P_inv_prior = np.copy(self.P_inv)
 
             # save priors
+            self.P_inv_prior = np.copy(self.P_inv)
             self.x_prior = np.copy(self.x)
         else:
             I_PF = self._I - dot(self.P_inv, self._F_inv)
@@ -265,7 +287,6 @@ class InformationFilter(object):
             # save priors
             self.x_prior = np.copy(self.x)
             self.P_inv_prior = np.copy(AQI)
-
 
     def batch_filter(self, zs, Rs=None, update_first=False, saver=None):
         """ Batch processes a sequences of measurements.
@@ -341,18 +362,15 @@ class InformationFilter(object):
 
         return (means, covariances)
 
-
     @property
     def F(self):
         """State Transition matrix"""
         return self._F
 
-
     @F.setter
     def F(self, value):
         self._F = value
         self._F_inv = self.inv(self._F)
-
 
     def __repr__(self):
         return '\n'.join([

@@ -19,13 +19,14 @@ for more information.
 
 from __future__ import (absolute_import, division, unicode_literals)
 
-import sys
+from copy import deepcopy
 import math
+import sys
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class ExtendedKalmanFilter(object):
@@ -71,10 +72,18 @@ class ExtendedKalmanFilter(object):
         Covariance matrix
 
     x_prior : numpy.array(dim_x, 1)
-        Prior (predicted) state estimate
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
 
     P_prior : numpy.array(dim_x, dim_x)
-        Prior (predicted) state covariance matrix
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
 
     R : numpy.array(dim_z, dim_z)
         Measurement noise matrix
@@ -96,6 +105,9 @@ class ExtendedKalmanFilter(object):
 
     S :  numpy.array
         Systen uncertaintly projected to measurement space. Read only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
@@ -130,13 +142,15 @@ class ExtendedKalmanFilter(object):
         self.Q = eye(dim_x)        # process uncertainty
         self.y = zeros((dim_z, 1)) # residual
 
+        z = np.array([None]*self.dim_z)
+        self.z = reshape_z(z, self.dim_z, self.x.ndim)
+
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
         self.K = np.zeros(self.x.shape) # kalman gain
         self.y = zeros((dim_z, 1))
         self.S = np.zeros((dim_z, dim_z)) # system uncertainty
-
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
@@ -145,10 +159,13 @@ class ExtendedKalmanFilter(object):
         self.log_likelihood = math.log(sys.float_info.min)
         self.likelihood = sys.float_info.min
 
-        # Priors. Will always be a copy of x, P after predict() is called.
-        self.x_prior = np.copy(self.x)
-        self.P_prior = np.copy(self.P)
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict_update(self, z, HJacobian, Hx, args=(), hx_args=(), u=0):
         """ Performs the predict/update innovation of the extended Kalman
@@ -227,6 +244,10 @@ class ExtendedKalmanFilter(object):
             if self.likelihood == 0:
                 self.likelihood = sys.float_info.min
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
                residual=np.subtract):
@@ -237,7 +258,7 @@ class ExtendedKalmanFilter(object):
 
         z : np.array
             measurement for this step.
-            If `None`, only predict step is perfomed.
+            If `None`, posterior is not computed
 
         HJacobian : function
            function which computes the Jacobian of the H matrix (measurement
@@ -270,6 +291,12 @@ class ExtendedKalmanFilter(object):
             the built in unless your residual computation is nonlinear (for
             example, if they are angles)
         """
+
+        if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
+            return
 
         if not isinstance(args, tuple):
             args = (args,)
@@ -307,6 +334,10 @@ class ExtendedKalmanFilter(object):
             if self.likelihood == 0:
                 self.likelihood = sys.float_info.min
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict_x(self, u=0):
         """
@@ -316,7 +347,6 @@ class ExtendedKalmanFilter(object):
         generate F is not providing accurate results for you.
         """
         self.x = dot(self.F, self.x) + dot(self.B, u)
-
 
     def predict(self, u=0):
         """
@@ -337,7 +367,6 @@ class ExtendedKalmanFilter(object):
         # save prior
         self.x_prior = np.copy(self.x)
         self.P_prior = np.copy(self.P)
-
 
     def __repr__(self):
         return '\n'.join([

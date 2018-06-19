@@ -18,8 +18,9 @@ for more information.
 
 from __future__ import (absolute_import, division)
 
-import sys
+from copy import deepcopy
 import math
+import sys
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
@@ -151,10 +152,21 @@ class UnscentedKalmanFilter(object):
         covariance estimate matrix
 
     x_prior : numpy.array(dim_x)
-        prior (predicted) state estimate vector
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
 
     P_prior : numpy.array(dim_x, dim_x)
-        prior (predicted) state estimate covariance
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
 
     R : numpy.array(dim_z, dim_z)
         measurement noise matrix
@@ -326,13 +338,17 @@ class UnscentedKalmanFilter(object):
 
         self.K = np.zeros((dim_x, dim_z)) # Kalman gain
         self.y = np.zeros((dim_z)) # residual
+        self.z = np.array([[None]*dim_z]).T
 
         self.inv = np.linalg.inv
 
-        # save prior
-        self.x_prior = np.copy(self.x)
-        self.P_prior = np.copy(self.P)
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict(self, dt=None, UT=None, fx=None, **fx_args):
         r"""
@@ -407,6 +423,9 @@ class UnscentedKalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self._dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         if hx is None:
@@ -450,6 +469,10 @@ class UnscentedKalmanFilter(object):
             if self.likelihood == 0:
                 self.likelihood = sys.float_info.min
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def cross_variance(self, x, z, sigmas_f, sigmas_h):
         """
@@ -463,7 +486,6 @@ class UnscentedKalmanFilter(object):
             dz = self.residual_z(sigmas_h[i], z)
             Pxz += self.Wc[i] * outer(dx, dz)
         return Pxz
-
 
     def compute_process_sigmas(self, dt, fx=None, **fx_args):
         """
@@ -482,7 +504,6 @@ class UnscentedKalmanFilter(object):
 
         for i, s in enumerate(sigmas):
             self.sigmas_f[i] = fx(s, dt, **fx_args)
-
 
     def batch_filter(self, zs, Rs=None, dts=None, UT=None, saver=None):
         """
@@ -602,7 +623,6 @@ class UnscentedKalmanFilter(object):
 
         return (means, covariances)
 
-
     def rts_smoother(self, Xs, Ps, Qs=None, dts=None):
         """
         Runs the Rauch-Tung-Striebal Kalman smoother on a set of
@@ -700,7 +720,6 @@ class UnscentedKalmanFilter(object):
             Ks[k] = K
 
         return (xs, ps, Ks)
-
 
     def __repr__(self):
         return '\n'.join([

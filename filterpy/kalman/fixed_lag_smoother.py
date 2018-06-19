@@ -82,7 +82,6 @@ class FixedLagSmoother(object):
 
     """
 
-
     def __init__(self, dim_x, dim_z, N=None):
         """ Create a fixed lag Kalman filter smoother. You are responsible for
         setting the various state variables to reasonable values; the defaults
@@ -130,8 +129,6 @@ class FixedLagSmoother(object):
 
         if N is not None:
             self.xSmooth = []
-
-
 
     def smooth(self, z, u=None):
         """ Smooths the measurement using a fixed lag smoother.
@@ -217,8 +214,6 @@ class FixedLagSmoother(object):
         self.x = x
         self.P = P
 
-
-
     def smooth_batch(self, zs, N, us=None):
         """ batch smooths the set of measurements using a fixed lag smoother.
         I consider this function a somewhat pedalogical exercise; why would
@@ -254,7 +249,6 @@ class FixedLagSmoother(object):
             xhat_smooth is the output of the N step fix lag smoother
             xhat is the filter output of the standard Kalman filter
         """
-
 
         # take advantage of the fact that np.array are assigned by reference.
         H = self.H
@@ -315,7 +309,6 @@ class FixedLagSmoother(object):
                 xSmooth[k] = xhat[k]
 
         return xSmooth, xhat
-
 
     def __repr__(self):
         return '\n'.join([

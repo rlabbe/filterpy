@@ -20,6 +20,8 @@ for more information.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
+from copy import deepcopy
 import numpy as np
 from numpy import dot, zeros, eye, outer
 from numpy.random import multivariate_normal
@@ -80,10 +82,21 @@ class EnsembleKalmanFilter(object):
         State covariance matrix
 
     x_prior : numpy.array(dim_x, 1)
-        Prior (predicted) state estimate
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
 
     P_prior : numpy.array(dim_x, dim_x)
-        Prior (predicted) state covariance matrix
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
+
+    z : numpy.array
+        Last measurement used in update(). Read only.
 
     R : numpy.array(dim_z, dim_z)
         Measurement noise matrix
@@ -160,6 +173,7 @@ class EnsembleKalmanFilter(object):
         self.hx = hx
         self.fx = fx
         self.K = np.zeros((dim_x, dim_z))
+        self.z = np.array([[None]*self.dim_z]).T
 
         self.initialize(x, P)
         self.Q = eye(dim_x)       # process uncertainty
@@ -169,8 +183,6 @@ class EnsembleKalmanFilter(object):
         # used to create error terms centered at 0 mean for state and measurement
         self._mean = np.zeros(dim_x)
         self._mean_z = np.zeros(dim_z)
-
-
 
     def initialize(self, x, P):
         """
@@ -194,10 +206,14 @@ class EnsembleKalmanFilter(object):
         self.sigmas = multivariate_normal(mean=x, cov=P, size=self.N)
         self.x = x
         self.P = P
-        self.x_prior = np.copy(x)
-        self.P_prior = np.copy(P)
 
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def update(self, z, R=None):
         """
@@ -216,6 +232,9 @@ class EnsembleKalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         if R is None:
@@ -253,6 +272,10 @@ class EnsembleKalmanFilter(object):
         self.x = np.mean(self.sigmas, axis=0)
         self.P = self.P - dot(dot(self.K, P_zz), self.K.T)
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict(self):
         """ Predict next position. """
@@ -274,7 +297,6 @@ class EnsembleKalmanFilter(object):
         # save prior
         self.x_prior = np.copy(self.x)
         self.P_prior = np.copy(self.P)
-
 
     def __repr__(self):
         return '\n'.join([

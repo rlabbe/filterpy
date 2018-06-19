@@ -48,14 +48,15 @@ of lists. These exceptions are documented in the method or function.
 Examples
 --------
 The following example constructs a constant velocity kinematic
-filter, filters noisy data, and plots the results
+filter, filters noisy data, and plots the results. It also demonstrates
+using the Saver class to save the state of the filter at each epoch.
 
 .. code-block:: Python
 
     import matplotlib.pyplot as plt
     import numpy as np
-    from filterpy.kalman import KalmanFilter, Saver
-    from filterpy.common import Q_discrete_white_noise
+    from filterpy.kalman import KalmanFilter
+    from filterpy.common import Q_discrete_white_noise, Saver
 
     r_std, q_std = 2., 0.003
     cv = KalmanFilter(dim_x=2, dim_z=1)
@@ -73,8 +74,14 @@ filter, filters noisy data, and plots the results
         saver.save() # save the filter's state
 
     saver.to_array()
-    plt.plot(saver.xs[:, 0])
+    plt.plot(saver.x[:, 0])
 
+    # plot all of the priors
+    plt.plot(saver.x_prior[:, 0])
+
+    # plot mahalanobis distance
+    plt.figure()
+    plt.plot(saver.mahalanobis)
 
 This code implements the same filter using the procedural form
 
@@ -88,7 +95,7 @@ This code implements the same filter using the procedural form
     for z in range(100):
         x, P = predict(x, P, F=F, Q=Q)
         x, P = update[x, P, z=[z + randn() * r_std], R=R, H=H)
-        xs.append(x[0, 0]
+        xs.append(x[0, 0])
     plt.plot(xs)
 
 
@@ -113,15 +120,15 @@ Copyright 2014-2018 Roger R Labbe Jr.
 
 from __future__ import absolute_import, division
 
+from copy import deepcopy
+import math
 import sys
 import warnings
-import math
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import numpy.linalg as linalg
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str, reshape_z, repeated_array
-
 
 
 class KalmanFilter(object):
@@ -162,16 +169,29 @@ class KalmanFilter(object):
     Attributes
     ----------
     x : numpy.array(dim_x, 1)
-        State estimate
+        Current state estimate. Any call to update() or predict() updates
+        this variable.
 
     P : numpy.array(dim_x, dim_x)
-        State covariance matrix
+        Current state covariance matrix. Any call to update() or predict()
+        updates this variable.
 
     x_prior : numpy.array(dim_x, 1)
-        Prior (predicted) state estimate
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
 
     P_prior : numpy.array(dim_x, dim_x)
-        Prior (predicted) state covariance matrix
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
+
+    z : numpy.array
+        Last measurement used in update(). Read only.
 
     R : numpy.array(dim_z, dim_z)
         Measurement noise matrix
@@ -193,9 +213,6 @@ class KalmanFilter(object):
 
     S :  numpy.array
         System uncertainty projected to measurement space. Read only.
-
-    z : ndarray
-        Last measurement used in update(). Read only.
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
@@ -220,7 +237,7 @@ class KalmanFilter(object):
         might choose to set it to filterpy.common.inv_diagonal, which is
         several times faster than numpy.linalg.inv for diagonal matrices.
 
-    alpha : float 
+    alpha : float
         Fading memory setting. 1.0 gives the normal Kalman filter, and
         values slightly larger than 1.0 (such as 1.02) give a fading
         memory effect - previous measurements have less influence on the
@@ -233,7 +250,7 @@ class KalmanFilter(object):
         .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
            p. 208-212. (2006)
 
-    
+
     Examples
     --------
 
@@ -262,8 +279,7 @@ class KalmanFilter(object):
         self.R = eye(dim_z)               # state uncertainty
         self._alpha_sq = 1.               # fading memory control
         self.M = np.zeros((dim_z, dim_z)) # process-measurement cross correlation
-
-        self.z = reshape_z(zeros((dim_z)), self.dim_z, self.x.ndim)
+        self.z = np.array([[None]*self.dim_z]).T
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -342,8 +358,10 @@ class KalmanFilter(object):
 
     def update(self, z, R=None, H=None):
         """
-        Add a new measurement (z) to the Kalman filter. If z is None, nothing
-        is changed.
+        Add a new measurement (z) to the Kalman filter.
+
+        If z is None, nothing is computed. However, x_post and P_post are
+        updated with the prior (x_prior, P_prior), and self.z is set to None.
 
         Parameters
         ----------
@@ -361,6 +379,9 @@ class KalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -400,8 +421,8 @@ class KalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(self.K, R), self.K.T)
 
-        self.z = z.copy() # save the measurement
-
+        # save measurement and posterior state
+        self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
@@ -505,6 +526,9 @@ class KalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -513,13 +537,11 @@ class KalmanFilter(object):
         # error (residual) between measurement and prediction
         self.y = z - dot(self.H, self.x)
 
-
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
         self.x = self.x + dot(self.K, self.y)
 
-        self.z = z.copy() # save the measurement
-
+        self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
@@ -527,7 +549,6 @@ class KalmanFilter(object):
         self._log_likelihood = None
         self._likelihood = None
         self._mahalanobis = None
-
 
     def update_correlated(self, z, R=None, H=None):
         """ Add a new measurement (z) to the Kalman filter assuming that
@@ -552,6 +573,9 @@ class KalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -593,7 +617,7 @@ class KalmanFilter(object):
         self.x = self.x + dot(self.K, self.y)
         self.P = self.P - dot(self.K, dot(H, self.P) + self.M.T)
 
-        self.z = z.copy() # save the measurement
+        self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
@@ -601,7 +625,6 @@ class KalmanFilter(object):
         self._log_likelihood = None
         self._likelihood = None
         self._mahalanobis = None
-
 
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
                      Rs=None, Bs=None, us=None, update_first=False,
@@ -641,7 +664,6 @@ class KalmanFilter(object):
             len(Qs) == len(zs), then it is treated as a list of Q values, one
             per epoch. This allows you to have varying Q per epoch.
 
-
         Hs : None, np.array or list-like, default=None
             optional list of values to use for the measurement matrix H.
 
@@ -653,7 +675,6 @@ class KalmanFilter(object):
             If it is a list of matrices or a 3D array where
             len(Hs) == len(zs), then it is treated as a list of H values, one
             per epoch. This allows you to have varying H per epoch.
-
 
         Rs : None, np.array or list-like, default=None
             optional list of values to use for the measurement error
@@ -668,7 +689,6 @@ class KalmanFilter(object):
             len(Rs) == len(zs), then it is treated as a list of R values, one
             per epoch. This allows you to have varying R per epoch.
 
-
         Bs : None, np.array or list-like, default=None
             optional list of values to use for the control transition matrix B.
 
@@ -680,7 +700,6 @@ class KalmanFilter(object):
             If it is a list of matrices or a 3D array where
             len(Bs) == len(zs), then it is treated as a list of B values, one
             per epoch. This allows you to have varying B per epoch.
-
 
         us : None, np.array or list-like, default=None
             optional list of values to use for the control input vector;
@@ -694,7 +713,6 @@ class KalmanFilter(object):
             If it is a list of matrices or a 3D array where
             len(Rs) == len(zs), then it is treated as a list of R values, one
             per epoch. This allows you to have varying R per epoch.
-
 
         update_first : bool, optional, default=False
             controls whether the order of operations is update followed by
@@ -764,7 +782,6 @@ class KalmanFilter(object):
         Bs = repeated_array(Bs, n)
         us = repeated_array(us, n)
 
-
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
             means = zeros((n, self.dim_x))
@@ -805,7 +822,6 @@ class KalmanFilter(object):
                     saver.save()
 
         return (means, covariances, means_p, covariances_p)
-
 
     def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, inv=np.linalg.inv):
         """
@@ -888,7 +904,6 @@ class KalmanFilter(object):
 
         return (x, P, K, Pp)
 
-
     def get_prediction(self, u=0):
         """
         Predicts the next state of the filter and returns it without
@@ -910,7 +925,6 @@ class KalmanFilter(object):
         x = dot(self.F, self.x) + dot(self.B, u)
         P = self._alpha_sq * dot(dot(self.F, self.P), self.F.T) + self.Q
         return (x, P)
-
 
     def get_update(self, z=None):
         """
@@ -961,14 +975,12 @@ class KalmanFilter(object):
 
         return x, P
 
-
     def residual_of(self, z):
         """
         Returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
         return z - dot(self.H, self.x_prior)
-
 
     def measurement_of_state(self, x):
         """
@@ -989,7 +1001,6 @@ class KalmanFilter(object):
         """
 
         return dot(self.H, x)
-
 
     @property
     def mahalanobis(self):
@@ -1025,7 +1036,6 @@ class KalmanFilter(object):
 
         return self._alpha_sq**.5
 
-
     def log_likelihood_of(self, z):
         """
         log likelihood of the measurement `z`. This should only be called
@@ -1036,14 +1046,12 @@ class KalmanFilter(object):
             return math.log(sys.float_info.min)
         return logpdf(z, dot(self.H, self.x), self.S)
 
-
     @alpha.setter
     def alpha(self, value):
         if not np.isscalar(value) or value < 1:
             raise ValueError('alpha must be a float greater than 1')
 
         self._alpha_sq = value**2
-
 
     def __repr__(self):
         return '\n'.join([
@@ -1072,7 +1080,6 @@ class KalmanFilter(object):
             pretty_str('alpha', self.alpha),
             pretty_str('inv', self.inv)
             ])
-
 
     def test_matrix_dimensions(self, z=None, H=None, R=None, F=None, Q=None):
         """

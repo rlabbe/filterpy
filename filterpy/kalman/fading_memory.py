@@ -19,15 +19,15 @@ for more information.
 
 
 from __future__ import (absolute_import, division, unicode_literals)
+from copy import deepcopy
+import math
 import sys
 import warnings
-import math
 import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str
-
 
 class FadingKalmanFilter(object):
 
@@ -81,6 +81,23 @@ class FadingKalmanFilter(object):
 
     P : ndarray (dim_x, dim_x), default identity matrix
         covariance matrix
+
+    x_prior : numpy.array(dim_x, 1)
+        Prior (predicted) state estimate. The *_prior and *_post attributes
+        are for convienence; they store the  prior and posterior of the
+        current epoch. Read Only.
+
+    P_prior : numpy.array(dim_x, dim_x)
+        Prior (predicted) state covariance matrix. Read Only.
+
+    x_post : numpy.array(dim_x, 1)
+        Posterior (updated) state estimate. Read Only.
+
+    P_post : numpy.array(dim_x, dim_x)
+        Posterior (updated) state covariance matrix. Read Only.
+
+    z : ndarray
+        Last measurement used in update(). Read only.
 
     Q : ndarray (dim_x, dim_x), default identity matrix
         Process uncertainty matrix
@@ -142,6 +159,7 @@ class FadingKalmanFilter(object):
         self.F = np.eye(dim_x)         # state transition matrix
         self.H = zeros((dim_z, dim_x)) # Measurement function
         self.R = eye(dim_z)            # state uncertainty
+        self.z = np.array([[None]*dim_z]).T
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -156,6 +174,13 @@ class FadingKalmanFilter(object):
         self.compute_log_likelihood = compute_log_likelihood
         self.log_likelihood = math.log(sys.float_info.min)
 
+        # these will always be a copy of x,P after predict() is called
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
+
+        # these will always be a copy of x,P after update() is called
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def update(self, z, R=None):
         """
@@ -174,6 +199,9 @@ class FadingKalmanFilter(object):
         """
 
         if z is None:
+            self.z = np.array([[None]*self.dim_z]).T
+            self.x_post = self.x.copy()
+            self.P_post = self.P.copy()
             return
 
         if R is None:
@@ -203,10 +231,13 @@ class FadingKalmanFilter(object):
         I_KH = self.I - dot(self.K, self.H)
         self.P = dot(I_KH, self.P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-
         if self.compute_log_likelihood:
             self.log_likelihood = logpdf(x=self.y, cov=self.S)
 
+        # save measurement and posterior state
+        self.z = deepcopy(z)
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
 
     def predict(self, u=0):
         """ Predict next position.
@@ -225,6 +256,9 @@ class FadingKalmanFilter(object):
         # P = FPF' + Q
         self.P = self.alpha_sq * dot(self.F, self.P).dot(self.F.T) + self.Q
 
+        # save prior
+        self.x_prior = self.x.copy()
+        self.P_prior = self.P.copy()
 
     def batch_filter(self, zs, Rs=None, update_first=False):
         """ Batch processes a sequences of measurements.
