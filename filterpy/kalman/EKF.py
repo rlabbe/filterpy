@@ -58,11 +58,6 @@ class ExtendedKalmanFilter(object):
         Number of of measurement inputs. For example, if the sensor
         provides you with position in (x,y), dim_z would be 2.
 
-    compute_log_likelihood : bool (default = True)
-        Computes log likelihood by default, but this can be a slow
-        computation, so if you never use it you can turn this computation
-        off.
-
     Attributes
     ----------
     x : numpy.array(dim_x, 1)
@@ -121,6 +116,12 @@ class ExtendedKalmanFilter(object):
         which multiply by this value, so by default we always return a
         number >= sys.float_info.min.
 
+    mahalanobis : float
+        mahalanobis distance of the innovation. E.g. 3 means measurement
+        was 3 standard deviations away from the predicted value.
+
+        Read only.
+
     Examples
     --------
 
@@ -128,7 +129,7 @@ class ExtendedKalmanFilter(object):
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
-    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
+    def __init__(self, dim_x, dim_z, dim_u=0):
 
         self.dim_x = dim_x
         self.dim_z = dim_z
@@ -150,14 +151,15 @@ class ExtendedKalmanFilter(object):
         # purposes
         self.K = np.zeros(self.x.shape) # kalman gain
         self.y = zeros((dim_z, 1))
-        self.S = np.zeros((dim_z, dim_z)) # system uncertainty
+        self.S = np.zeros((dim_z, dim_z))   # system uncertainty
+        self.SI = np.zeros((dim_z, dim_z))  # inverse system uncertainty
 
         # identity matrix. Do not alter this.
         self._I = np.eye(dim_x)
 
-        self.compute_log_likelihood = compute_log_likelihood
-        self.log_likelihood = math.log(sys.float_info.min)
-        self.likelihood = sys.float_info.min
+        self._log_likelihood = math.log(sys.float_info.min)
+        self._likelihood = sys.float_info.min
+        self._mahalanobis = None
 
         # these will always be a copy of x,P after predict() is called
         self.x_prior = self.x.copy()
@@ -230,7 +232,8 @@ class ExtendedKalmanFilter(object):
         # update step
         PHT = dot(P, H.T)
         self.S = dot(H, PHT) + R
-        self.K = dot(PHT, linalg.inv(self.S))
+        self.SI = linalg.inv(self.S)
+        self.K = dot(PHT, self.SI)
 
         self.y = z - Hx(x, *hx_args)
         self.x = x + dot(self.K, self.y)
@@ -248,6 +251,11 @@ class ExtendedKalmanFilter(object):
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
+
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
 
     def update(self, z, HJacobian, Hx, R=None, args=(), hx_args=(),
                residual=np.subtract):
@@ -328,11 +336,10 @@ class ExtendedKalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(I_KH, self.P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-        if self.compute_log_likelihood:
-            self.log_likelihood = logpdf(x=self.y, cov=self.S)
-            self.likelihood = math.exp(self.log_likelihood)
-            if self.likelihood == 0:
-                self.likelihood = sys.float_info.min
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
 
         # save measurement and posterior state
         self.z = deepcopy(z)
@@ -368,6 +375,45 @@ class ExtendedKalmanFilter(object):
         self.x_prior = np.copy(self.x)
         self.P_prior = np.copy(self.P)
 
+    @property
+    def log_likelihood(self):
+        """
+        log-likelihood of the last measurement.
+        """
+
+        if self._log_likelihood is None:
+            self._log_likelihood = logpdf(x=self.y, cov=self.S)
+        return self._log_likelihood
+
+    @property
+    def likelihood(self):
+        """
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+        """
+        if self._likelihood is None:
+            self._likelihood = math.exp(self.log_likelihood)
+            if self._likelihood == 0:
+                self._likelihood = sys.float_info.min
+        return self._likelihood
+
+    @property
+    def mahalanobis(self):
+        """
+        Mahalanobis distance of innovation. E.g. 3 means measurement
+        was 3 standard deviations away from the predicted value.
+
+        Returns
+        -------
+        mahalanobis : float
+        """
+        if self._mahalanobis is None:
+            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
+        return self._mahalanobis
+
     def __repr__(self):
         return '\n'.join([
             'KalmanFilter object',
@@ -382,5 +428,6 @@ class ExtendedKalmanFilter(object):
             pretty_str('y', self.y),
             pretty_str('S', self.S),
             pretty_str('likelihood', self.likelihood),
-            pretty_str('log-likelihood', self.log_likelihood)
+            pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('mahalanobis', self.mahalanobis)
             ])

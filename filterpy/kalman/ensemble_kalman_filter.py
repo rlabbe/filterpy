@@ -113,9 +113,6 @@ class EnsembleKalmanFilter(object):
     K : numpy.array(dim_x, dim_z)
         Kalman gain of the update step. Read only.
 
-    log_likelihood : float
-        log-likelihood of the last measurement. Read only.
-
     inv : function, default numpy.linalg.inv
         If you prefer another inverse function, such as the Moore-Penrose
         pseudo inverse, set it to that instead: kf.inv = np.linalg.pinv
@@ -174,6 +171,8 @@ class EnsembleKalmanFilter(object):
         self.fx = fx
         self.K = np.zeros((dim_x, dim_z))
         self.z = np.array([[None]*self.dim_z]).T
+        self.S = np.zeros((dim_z, dim_z))   # system uncertainty
+        self.SI = np.zeros((dim_z, dim_z))  # inverse system uncertainty
 
         self.initialize(x, P)
         self.Q = eye(dim_x)       # process uncertainty
@@ -257,6 +256,9 @@ class EnsembleKalmanFilter(object):
             s = sigma - z_mean
             P_zz += outer(s, s)
         P_zz = P_zz / (N-1) + R
+        self.S = P_zz
+        self.SI = self.inv(self.S)
+
 
         P_xz = 0
         for i in range(N):
@@ -311,6 +313,7 @@ class EnsembleKalmanFilter(object):
             pretty_str('Q', self.Q),
             pretty_str('R', self.R),
             pretty_str('K', self.K),
+            pretty_str('S', self.S),
             pretty_str('sigmas', self.sigmas),
             pretty_str('hx', self.hx),
             pretty_str('fx', self.fx)

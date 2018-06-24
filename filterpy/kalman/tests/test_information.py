@@ -126,6 +126,8 @@ def test_1d():
         r.append (f.x[0,0])
         r2.append (inf.x[0,0])
         m.append(z)
+        print(inf.y)
+        print(inf.SI)
         s.save()
 
         assert abs(f.x[0,0] - inf.x[0,0]) < 1.e-12

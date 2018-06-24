@@ -177,11 +177,6 @@ class CubatureKalmanFilter(object):
                     y = 2*np.pi
                 return y
 
-    compute_log_likelihood : bool (default = True)
-        Computes log likelihood by default, but this can be a slow
-        computation, so if you never use it you can turn this computation
-        off.
-
     Attributes
     ----------
 
@@ -232,6 +227,9 @@ class CubatureKalmanFilter(object):
         which multiply by this value, so by default we always return a
         number >= sys.float_info.min.
 
+    mahalanobis : float
+        mahalanobis distance of the innovation. Read only.
+
     References
     ----------
 
@@ -244,8 +242,7 @@ class CubatureKalmanFilter(object):
                  x_mean_fn=None,
                  z_mean_fn=None,
                  residual_x=None,
-                 residual_z=None,
-                 compute_log_likelihood=True):
+                 residual_z=None):
 
         self.Q = eye(dim_x)
         self.R = eye(dim_z)
@@ -262,7 +259,8 @@ class CubatureKalmanFilter(object):
         self.z_mean = z_mean_fn
         self.y = 0
         self.z = np.array([[None]*self.dim_z]).T
-
+        self.S = np.zeros((dim_z, dim_z)) # system uncertainty
+        self.SI = np.zeros((dim_z, dim_z)) # inverse system uncertainty
 
         if residual_x is None:
             self.residual_x = np.subtract
@@ -279,9 +277,10 @@ class CubatureKalmanFilter(object):
         self.sigmas_f = zeros((2*self.dim_x, self.dim_x))
         self.sigmas_h = zeros((2*self.dim_x, self.dim_z))
 
-        self.compute_log_likelihood = compute_log_likelihood
-        self.log_likelihood = math.log(sys.float_info.min)
-        self.likelihood = sys.float_info.min
+        # Only computed only if requested via property
+        self._log_likelihood = math.log(sys.float_info.min)
+        self._likelihood = sys.float_info.min
+        self._mahalanobis = None
 
         # these will always be a copy of x,P after predict() is called
         self.x_prior = self.x.copy()
@@ -366,7 +365,8 @@ class CubatureKalmanFilter(object):
 
         # mean and covariance of prediction passed through unscented transform
         #zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R, self.z_mean, self.residual_z)
-        zp, Pz = ckf_transform(self.sigmas_h, R)
+        zp, self.S = ckf_transform(self.sigmas_h, R)
+        self.SI = inv(self.S)
 
         # compute cross variance of the state and the measurements
         Pxz = zeros((self.dim_x, self.dim_z))
@@ -380,22 +380,59 @@ class CubatureKalmanFilter(object):
 
         Pxz /= m
 
-        self.K = dot(Pxz, inv(Pz))        # Kalman gain
-        self.y = self.residual_z(z, zp)   #residual
+        self.K = dot(Pxz, self.SI)        # Kalman gain
+        self.y = self.residual_z(z, zp)   # residual
 
         self.x = self.x + dot(self.K, self.y)
-        self.P = self.P - dot(self.K, Pz).dot(self.K.T)
-
-        if self.compute_log_likelihood:
-            self.log_likelihood = logpdf(x=self.y, cov=Pz)
-            self.likelihood = math.exp(self.log_likelihood)
-            if self.likelihood == 0:
-                self.likelihood = sys.float_info.min
+        self.P = self.P - dot(self.K, self.S).dot(self.K.T)
 
         # save measurement and posterior state
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
+
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
+
+    @property
+    def log_likelihood(self):
+        """
+        log-likelihood of the last measurement.
+        """
+        if self._log_likelihood is None:
+            self._log_likelihood = logpdf(x=self.y, cov=self.S)
+        return self._log_likelihood
+
+    @property
+    def likelihood(self):
+        """
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+        """
+        if self._likelihood is None:
+            self._likelihood = math.exp(self.log_likelihood)
+            if self._likelihood == 0:
+                self._likelihood = sys.float_info.min
+        return self._likelihood
+
+    @property
+    def mahalanobis(self):
+        """"
+        Mahalanobis distance of innovation. E.g. 3 means measurement
+        was 3 standard deviations away from the predicted value.
+
+        Returns
+        -------
+        mahalanobis : float
+        """
+        if self._mahalanobis is None:
+            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
+        return self._mahalanobis
 
     def __repr__(self):
         return '\n'.join([
@@ -410,5 +447,6 @@ class CubatureKalmanFilter(object):
             pretty_str('K', self.K),
             pretty_str('y', self.y),
             pretty_str('log-likelihood', self.log_likelihood),
-            pretty_str('likelihood', self.likelihood)
+            pretty_str('likelihood', self.likelihood),
+            pretty_str('mahalanobis', self.mahalanobis)
             ])

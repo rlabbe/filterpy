@@ -66,7 +66,6 @@ class SquareRootKalmanFilter(object):
         Default value of 0 indicates it is not used.
 
 
-
     Attributes
     ----------
 
@@ -225,7 +224,6 @@ class SquareRootKalmanFilter(object):
         self.x_post = self.x.copy()
         self._P1_2_post = np.copy(self._P1_2)
 
-
     def predict(self, u=0):
         """
         Predict next state (prior) using the Kalman filter state propagation
@@ -250,14 +248,12 @@ class SquareRootKalmanFilter(object):
         self.x_prior = np.copy(self.x)
         self._P1_2_prior = np.copy(self._P1_2)
 
-
     def residual_of(self, z):
         """ returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
 
         return z - dot(self.H, self.x)
-
 
     def measurement_of_state(self, x):
         """ Helper function that converts a state into a measurement.
@@ -276,18 +272,15 @@ class SquareRootKalmanFilter(object):
         """
         return dot(self.H, x)
 
-
     @property
     def Q(self):
         """ Process uncertainty"""
         return dot(self._Q1_2.T, self._Q1_2)
 
-
     @property
     def Q1_2(self):
         """ Sqrt Process uncertainty"""
         return self._Q1_2
-
 
     @Q.setter
     def Q(self, value):
@@ -315,13 +308,11 @@ class SquareRootKalmanFilter(object):
         """ sqrt of covariance matrix"""
         return self._P1_2
 
-
     @P.setter
     def P(self, value):
         """ covariance matrix"""
         self._P = value
         self._P1_2 = cholesky(self._P, lower=True)
-
 
     @property
     def R(self):
@@ -333,13 +324,11 @@ class SquareRootKalmanFilter(object):
         """ sqrt of measurement uncertainty"""
         return self._R1_2
 
-
     @R.setter
     def R(self, value):
         """ measurement uncertainty"""
         self._R = value
         self._R1_2 = cholesky(self._R, lower=True)
-
 
     def __repr__(self):
         return '\n'.join([

@@ -65,11 +65,6 @@ class FadingKalmanFilter(object):
         size of the control input, if it is being used.
         Default value of 0 indicates it is not used.
 
-    compute_log_likelihood : bool (default = True)
-        Computes log likelihood by default, but this can be a slow
-        computation, so if you never use it you can turn this computation
-        off.
-
     Attributes
     ----------
 
@@ -126,6 +121,18 @@ class FadingKalmanFilter(object):
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
 
+    likelihood : float
+        likelihood of last measurement. Read only.
+
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+
+    mahalanobis : float
+        mahalanobis distance of the innovation. Read only.
+
 
     Examples
     --------
@@ -135,8 +142,7 @@ class FadingKalmanFilter(object):
     """
 
 
-    def __init__(self, alpha, dim_x, dim_z, dim_u=0,
-                 compute_log_likelihood=True):
+    def __init__(self, alpha, dim_x, dim_z, dim_u=0):
 
         warnings.warn(
             "Use KalmanFilter class instead; it also provides the alpha attribute",
@@ -171,8 +177,10 @@ class FadingKalmanFilter(object):
         # identity matrix. Do not alter this.
         self.I = np.eye(dim_x)
 
-        self.compute_log_likelihood = compute_log_likelihood
-        self.log_likelihood = math.log(sys.float_info.min)
+        # Only computed only if requested via property
+        self._log_likelihood = math.log(sys.float_info.min)
+        self._likelihood = sys.float_info.min
+        self._mahalanobis = None
 
         # these will always be a copy of x,P after predict() is called
         self.x_prior = self.x.copy()
@@ -231,13 +239,15 @@ class FadingKalmanFilter(object):
         I_KH = self.I - dot(self.K, self.H)
         self.P = dot(I_KH, self.P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-        if self.compute_log_likelihood:
-            self.log_likelihood = logpdf(x=self.y, cov=self.S)
-
         # save measurement and posterior state
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
+
+            # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
 
     def predict(self, u=0):
         """ Predict next position.
@@ -391,23 +401,42 @@ class FadingKalmanFilter(object):
         return math.sqrt(self.alpha_sq)
 
     @property
+    def log_likelihood(self):
+        """
+        log-likelihood of the last measurement.
+        """
+        if self._log_likelihood is None:
+            self._log_likelihood = logpdf(x=self.y, cov=self.S)
+        return self._log_likelihood
+
+    @property
     def likelihood(self):
         """
-        likelihood of last measurment.
-
         Computed from the log-likelihood. The log-likelihood can be very
         small,  meaning a large negative value such as -28000. Taking the
         exp() of that results in 0.0, which can break typical algorithms
         which multiply by this value, so by default we always return a
         number >= sys.float_info.min.
+        """
+        if self._likelihood is None:
+            self._likelihood = math.exp(self.log_likelihood)
+            if self._likelihood == 0:
+                self._likelihood = sys.float_info.min
+        return self._likelihood
 
-        But really, this is a bad measure because of the scaling that is
-        involved - try to use log-likelihood in your equations!"""
+    @property
+    def mahalanobis(self):
+        """"
+        Mahalanobis distance of innovation. E.g. 3 means measurement
+        was 3 standard deviations away from the predicted value.
 
-        lh = math.exp(self.log_likelihood)
-        if lh == 0:
-            lh = sys.float_info.min
-        return lh
+        Returns
+        -------
+        mahalanobis : float
+        """
+        if self._mahalanobis is None:
+            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
+        return self._mahalanobis
 
     def __repr__(self):
         return '\n'.join([
@@ -425,6 +454,8 @@ class FadingKalmanFilter(object):
             pretty_str('y', self.y),
             pretty_str('S', self.S),
             pretty_str('B', self.B),
+            pretty_str('likelihood', self.likelihood),
             pretty_str('log-likelihood', self.log_likelihood),
-            pretty_str('alpha', self.alpha),
+            pretty_str('mahalanobis', self.mahalanobis),
+            pretty_str('alpha', self.alpha)
             ])

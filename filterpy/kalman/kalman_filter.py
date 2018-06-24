@@ -431,23 +431,6 @@ class KalmanFilter(object):
         self._likelihood = None
         self._mahalanobis = None
 
-
-    @property
-    def log_likelihood(self):
-        if self._log_likelihood is None:
-            self._log_likelihood = logpdf(x=self.y, cov=self.S)
-        return self._log_likelihood
-
-
-    @property
-    def likelihood(self):
-        if self._likelihood is None:
-            self._likelihood = math.exp(self.log_likelihood)
-            if self._likelihood == 0:
-                self._likelihood = sys.float_info.min
-        return self._likelihood
-
-
     def predict_steadystate(self, u=0, B=None):
         """
         Predict state (prior) using the Kalman filter state propagation
@@ -1003,9 +986,33 @@ class KalmanFilter(object):
         return dot(self.H, x)
 
     @property
+    def log_likelihood(self):
+        """
+        log-likelihood of the last measurement.
+        """
+        if self._log_likelihood is None:
+            self._log_likelihood = logpdf(x=self.y, cov=self.S)
+        return self._log_likelihood
+
+    @property
+    def likelihood(self):
+        """
+        Computed from the log-likelihood. The log-likelihood can be very
+        small,  meaning a large negative value such as -28000. Taking the
+        exp() of that results in 0.0, which can break typical algorithms
+        which multiply by this value, so by default we always return a
+        number >= sys.float_info.min.
+        """
+        if self._likelihood is None:
+            self._likelihood = math.exp(self.log_likelihood)
+            if self._likelihood == 0:
+                self._likelihood = sys.float_info.min
+        return self._likelihood
+
+    @property
     def mahalanobis(self):
         """"
-        Mahalanobis distance of innovation. E.g. 3 means measurement
+        Mahalanobis distance of measurement. E.g. 3 means measurement
         was 3 standard deviations away from the predicted value.
 
         Returns
@@ -1015,7 +1022,6 @@ class KalmanFilter(object):
         if self._mahalanobis is None:
             self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
         return self._mahalanobis
-
 
     @property
     def alpha(self):
@@ -1033,7 +1039,6 @@ class KalmanFilter(object):
            p. 208-212. (2006)
 
         """
-
         return self._alpha_sq**.5
 
     def log_likelihood_of(self, z):
@@ -1077,6 +1082,8 @@ class KalmanFilter(object):
             pretty_str('B', self.B),
             pretty_str('z', self.z),
             pretty_str('log-likelihood', self.log_likelihood),
+            pretty_str('likelihood', self.likelihood),
+            pretty_str('mahalanobis', self.mahalanobis),
             pretty_str('alpha', self.alpha),
             pretty_str('inv', self.inv)
             ])
