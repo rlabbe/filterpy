@@ -227,7 +227,9 @@ def test_imm():
     trans = np.array([[0.97, 0.03],
                       [0.03, 0.97]])
 
+
     bank = IMMEstimator(filters, (0.5, 0.5), trans)
+
 
     # ensure __repr__ doesn't have problems
     str(bank)
@@ -280,6 +282,36 @@ def test_imm():
 
         return bank
 
+
+def test_misshapen():
+
+    """Ensure we get a ValueError if the filter banks are not designed
+    properly
+    """
+
+    ca = KalmanFilter(3, 1)
+    cv = KalmanFilter(2, 1)
+
+    trans = np.array([[0.97, 0.03],
+                      [0.03, 0.97]])
+
+    try:
+        IMMEstimator([ca, cv], (0.5, 0.5), trans)
+        assert "IMM should raise ValueError on filter banks with filters of different sizes"
+    except ValueError:
+        pass
+
+
+    try:
+        IMMEstimator([], (0.5, 0.5), trans)
+        assert "Should raise ValueError on empty bank"
+    except ValueError:
+        pass
+
+
+
 if __name__ == '__main__':
+
+    test_misshapen()
     DO_PLOT = True
     test_imm()

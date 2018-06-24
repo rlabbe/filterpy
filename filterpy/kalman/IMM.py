@@ -60,6 +60,9 @@ class IMMEstimator(object):
             List of N filters. filters[i] is the ith Kalman filter in the
             IMM estimator.
 
+            Each filter must have the same dimension for the state `x` and `P`.
+
+
         mu : (N,) ndarray of float
             mode probability: mu[i] is the probability that
             filter i is the correct one.
@@ -83,6 +86,10 @@ class IMMEstimator(object):
             n_states = x_shape[0]
         except AttributeError:
             n_states = x_shape
+
+        for f in filters:
+            if x_shape != f.x.shape:
+                raise ValueError('All filters must have the same state dimension')
 
         self.x = np.zeros(x_shape)
         self.P = np.zeros((n_states, n_states))
