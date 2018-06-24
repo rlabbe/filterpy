@@ -29,6 +29,46 @@ from filterpy.common import pretty_str
 class IMMEstimator(object):
     """ Implements an Interacting Multiple-Model (IMM) estimator.
 
+    Parameters
+    ----------
+
+    filters : (N,) array_like of KalmanFilter objects
+        List of N filters. filters[i] is the ith Kalman filter in the
+        IMM estimator.
+
+        Each filter must have the same dimension for the state `x` and `P`.
+
+
+    mu : (N,) ndarray of float
+        mode probability: mu[i] is the probability that
+        filter i is the correct one.
+
+    M : (N,N) ndarray of float
+        Markov chain transition matrix. M[i,j] is the probability of
+        switching from filter j to filter i.
+
+    Attributes
+    ----------
+    x : numpy.array(dim_x, 1)
+        Current state estimate. Any call to update() or predict() updates
+        this variable.
+
+    P : numpy.array(dim_x, dim_x)
+        Current state covariance matrix. Any call to update() or predict()
+        updates this variable.
+
+    N : int
+        number of filters in the filter bank
+
+    mu : (N,) ndarray of float
+        mode probability: mu[i] is the probability that
+        filter i is the correct one.
+
+    M : (N,N) ndarray of float
+        Markov chain transition matrix. M[i,j] is the probability of
+        switching from filter j to filter i.
+
+
     Examples
     --------
 
@@ -53,24 +93,6 @@ class IMMEstimator(object):
         """"
         Create an IMM estimator from a list of filters.
 
-        Parameters
-        ----------
-
-        filters : (N,) array_like of KalmanFilter objects
-            List of N filters. filters[i] is the ith Kalman filter in the
-            IMM estimator.
-
-            Each filter must have the same dimension for the state `x` and `P`.
-
-
-        mu : (N,) ndarray of float
-            mode probability: mu[i] is the probability that
-            filter i is the correct one.
-
-        M : (N,N) ndarray of float
-            Markov chain transition matrix. M[i,j] is the probability of
-            switching from filter j to filter i.
-
         """
 
         if len(filters) < 1:
@@ -94,9 +116,8 @@ class IMMEstimator(object):
         self.x = np.zeros(x_shape)
         self.P = np.zeros((n_states, n_states))
         self.N = len(filters) # number of filters
-        self.cbar = 0.
-        self.likelihood = 0
-
+        self._cbar = 0.
+        self._likelihood = 0
 
     def update(self, z, u=None):
         """
@@ -118,7 +139,7 @@ class IMMEstimator(object):
         L = zeros(len(self.filters))
         for i, f in enumerate(self.filters):
             f.update(z)
-            L[i] = f.likelihood
+            L[i] = f._likelihood
 
         # initial condition IMM state, covariance
         xs, Ps = [], []
@@ -127,13 +148,13 @@ class IMMEstimator(object):
         # cbar is the total probability, after interaction,
         # that the target is in state j. We use it as the
         # normalization constant.
-        self.cbar = dot(self.mu, self.M)
+        self._cbar = dot(self.mu, self.M)
 
         # compute mixing probabilities
         omega = np.zeros((self.N, self.N))
         for i in range(self.N):
             for j in range(self.N):
-                omega[i, j] = (self.M[i, j] * self.mu[i]) / self.cbar[j]
+                omega[i, j] = (self.M[i, j] * self.mu[i]) / self._cbar[j]
 
         # compute mixed initial conditions
         for i, (f, w) in enumerate(zip(self.filters, omega.T)):
@@ -168,10 +189,9 @@ class IMMEstimator(object):
             self.P += w * (np.outer(y, y) + f.P)
 
         # update mode probabilities from total probability * likelihood
-        self.mu = self.cbar * L
+        self.mu = self._cbar * L
         self.mu /= sum(self.mu) # normalize
-        self.likelihood = L
-
+        self._likelihood = L
 
     def __repr__(self):
         return '\n'.join([
@@ -181,6 +201,6 @@ class IMMEstimator(object):
             pretty_str('P', self.P),
             pretty_str('mu', self.mu),
             pretty_str('M', self.M),
-            pretty_str('cbar', self.cbar),
-            pretty_str('likelihood', self.likelihood),
+            pretty_str('cbar', self._cbar),
+            pretty_str('likelihood', self._likelihood),
             ])
