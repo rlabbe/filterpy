@@ -139,7 +139,7 @@ class IMMEstimator(object):
         L = zeros(len(self.filters))
         for i, f in enumerate(self.filters):
             f.update(z)
-            L[i] = f._likelihood
+            L[i] = f.likelihood
 
         # initial condition IMM state, covariance
         xs, Ps = [], []
