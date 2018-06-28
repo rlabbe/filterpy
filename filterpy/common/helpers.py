@@ -117,7 +117,6 @@ class Saver(object):
         if save_current:
             self.save()
 
-
     def save(self):
         """ save the current state of the Kalman filter"""
 
@@ -167,7 +166,6 @@ class Saver(object):
         """ list of all keys"""
         return list(self._DL.keys())
 
-
     def to_array(self):
         """
         Convert all saved attributes from a list to np.array.
@@ -188,6 +186,28 @@ class Saver(object):
                 self.__dict__.update(self._DL)
 
                 raise ValueError("could not convert {} into np.array".format(key))
+
+    def flatten(self):
+        """
+        Flattens any np.array of column vectors into 1D arrays. Basically,
+        this makes data readable for humans if you are just inspecting via
+        the REPL. For example, if you have saved a KalmanFilter object with 89
+        epochs, self.x will be shape (89, 9, 1) (for example). After flatten
+        is run, self.x.shape == (89, 9), which displays nicely from the REPL.
+
+        There is no way to unflatten, so it's a one way trip.
+        """
+
+        for key in self.keys:
+            try:
+                arr = self.__dict__[key]
+                shape = arr.shape
+                if shape[2] == 1:
+                    self.__dict__[key] = arr.reshape(shape[0], shape[1])
+            except:
+                # not an ndarray or not a column vector
+                pass
+
 
 
 def runge_kutta4(y, x, dx, f):
