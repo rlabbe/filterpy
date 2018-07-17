@@ -55,6 +55,9 @@ class InformationFilter(object):
         size of the control input, if it is being used.
         Default value of 0 indicates it is not used.
 
+    self.compute_log_likelihood = compute_log_likelihood
+    self.log_likelihood = math.log(sys.float_info.min)
+
 
     Attributes
     ----------
@@ -124,7 +127,7 @@ class InformationFilter(object):
     """
 
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
 
         if dim_x < 1:
             raise ValueError('dim_x must be 1 or greater')
@@ -153,11 +156,15 @@ class InformationFilter(object):
         self.K = 0. # kalman gain
         self.y = zeros((dim_z, 1))
         self.z = zeros((dim_z, 1))
-        self.S = np.zeros((dim_z, dim_z))  # system uncertainty
-        self.SI = np.zeros((dim_z, dim_z)) # inverse system uncertainty
+        self.S = 0. # system uncertainty in measurement space
 
-        self._I = np.eye(dim_x) # identity matrix.
+        # identity matrix. Do not alter this.
+        self._I = np.eye(dim_x)
         self._no_information = False
+
+        self.compute_log_likelihood = compute_log_likelihood
+        self.log_likelihood = math.log(sys.float_info.min)
+        self.likelihood = sys.float_info.min
 
         self.inv = np.linalg.inv
 
@@ -167,10 +174,6 @@ class InformationFilter(object):
         self.x_post = np.copy(self.x)
         self.P_inv_post = np.copy(self.P_inv)
 
-        # Only computed only if requested via property
-        self._log_likelihood = math.log(sys.float_info.min)
-        self._likelihood = sys.float_info.min
-        # self._mahalanobis = None
 
     def update(self, z, R_inv=None):
         """
@@ -208,9 +211,8 @@ class InformationFilter(object):
         if self._no_information:
             self.x = dot(P_inv, x) + dot(H_T, R_inv).dot(z)
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
-            self._log_likelihood = math.log(sys.float_info.min)
-            self._likelihood = sys.float_info.min
-            self._mahalanobis = sys.float_info.max
+            self.log_likelihood = math.log(sys.float_info.min)
+            self.likelihood = sys.float_info.min
 
         else:
             # y = z - Hx
@@ -220,8 +222,7 @@ class InformationFilter(object):
             # S = HPH' + R
             # project system uncertainty into measurement space
             self.S = P_inv + dot(H_T, R_inv).dot(H)
-            self.SI = self.inv(self.S)
-            self.K = dot(self.SI, H_T).dot(R_inv)
+            self.K = dot(self.inv(self.S), H_T).dot(R_inv)
 
             # x = x + Ky
             # predict new x with residual scaled by the kalman gain
@@ -230,15 +231,16 @@ class InformationFilter(object):
 
             self.z = np.copy(reshape_z(z, self.dim_z, np.ndim(self.x)))
 
+            if self.compute_log_likelihood:
+                self.log_likelihood = logpdf(x=self.y, cov=self.S)
+                self.likelihood = math.exp(self.log_likelihood)
+                if self.likelihood == 0:
+                    self.likelihood = sys.float_info.min
+
         # save measurement and posterior state
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_inv_post = self.P_inv.copy()
-
-        # set to None to force recompute
-        self._log_likelihood = None
-        self._likelihood = None
-        #self._mahalanobis = None
 
     def predict(self, u=0):
         """ Predict next position.
@@ -361,52 +363,20 @@ class InformationFilter(object):
         return (means, covariances)
 
     @property
-    def log_likelihood(self):
-        """
-        log-likelihood of the last measurement.
-        """
-        if self._log_likelihood is None:
-            self._log_likelihood = logpdf(x=self.y, cov=self.S)
-        return self._log_likelihood
-
-    @property
-    def likelihood(self):
-        """
-        Computed from the log-likelihood. The log-likelihood can be very
-        small,  meaning a large negative value such as -28000. Taking the
-        exp() of that results in 0.0, which can break typical algorithms
-        which multiply by this value, so by default we always return a
-        number >= sys.float_info.min.
-        """
-        if self._likelihood is None:
-            self._likelihood = math.exp(self.log_likelihood)
-            if self._likelihood == 0:
-                self._likelihood = sys.float_info.min
-        return self._likelihood
-
-    '''@property
-    def mahalanobis(self):
-        """"
-        Mahalanobis distance of measurement. E.g. 3 means measurement
-        was 3 standard deviations away from the predicted value.
-
-        Returns
-        -------
-        mahalanobis : float
-        """
-        if self._mahalanobis is None:
-            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
-        return self._mahalanobis'''
-
-    @property
     def F(self):
         """State Transition matrix"""
         return self._F
 
     @F.setter
     def F(self, value):
+        """State Transition matrix"""
         self._F = value
         self._F_inv = self.inv(self._F)
+
+    @property
+    def P(self):
+        """State covariance matrix"""
+        return self.inv(self.P_inv)
 
     def __repr__(self):
         return '\n'.join([
@@ -430,6 +400,5 @@ class InformationFilter(object):
             pretty_str('B', self.B),
             pretty_str('log-likelihood', self.log_likelihood),
             pretty_str('likelihood', self.likelihood),
-            #pretty_str('mahalanobis', self.mahalanobis),
             pretty_str('inv', self.inv)
             ])

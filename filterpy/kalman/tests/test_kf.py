@@ -354,9 +354,9 @@ def test_procedural_batch_filter():
     f.F = np.array([[1.,1.],
                     [0.,1.]])
 
-    f.H = np.array([[1.,0.]])
-    f.P = np.eye(2)*1000.
-    f.R = np.eye(1)*5
+    f.H = np.array([[1., 0.]])
+    f.P = np.eye(2) * 1000.
+    f.R = np.eye(1) * 5
     f.Q = Q_discrete_white_noise(2, 1., 0.0001)
 
     f.test_matrix_dimensions()
@@ -364,19 +364,18 @@ def test_procedural_batch_filter():
     x = np.array([2., 0])
 
     F = np.array([[1.,1.],
-                    [0.,1.]])
+                  [0.,1.]])
 
     H = np.array([[1., 0.]])
-    P = np.eye(2)*1000.
-    R = np.eye(1)*5
+    P = np.eye(2) * 1000.
+    R = np.eye(1) * 5
     Q = Q_discrete_white_noise(2, 1., 0.0001)
 
-    zs = [13., None, 1., 2.]*10
-    m,c,_,_ = f.batch_filter(zs,update_first=False)
+    zs = [13., None, 1., 2.] * 10
+    m,c,_,_ = f.batch_filter(zs, update_first=False)
 
     n = len(zs)
-    # test both list of matrices, and single matrix forms
-    mp, cp, _, _ = batch_filter(x, P, zs, F, Q, [H]*n, R)
+    mp, cp, _, _ = batch_filter(x, P, zs, [F]*n, [Q]*n, [H]*n, [R]*n)
 
     for x1, x2 in zip(m, mp):
         assert np.allclose(x1, x2)

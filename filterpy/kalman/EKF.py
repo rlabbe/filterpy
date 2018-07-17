@@ -241,12 +241,6 @@ class ExtendedKalmanFilter(object):
         I_KH = self._I - dot(self.K, H)
         self.P = dot(I_KH, P).dot(I_KH.T) + dot(self.K, R).dot(self.K.T)
 
-        if self.compute_log_likelihood:
-            self.log_likelihood = logpdf(x=self.y, cov=self.S)
-            self.likelihood = math.exp(self.log_likelihood)
-            if self.likelihood == 0:
-                self.likelihood = sys.float_info.min
-
         # save measurement and posterior state
         self.z = deepcopy(z)
         self.x_post = self.x.copy()

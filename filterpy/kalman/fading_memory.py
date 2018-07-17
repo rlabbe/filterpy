@@ -116,7 +116,10 @@ class FadingKalmanFilter(object):
         Kalman gain of the update step. Read only.
 
     S :  numpy.array
-        Systen uncertaintly projected to measurement space. Read only.
+        System uncertainty (P projected to measurement space). Read only.
+
+    S :  numpy.array
+        Inverse system uncertainty. Read only.
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
@@ -172,7 +175,8 @@ class FadingKalmanFilter(object):
         # purposes
         self.K = 0 # kalman gain
         self.y = zeros((dim_z, 1))
-        self.S = 0 # system uncertainty in measurement space
+        self.S = np.zeros((dim_z, dim_z))   # system uncertainty (measurement space)
+        self.SI = np.zeros((dim_z, dim_z))  # inverse system uncertainty
 
         # identity matrix. Do not alter this.
         self.I = np.eye(dim_x)
@@ -226,10 +230,11 @@ class FadingKalmanFilter(object):
         # S = HPH' + R
         # project system uncertainty into measurement space
         self.S = dot(self.H, PHT) + R
+        self.SI = linalg.inv(self.S)
 
         # K = PH'inv(S)
         # map system uncertainty into kalman gain
-        self.K = PHT.dot(linalg.inv(self.S))
+        self.K = PHT.dot(self.SI)
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain

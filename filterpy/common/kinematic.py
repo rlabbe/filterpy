@@ -21,7 +21,6 @@ from __future__ import (absolute_import, division, print_function,
 import math
 import numpy as np
 from scipy.linalg import block_diag
-import filterpy
 
 
 def kinematic_state_transition(order, dt):

@@ -128,7 +128,7 @@ import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import numpy.linalg as linalg
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str, reshape_z, repeated_array
+from filterpy.common import pretty_str, reshape_z
 
 
 class KalmanFilter(object):
@@ -212,7 +212,10 @@ class KalmanFilter(object):
         Kalman gain of the update step. Read only.
 
     S :  numpy.array
-        System uncertainty projected to measurement space. Read only.
+        System uncertainty (P projected to measurement space). Read only.
+
+    SI :  numpy.array
+        Inverse system uncertainty. Read only.
 
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
@@ -308,7 +311,7 @@ class KalmanFilter(object):
         self.inv = np.linalg.inv
 
 
-    def predict(self, u=0, B=None, F=None, Q=None):
+    def predict(self, u=None, B=None, F=None, Q=None):
         """
         Predict next state (prior) using the Kalman filter state propagation
         equations.
@@ -317,7 +320,7 @@ class KalmanFilter(object):
         ----------
 
         u : np.array
-            Optional control vector. If non-zero, it is multiplied by B
+            Optional control vector. If not `None`, it is multiplied by B
             to create the control input into the system.
 
         B : np.array(dim_x, dim_z), or None
@@ -343,7 +346,7 @@ class KalmanFilter(object):
             Q = eye(self.dim_x) * Q
 
         # x = Fx + Bu
-        if B is not None:
+        if B is not None and u is not None:
             self.x = dot(F, self.x) + dot(B, u)
         else:
             self.x = dot(F, self.x)
@@ -378,10 +381,16 @@ class KalmanFilter(object):
             one call, otherwise self.H will be used.
         """
 
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
+
         if z is None:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
+            self.y = zeros((self.dim_z, 1))
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -426,11 +435,6 @@ class KalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
-        # set to None to force recompute
-        self._log_likelihood = None
-        self._likelihood = None
-        self._mahalanobis = None
-
     def predict_steadystate(self, u=0, B=None):
         """
         Predict state (prior) using the Kalman filter state propagation
@@ -462,7 +466,6 @@ class KalmanFilter(object):
         # save prior
         self.x_prior = self.x.copy()
         self.P_prior = self.P.copy()
-
 
     def update_steadystate(self, z):
         """
@@ -508,10 +511,16 @@ class KalmanFilter(object):
         >>>     cv.update_steadystate([i, i, i])
         """
 
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
+
         if z is None:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
+            self.y = zeros((self.dim_z, 1))
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -555,10 +564,16 @@ class KalmanFilter(object):
             one call, otherwise  self.H will be used.
         """
 
+        # set to None to force recompute
+        self._log_likelihood = None
+        self._likelihood = None
+        self._mahalanobis = None
+
         if z is None:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
+            self.y = zeros((self.dim_z, 1))
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -604,11 +619,6 @@ class KalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
-        # set to None to force recompute
-        self._log_likelihood = None
-        self._likelihood = None
-        self._mahalanobis = None
-
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
                      Rs=None, Bs=None, us=None, update_first=False,
                      saver=None):
@@ -621,18 +631,14 @@ class KalmanFilter(object):
             list of measurements at each time step `self.dt`. Missing
             measurements must be represented by `None`.
 
-        Fs : None, np.array or list-like, default=None
+        Fs : None, list-like, default=None
             optional value or list of values to use for the state transition
             matrix F.
 
             If Fs is None then self.F is used for all epochs.
 
-            If Fs contains a single matrix, then it is used as F for all
-            epochs.
-
-            If it is a list of matrices or a 3D array where
-            len(Fs) == len(zs), then it is treated as a list of F values, one
-            per epoch. This allows you to have varying F per epoch.
+            Otherwise it must contain a list-like list of F's, one for
+            each epoch.  This allows you to have varying F per epoch.
 
         Qs : None, np.array or list-like, default=None
             optional value or list of values to use for the process error
@@ -640,12 +646,8 @@ class KalmanFilter(object):
 
             If Qs is None then self.Q is used for all epochs.
 
-            If Qs contains a single matrix, then it is used as Q for all
-            epochs.
-
-            If it is a list of matrices or a 3D array where
-            len(Qs) == len(zs), then it is treated as a list of Q values, one
-            per epoch. This allows you to have varying Q per epoch.
+            Otherwise it must contain a list-like list of Q's, one for
+            each epoch.  This allows you to have varying Q per epoch.
 
         Hs : None, np.array or list-like, default=None
             optional list of values to use for the measurement matrix H.
@@ -655,9 +657,8 @@ class KalmanFilter(object):
             If Hs contains a single matrix, then it is used as H for all
             epochs.
 
-            If it is a list of matrices or a 3D array where
-            len(Hs) == len(zs), then it is treated as a list of H values, one
-            per epoch. This allows you to have varying H per epoch.
+            Otherwise it must contain a list-like list of H's, one for
+            each epoch.  This allows you to have varying H per epoch.
 
         Rs : None, np.array or list-like, default=None
             optional list of values to use for the measurement error
@@ -665,24 +666,16 @@ class KalmanFilter(object):
 
             If Rs is None then self.R is used for all epochs.
 
-            If Rs contains a single matrix, then it is used as H for all
-            epochs.
-
-            If it is a list of matrices or a 3D array where
-            len(Rs) == len(zs), then it is treated as a list of R values, one
-            per epoch. This allows you to have varying R per epoch.
+            Otherwise it must contain a list-like list of R's, one for
+            each epoch.  This allows you to have varying R per epoch.
 
         Bs : None, np.array or list-like, default=None
             optional list of values to use for the control transition matrix B.
 
             If Bs is None then self.B is used for all epochs.
 
-            If Bs contains a single matrix, then it is used as B for all
-            epochs.
-
-            If it is a list of matrices or a 3D array where
-            len(Bs) == len(zs), then it is treated as a list of B values, one
-            per epoch. This allows you to have varying B per epoch.
+            Otherwise it must contain a list-like list of B's, one for
+            each epoch.  This allows you to have varying B per epoch.
 
         us : None, np.array or list-like, default=None
             optional list of values to use for the control input vector;
@@ -690,14 +683,10 @@ class KalmanFilter(object):
             If us is None then None is used for all epochs (equivalent to 0,
             or no control input).
 
-            If us contains a single matrix, then it is used as H for all
-            epochs.
+            Otherwise it must contain a list-like list of u's, one for
+            each epoch.
 
-            If it is a list of matrices or a 3D array where
-            len(Rs) == len(zs), then it is treated as a list of R values, one
-            per epoch. This allows you to have varying R per epoch.
-
-        update_first : bool, optional, default=False
+       update_first : bool, optional, default=False
             controls whether the order of operations is update followed by
             predict, or predict followed by update. Default is predict->update.
 
@@ -746,24 +735,17 @@ class KalmanFilter(object):
         #pylint: disable=too-many-statements
         n = np.size(zs, 0)
         if Fs is None:
-            Fs = self.F
+            Fs = [self.F] * n
         if Qs is None:
-            Qs = self.Q
+            Qs = [self.Q] * n
         if Hs is None:
-            Hs = self.H
+            Hs = [self.H] * n
         if Rs is None:
-            Rs = self.R
+            Rs = [self.R] * n
         if Bs is None:
-            Bs = self.B
+            Bs = [self.B] * n
         if us is None:
-            us = 0
-
-        Fs = repeated_array(Fs, n)
-        Qs = repeated_array(Qs, n)
-        Hs = repeated_array(Hs, n)
-        Rs = repeated_array(Rs, n)
-        Bs = repeated_array(Bs, n)
-        us = repeated_array(us, n)
+            us = [0] * n
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:
@@ -1551,15 +1533,6 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
     if us is None:
         us = [0.] * n
         Bs = [0.] * n
-
-    #pylint: disable=multiple-statements
-    Fs = repeated_array(Fs, n)
-    Qs = repeated_array(Qs, n)
-    Hs = repeated_array(Hs, n)
-    Rs = repeated_array(Rs, n)
-    Bs = repeated_array(Bs, n)
-    us = repeated_array(us, n)
-
 
     if update_first:
         for i, (z, F, Q, H, R, B, u) in enumerate(zip(zs, Fs, Qs, Hs, Rs, Bs, us)):

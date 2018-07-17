@@ -26,7 +26,7 @@ from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str, repeated_array
+from filterpy.common import pretty_str
 
 
 class UnscentedKalmanFilter(object):
@@ -278,8 +278,7 @@ class UnscentedKalmanFilter(object):
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
                  sqrt_fn=None, x_mean_fn=None, z_mean_fn=None,
                  residual_x=None,
-                 residual_z=None,
-                 compute_log_likelihood=True):
+                 residual_z=None):
         """
         Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
@@ -520,9 +519,6 @@ class UnscentedKalmanFilter(object):
 
             If Rs is None then self.R is used for all epochs.
 
-            If Rs contains a single matrix, then it is used as H for all
-            epochs.
-
             If it is a list of matrices or a 3D array where
             len(Rs) == len(zs), then it is treated as a list of R values, one
             per epoch. This allows you to have varying R per epoch.
@@ -531,9 +527,6 @@ class UnscentedKalmanFilter(object):
             optional value or list of delta time to be passed into predict.
 
             If dtss is None then self.dt is used for all epochs.
-
-            If dts contains a single matrix, then it is used as dt for all
-            epochs.
 
             If it is a list where len(dts) == len(zs), then it is treated as a
             list of dt values, one per epoch. This allows you to have varying
@@ -593,13 +586,10 @@ class UnscentedKalmanFilter(object):
 
         z_n = np.size(zs, 0)
         if Rs is None:
-            Rs = self.R
+            Rs = [self.R] * z_n
 
         if dts is None:
-            dts = self._dt
-
-        Rs = repeated_array(Rs, z_n)
-        dts = repeated_array(dts, z_n)
+            dts = [self._dt] * z_n
 
         # mean estimates from Kalman Filter
         if self.x.ndim == 1:

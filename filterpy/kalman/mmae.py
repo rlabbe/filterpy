@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,too-many-instance-attributes
 
 """Copyright 2015 Roger R Labbe Jr.
 

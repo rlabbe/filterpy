@@ -26,7 +26,6 @@ from numpy.linalg import inv
 from scipy.linalg import expm, block_diag
 
 
-
 def order_by_derivative(Q, dim, block_size):
     """
     Given a matrix Q, ordered assuming state space
@@ -141,14 +140,9 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1, order_by_dim=True):
              [(dt**4)/6,  (dt**3)/2,   dt**2,     dt],
              [(dt**3)/6,  (dt**2)/2 ,  dt,        1.]]
 
-
-
     if order_by_dim:
         return block_diag(*[Q]*block_size) * var
-
-    else:
-        return order_by_derivative(array(Q), dim, block_size) * var
-
+    return order_by_derivative(array(Q), dim, block_size) * var
 
 
 def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
@@ -220,8 +214,8 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
 
     if order_by_dim:
         return block_diag(*[Q]*block_size) * spectral_density
-    else:
-        return order_by_derivative(array(Q), dim, block_size) * spectral_density
+
+    return order_by_derivative(array(Q), dim, block_size) * spectral_density
 
 
 def van_loan_discretization(F, G, dt):

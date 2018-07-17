@@ -20,8 +20,6 @@ import numpy as np
 from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
                              ExtendedKalmanFilter)
 
-
-
 def test_kinematic_filter():
     global kf
 
@@ -65,7 +63,6 @@ def test_saver_UKF():
     def hx(x):
         return np.array([x[0], x[2]])
 
-
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
     kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
@@ -83,7 +80,6 @@ def test_saver_UKF():
         #print(kf.x, kf.log_likelihood, kf.P.diagonal())
         s.save()
     s.to_array()
-
 
 
 def test_saver_kf():
@@ -155,7 +151,6 @@ def test_inv_diagonal():
         assert np.allclose(inv_diagonal(S), np.linalg.inv(S))
 
 
-
 def test_save_properties():
     global f, s
 
@@ -165,7 +160,6 @@ def test_save_properties():
         def __init__(self):
             self.x = 7.
             self.a = None
-
 
         @property
         def ll(self):
@@ -188,10 +182,9 @@ def test_save_properties():
     assert f.a == 4
 
 
-
-
 if __name__ == "__main__":
-    test_save_properties()
+    #test_repeaters()
+    '''test_save_properties()
 
     test_saver_kf()
     test_saver_ekf()
@@ -200,6 +193,6 @@ if __name__ == "__main__":
     ITERS = 1000000
     #test_mahalanobis()
 
-    test_kinematic_filter()
+    test_kinematic_filter()'''
 
 
