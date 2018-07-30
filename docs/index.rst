@@ -132,14 +132,14 @@ Python code for this would be
 
 .. code-block:: Python
 
-    K = dot(P, H.T).dot(inv(dot(H, P).dot(H.T) + R))
+    K = P @ H.T @ inv(H @ P @ H.T + R)
     
-It's already a bit hard to read because of the `dot` function calls (required because Python does not yet support an operator for matrix multiplication). But compare this to::
+But compare this to::
 
-    kalman_gain = (
-        dot(apriori_state_covariance, measurement_function_transpose).dot(
-        inv(dot(measurement_function, apriori_state_covariance).dot(
-        measurement_function_transpose) + measurement_noise_covariance)))
+    kalman_gain = ( 
+        apriori_state_covariance @ measurement_function_transpose @
+        inv(measurement_function @ apriori_state_covariance @
+        measurement_function_transpose + measurement_noise_covariance))
 
 which I adapted from a popular library. I grant you this version has more context, but I cannot glance at this and see what math it is implementing. In particular, the linear algebra :math:`\mathbf{HPH}^\mathsf{T}` is doing something very specific - multiplying :math:`\mathbf{P}` by :math:`\mathbf{H}` in a way that converts :math:`\mathbf{P}` from *world space* to *measurement space* (we'll learn what that means). It is nearly impossible to see that the Kalman gain (`K`) is just a ratio of one number divided by a second number which has been converted to a different basis. This statement may not convey a lot of information to you before reading the book, but I assure you that :math:`\mathbf{K} = \mathbf{PH}^\mathsf{T}[\mathbf{HPH}^\mathsf{T} + \mathbf{R}]^{-1}` is saying something very succinctly. There are two key pieces of information here - we are finding a ratio, and we are doing it in measurement space. I can see that in my first Python line, I cannot see that in the second line. If you want a counter-argument, my version obscures the information that :math:`\mathbf{P}` is in this context is a *prior* . 
 
