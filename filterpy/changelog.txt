@@ -1,10 +1,35 @@
-Version 1.4.x
+Version 1.4.2
 =============
 
 * added a fast inverse of a diagonal matrix function common.inv_diagonal()
 
 * added ability to order Q matrix by dimension or derivative with the helper 
 functions
+
+* mahalanobis, log-likelihood, and likelihood only computed when requested;
+`compute_log_likelihood` attribute removed.
+
+* fix for bug where attributes not saved. GitHub #136
+
+* Many minor typos in docstring and comments fixes
+
+* Added saving of posterior state to classes
+
+* Added exception to IMM if filter bank dimensions do not agree. GitHub #141
+
+* Added Mahalanobis distance to classes that didn't support it
+
+* added flatten() to saver as an convienent way to flatten column vectors
+so they will display nicely in the REPL.
+
+* Partially removed dependence on Matplotlib. Matplotlib is only imported
+by functions that use plotting. Github #148
+
+* Removed ability to pass in single matrix to batch_filter functions/methods.
+Github #147. In general it is impossible to tell if you have a list of matrices,
+or an single array, depending on the shape of the arrays and the size of the
+input. Rather than try and obscurely fail, make the user pass the correctly
+dimensioned data in.
 
 
 Version 1.4.1

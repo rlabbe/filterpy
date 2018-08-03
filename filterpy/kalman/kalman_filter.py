@@ -136,6 +136,138 @@ class KalmanFilter(object):
     various state variables to reasonable values; the defaults  will
     not give you a functional filter.
 
+    For now the best documentation is my free book Kalman and Bayesian
+    Filters in Python [2]_. The test files in this directory also give you a
+    basic idea of use, albeit without much description.
+
+    In brief, you will first construct this object, specifying the size of
+    the state vector with dim_x and the size of the measurement vector that
+    you will be using with dim_z. These are mostly used to perform size checks
+    when you assign values to the various matrices. For example, if you
+    specified dim_z=2 and then try to assign a 3x3 matrix to R (the
+    measurement noise matrix you will get an assert exception because R
+    should be 2x2. (If for whatever reason you need to alter the size of
+    things midstream just use the underscore version of the matrices to
+    assign directly: your_filter._R = a_3x3_matrix.)
+
+    After construction the filter will have default matrices created for you,
+    but you must specify the values for each. It’s usually easiest to just
+    overwrite them rather than assign to each element yourself. This will be
+    clearer in the example below. All are of type numpy.array.
+
+
+    Examples
+    --------
+
+    Here is a filter that tracks position and velocity using a sensor that only
+    reads position.
+
+    First construct the object with the required dimensionality.
+
+    .. code::
+
+        from filterpy.kalman import KalmanFilter
+        f = KalmanFilter (dim_x=2, dim_z=1)
+
+
+    Assign the initial value for the state (position and velocity). You can do this
+    with a two dimensional array like so:
+
+        .. code::
+
+            f.x = np.array([[2.],    # position
+                            [0.]])   # velocity
+
+    or just use a one dimensional array, which I prefer doing.
+
+    .. code::
+
+        f.x = np.array([2., 0.])
+
+
+    Define the state transition matrix:
+
+        .. code::
+
+            f.F = np.array([[1.,1.],
+                            [0.,1.]])
+
+    Define the measurement function:
+
+        .. code::
+
+        f.H = np.array([[1.,0.]])
+
+    Define the covariance matrix. Here I take advantage of the fact that
+    P already contains np.eye(dim_x), and just multiply by the uncertainty:
+
+    .. code::
+
+        f.P *= 1000.
+
+    I could have written:
+
+    .. code::
+
+        f.P = np.array([[1000.,    0.],
+                        [   0., 1000.] ])
+
+    You decide which is more readable and understandable.
+
+    Now assign the measurement noise. Here the dimension is 1x1, so I can
+    use a scalar
+
+    .. code::
+
+        f.R = 5
+
+    I could have done this instead:
+
+    .. code::
+
+        f.R = np.array([[5.]])
+
+    Note that this must be a 2 dimensional array, as must all the matrices.
+
+    Finally, I will assign the process noise. Here I will take advantage of
+    another FilterPy library function:
+
+    .. code::
+
+        from filterpy.common import Q_discrete_white_noise
+        f.Q = Q_discrete_white_noise(dim=2, dt=0.1, var=0.13)
+
+
+    Now just perform the standard predict/update loop:
+
+    while some_condition_is_true:
+
+    .. code::
+
+        z = get_sensor_reading()
+        f.predict()
+        f.update(z)
+
+        do_something_with_estimate (f.x)
+
+
+    **Procedural Form**
+
+    This module also contains stand alone functions to perform Kalman filtering.
+    Use these if you are not a fan of objects.
+
+    **Example**
+
+    .. code::
+
+        while True:
+            z, R = read_sensor()
+            x, P = predict(x, P, F, Q)
+            x, P = update(x, P, z, R, H)
+
+    See my book Kalman and Bayesian Filters in Python [2]_.
+
+
     You will have to set the following attributes after constructing this
     object for the filter to perform properly. Please note that there are
     various checks in place to ensure that you have made everything the
@@ -247,18 +379,15 @@ class KalmanFilter(object):
         filter's estimates. This formulation of the Fading memory filter
         (there are many) is due to Dan Simon [1]_.
 
-        References
-        ----------
+    References
+    ----------
 
-        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
-           p. 208-212. (2006)
+    .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
+       p. 208-212. (2006)
 
+    .. [2] Roger Labbe. "Kalman and Bayesian Filters in Python"
+       https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
-    Examples
-    --------
-
-    See my book Kalman and Bayesian Filters in Python
-    https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
     def __init__(self, dim_x, dim_z, dim_u=0):
@@ -1013,13 +1142,6 @@ class KalmanFilter(object):
         memory effect - previous measurements have less influence on the
         filter's estimates. This formulation of the Fading memory filter
         (there are many) is due to Dan Simon [1]_.
-
-        References
-        ----------
-
-        .. [1] Dan Simon. "Optimal State Estimation." John Wiley & Sons.
-           p. 208-212. (2006)
-
         """
         return self._alpha_sq**.5
 
