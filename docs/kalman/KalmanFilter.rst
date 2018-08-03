@@ -2,7 +2,7 @@ KalmanFilter
 ============
 
 Implements a linear Kalman filter. For now the best documentation
-is my free book Kalman and Bayesian Filters in Python [1]_
+is my free book Kalman and Bayesian Filters in Python [2]_
 
 The test files in this directory also give you a basic idea of use,
 albeit without much description.
@@ -197,7 +197,7 @@ Use these if you are not a fan of objects.
 **References**
 
 
-.. [1] Labbe, Roger. "Kalman and Bayesian Filters in Python".
+.. [2] Labbe, Roger. "Kalman and Bayesian Filters in Python".
 
 github repo:
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
