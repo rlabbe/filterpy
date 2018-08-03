@@ -611,7 +611,7 @@ class UnscentedKalmanFilter(object):
 
         return (means, covariances)
 
-    def rts_smoother(self, Xs, Ps, Qs=None, dts=None):
+    def rts_smoother(self, Xs, Ps, Qs=None, dts=None, UT=None):
         """
         Runs the Rauch-Tung-Striebal Kalman smoother on a set of
         means and covariances computed by the UKF. The usual input
@@ -636,6 +636,12 @@ class UnscentedKalmanFilter(object):
             If float, then the same time step is used for all steps. If
             an array, then each element k contains the time  at step k.
             Units are seconds.
+
+        UT : function(sigmas, Wm, Wc, noise_cov), optional
+            Optional function to compute the unscented transform for the sigma
+            points passed through hx. Typically the default function will
+            work - you can use x_mean_fn and z_mean_fn to alter the behavior
+            of the unscented transform.
 
         Returns
         -------
@@ -674,6 +680,9 @@ class UnscentedKalmanFilter(object):
         if Qs is None:
             Qs = [self.Q] * n
 
+        if UT is None:
+            UT = unscented_transform
+
         # smoother gain
         Ks = zeros((n, dim_x, dim_x))
 
@@ -688,7 +697,7 @@ class UnscentedKalmanFilter(object):
             for i in range(num_sigmas):
                 sigmas_f[i] = self.fx(sigmas[i], dts[k])
 
-            xb, Pb = unscented_transform(
+            xb, Pb = UT(
                 sigmas_f, self.Wm, self.Wc, self.Q,
                 self.x_mean, self.residual_x)
 

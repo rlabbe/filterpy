@@ -1,9 +1,16 @@
+Version x.x.x
+=============
+* Improved documentation
+* Github #151 - added ability to specify unscented transform function for
+the UKF RTS smoother.
+
+
 Version 1.4.2
 =============
 
 * added a fast inverse of a diagonal matrix function common.inv_diagonal()
 
-* added ability to order Q matrix by dimension or derivative with the helper 
+* added ability to order Q matrix by dimension or derivative with the helper
 functions
 
 * mahalanobis, log-likelihood, and likelihood only computed when requested;
