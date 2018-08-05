@@ -1,10 +1,3 @@
-Version x.x.x
-=============
-* Improved documentation
-* Github #151 - added ability to specify unscented transform function for
-the UKF RTS smoother.
-
-
 Version 1.4.2
 =============
 
@@ -37,6 +30,24 @@ Github #147. In general it is impossible to tell if you have a list of matrices,
 or an single array, depending on the shape of the arrays and the size of the
 input. Rather than try and obscurely fail, make the user pass the correctly
 dimensioned data in.
+
+* Github #151 - added ability to specify unscented transform function for
+the UKF RTS smoother.
+
+* Compute log-likelihood and mahalanobis only when requested GitHub #139.
+Some, but not all classes did this already; I normalized the behavior
+across all classes.
+
+* added .gitattributes to force all files to use unix-style line endings
+
+* GitHub #138. Attributes were not being set when z == None on call to 
+update(), meaning things like log-likelihood and mahalanobis had incorrect
+values.
+
+
+
+
+
 
 
 Version 1.4.1

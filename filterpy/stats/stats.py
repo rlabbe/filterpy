@@ -159,7 +159,7 @@ def logpdf(x, mean=None, cov=1, allow_singular=True):
     return multivariate_normal.logpdf(flat_x, flat_mean, cov)
 
 
-def gaussian(x, mean, var):
+def gaussian(x, mean, var, normed=True):
     """
     returns normal distribution (pdf) for x given a Gaussian with the
     specified mean and variance. All must be scalars.
@@ -179,6 +179,9 @@ def gaussian(x, mean, var):
     var : scalar
         Variance of the Gaussian
 
+    norm : bool, default True
+        Normalize the output if the input is an array of values.
+
     Returns
     -------
 
@@ -196,8 +199,12 @@ def gaussian(x, mean, var):
     array([1.34985669e-06, 3.48132630e-05, 3.17455867e-08])
     """
 
-    return (np.exp((-0.5*(np.asarray(x)-mean)**2)/var) /
-            math.sqrt(2*math.pi*var))
+    g = ((2*math.pi*var)**-.5) * np.exp((-0.5*(np.asarray(x)-mean)**2.) / var)
+    if normed and len(np.shape(g)) > 0:
+        g = g / sum(g)
+
+    return g
+
 
 
 def mul(mean1, var1, mean2, var2):
