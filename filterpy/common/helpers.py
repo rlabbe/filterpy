@@ -208,6 +208,11 @@ class Saver(object):
                 pass
 
 
+    def __repr__(self):
+        return '<Saver object at {}\n  Keys: {}>'.format(
+                hex(id(self)),
+                ' '.join(self.keys))
+
 
 def runge_kutta4(y, x, dx, f):
     """computes 4th order Runge-Kutta for dy/dx.
