@@ -31,7 +31,7 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
     Parameters
     ----------
 
-    sigmas: ndarray [#sigmas per dimension, dimension]
+    sigmas: ndarray, of size (n, 2n+1)
         2D array of sigma points.
 
     Wm : ndarray [# sigmas per dimension]
