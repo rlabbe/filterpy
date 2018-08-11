@@ -265,10 +265,8 @@ def pretty_str(label, arr):
         except (AttributeError, IndexError):
             return False
 
-    transposed = False
     if is_col(arr):
-        arr = arr.T
-        transposed = True
+        return str(arr.T).replace('\n', '') + '.T'
 
     rows = str(arr).split('\n')
     if not rows:
@@ -281,12 +279,7 @@ def pretty_str(label, arr):
         label += ' = '
 
     s = label + rows[0]
-    if transposed:
-        s += '.T'
-        return s
-
     pad = ' ' * len(label)
-
     for line in rows[1:]:
         s = s + '\n' + pad + line
 
