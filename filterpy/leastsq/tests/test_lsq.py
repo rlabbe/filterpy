@@ -216,24 +216,32 @@ def test_lsq():
     using g-h filter formulation and uses it to check the output of the
     LeastSquaresFilter class."""
 
+    global lsq, lsq2, xs, lsq_xs
+
     gh = GHFilter(x=0, dx=0, dt=1, g=.5, h=0.02)
     lsq = LeastSquaresFilterOriginal(dt=1, order=1)
     lsq2 = LeastSquaresFilter(dt=1, order=1)
-    zs = [x+random.randn() for x in range(0,100)]
+    zs = [x+random.randn()*10 for x in range(0, 10000)]
+
+    # test __repr__ at least doesn't crash
+    try:
+        str(lsq2)
+    except:
+        assert False, "LeastSquaresFilter.__repr__ exception"
 
     xs = []
     lsq_xs= []
-    for i,z in enumerate(zs):
+    for i, z in enumerate(zs):
         g = 2*(2*i + 1) / ((i+2)*(i+1))
         h = 6 / ((i+2)*(i+1))
 
-
-        x,dx = gh.update(z,g,h)
+        x, dx = gh.update(z, g, h)
         lx = lsq(z)
         lsq_xs.append(lx)
 
         x2 = lsq2.update(z)
-        assert near_equal(x2[0], lx, 1.e-13)
+        assert near_equal(x2[0], lx, 1.e-10), '{}, {}, {}'.format(
+                i, x2[0], lx)
         xs.append(x)
 
 
@@ -323,6 +331,7 @@ def lsq2_plot():
         fl.update(np.array([[x], [x]], dtype=float))
         plt.scatter(x, fl.x[0,0])
 
+'''
 fl = LSQ(1)
 fl.H = np.eye(1)
 fl.R = np.eye(1)
@@ -343,11 +352,14 @@ for x in range(40):
 
 
     plt.plot([0,40], [0,40])
-
+'''
 
 
 if __name__ == "__main__":
-    pass
+    #pass
+
+    test_lsq()
+
     #test_listing_3_4()
 
     #test_second_order()

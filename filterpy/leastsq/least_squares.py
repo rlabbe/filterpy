@@ -54,13 +54,20 @@ class LeastSquaresFilter(object):
         step in the recursion. 0 prior to first call, 1 after the first call,
         etc.
 
-    K1,K2,K3 : float
-        Gains for the filter. K1 for all orders, K2 for orders 0 and 1, and
-        K3 for order 2
+    K : np.array
+        Gains for the filter. K[0] for all orders, K[1] for orders 0 and 1, and
+        K[2] for order 2
 
-    x, dx, ddx: type(z)
-        estimate(s) of the output. 'd' denotes derivative, so 'dx' is the first
-        derivative of x, 'ddx' is the second derivative.
+    x: np.array (order + 1, 1)
+        estimate(s) of the output. It is a vector containing the estimate x
+        and the derivatives of x: [x x' x''].T. It contains as many
+        derivatives as the order allows. That is, a zero order filter has
+        no derivatives, a first order has one derivative, and a second order
+        has two.
+
+    y : float
+        residual (difference between measurement projection of previous
+        estimate to current time).
 
     Examples
     --------
@@ -74,7 +81,8 @@ class LeastSquaresFilter(object):
         while True:
             z = sensor_reading()  # get a measurement
             x = lsq.update(z)     # get the filtered estimate.
-            print('error: {}, velocity error: {}'.format(lsq.error, lsq.derror))
+            print('error: {}, velocity error: {}'.format(
+                  lsq.error, lsq.derror))
 
     References
     ----------
@@ -82,75 +90,73 @@ class LeastSquaresFilter(object):
     .. [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
           Approach." Third Edition. AIAA, 2009.
     """
-
-
     def __init__(self, dt, order, noise_sigma=0.):
         if order < 0 or order > 2:
             raise ValueError('order must be between 0 and 2')
 
         self.dt = dt
-        self.dt2 = dt**2
 
         self.sigma = noise_sigma
         self._order = order
 
         self.reset()
 
-
     def reset(self):
         """ reset filter back to state at time of construction"""
 
-        self.n = 0 #nth step in the recursion
+        self.n = 0  # nth step in the recursion
         self.x = np.zeros(self._order + 1)
         self.K = np.zeros(self._order + 1)
-
+        self.y = 0  # residual
 
     def update(self, z):
-        """ Update filter with new measurement `z` """
+        """ Update filter with new measurement `z`
+
+        Returns
+        -------
+
+        x : np.array
+            estimate for this time step (same as self.x)
+        """
 
         self.n += 1
+        # rename for readability
         n = self.n
         dt = self.dt
-        dt2 = self.dt2
+        x = self.x
+        K = self.K
+        y = self.y
 
         if self._order == 0:
-            self.K[0] = 1./n
-            residual = z - self.x
-            self.x += residual * self.K[0]
+            K[0] = 1. / n
+            y = z - x
+            x[0] += K[0] * y
 
         elif self._order == 1:
-            self.K[0] = 2*(2*n-1) / (n*(n+1))
-            self.K[1] = 6 / (n*(n+1)*dt)
+            K[0] = 2. * (2*n - 1) / (n*(n + 1))
+            K[1] = 6. / (n*(n + 1)*dt)
 
-            self.x[0] += self.x[1] * dt
+            y = z - x[0] - (dt * x[1])
 
-            residual = z - self.x[0]
-
-            self.x[0] += self.K[0] * residual
-            self.x[1] += self.K[1] * residual
+            x[0] += (K[0] * y) + (dt * x[1])
+            x[1] += (K[1] * y)
 
         else:
-            den = n*(n+1)*(n+2)
-            self.K[0] = 3*(3*n**2 - 3*n + 2) / den
-            self.K[1] = 18*(2*n-1) / (den*dt)
-            self.K[2] = 60./ (den*dt2)
+            den = n * (n+1) * (n+2)
+            K[0] = 3. * (3*n**2 - 3*n + 2) / den
+            K[1] = 18. * (2*n-1) / (den*dt)
+            K[2] = 60. / (den*dt**2)
 
+            y = z - x[0] - (dt * x[1]) - (0.5 * dt**2 * x[2])
 
-            self.x[0] += self.x[1]*dt + .5*self.x[2]*dt2
-            self.x[1] += self.x[2]*dt
-
-            residual = z - self.x[0]
-
-            self.x[0] += self.K[0] * residual
-            self.x[1] += self.K[1] * residual
-            self.x[2] += self.K[2] * residual
-
+            x[0] += (K[0] * y) + (x[1] * dt) + (.5 * dt**2 * x[2])
+            x[1] += (K[1] * y) + (x[2] * dt)
+            x[2] += (K[2] * y)
         return self.x
-
 
     def errors(self):
         """
-        Computes and returns the error and  standard deviation  of the
+        Computes and returns the error and standard deviation of the
         filter at this time step.
 
         Returns
@@ -167,7 +173,6 @@ class LeastSquaresFilter(object):
 
         error = np.zeros(order + 1)
         std = np.zeros(order + 1)
-
 
         if n == 0:
             return (error, std)
@@ -194,17 +199,15 @@ class LeastSquaresFilter(object):
 
             std[0] = sigma * sqrt((3*(3*n*n - 3*n + 2)) / (n*(n+1)*(n+2)))
             std[1] = (sigma/dt) * sqrt((12*(16*n*n - 30*n + 11)) /
-                                       (n*(n*n - 1)*(n*n -4)))
+                                       (n*(n*n - 1)*(n*n - 4)))
             std[2] = (sigma/dt2) * sqrt(720 / (n*(n*n-1)*(n*n-4)))
 
         return error, std
-
 
     def __repr__(self):
         return '\n'.join([
             'LeastSquaresFilter object',
             pretty_str('dt', self.dt),
-            pretty_str('dt2', self.dt2),
             pretty_str('sigma', self.sigma),
             pretty_str('_order', self._order),
             pretty_str('x', self.x),
