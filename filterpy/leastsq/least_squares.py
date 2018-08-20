@@ -46,6 +46,9 @@ class LeastSquaresFilter(object):
         sigma (std dev) in x. This allows us to calculate the error of
         the filter, it does not influence the filter output.
 
+    alpha : int
+        fading factor (how many elements should be processed before "forgetting"
+        about previous calculations). Default is 0.
 
     Attributes
     ----------
@@ -90,14 +93,21 @@ class LeastSquaresFilter(object):
     .. [1] Zarchan and Musoff. "Fundamentals of Kalman Filtering: A Practical
           Approach." Third Edition. AIAA, 2009.
     """
-    def __init__(self, dt, order, noise_sigma=0.):
+    def __init__(self, dt, order, noise_sigma=0., alpha=0):
         if order < 0 or order > 2:
             raise ValueError('order must be between 0 and 2')
+
+        if alpha < 0:
+            raise ValueError('alpha must be more than 0')
+            
+        if int(alpha) != alpha:
+            raise ValueError('alpha must be integer')
 
         self.dt = dt
 
         self.sigma = noise_sigma
         self._order = order
+        self.alpha = alpha
 
         self.reset()
 
@@ -118,8 +128,11 @@ class LeastSquaresFilter(object):
         x : np.array
             estimate for this time step (same as self.x)
         """
+        if self.alpha > 0:
+            self.n = self.alpha
+        else:
+            self.n += 1
 
-        self.n += 1
         # rename for readability
         n = self.n
         dt = self.dt
