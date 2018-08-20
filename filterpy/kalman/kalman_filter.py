@@ -94,7 +94,7 @@ This code implements the same filter using the procedural form
 
     for z in range(100):
         x, P = predict(x, P, F=F, Q=Q)
-        x, P = update[x, P, z=[z + randn() * r_std], R=R, H=H)
+        x, P = update(x, P, z=[z + randn() * r_std], R=R, H=H)
         xs.append(x[0, 0])
     plt.plot(xs)
 
