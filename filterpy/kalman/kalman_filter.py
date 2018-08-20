@@ -70,7 +70,7 @@ using the Saver class to save the state of the filter at each epoch.
     saver = Saver(cv)
     for z in range(100):
         cv.predict()
-        cv.update[[z + randn() * r_std])
+        cv.update([z + randn() * r_std])
         saver.save() # save the filter's state
 
     saver.to_array()
