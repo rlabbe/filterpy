@@ -70,7 +70,7 @@ using the Saver class to save the state of the filter at each epoch.
     saver = Saver(cv)
     for z in range(100):
         cv.predict()
-        cv.update[[z + randn() * r_std])
+        cv.update([z + randn() * r_std])
         saver.save() # save the filter's state
 
     saver.to_array()
@@ -94,7 +94,7 @@ This code implements the same filter using the procedural form
 
     for z in range(100):
         x, P = predict(x, P, F=F, Q=Q)
-        x, P = update[x, P, z=[z + randn() * r_std], R=R, H=H)
+        x, P = update(x, P, z=[z + randn() * r_std], R=R, H=H)
         xs.append(x[0, 0])
     plt.plot(xs)
 
