@@ -20,7 +20,7 @@ for more information.
 
 from __future__ import (absolute_import, division, unicode_literals)
 from copy import deepcopy
-import math
+from math import log, exp, sqrt
 import sys
 import warnings
 import numpy as np
@@ -30,8 +30,6 @@ from filterpy.stats import logpdf
 from filterpy.common import pretty_str
 
 class FadingKalmanFilter(object):
-
-
     """
     Fading memory Kalman filter. This implements a linear Kalman filter with
     a fading memory effect controlled by `alpha`. This is obsolete. The
@@ -182,7 +180,7 @@ class FadingKalmanFilter(object):
         self.I = np.eye(dim_x)
 
         # Only computed only if requested via property
-        self._log_likelihood = math.log(sys.float_info.min)
+        self._log_likelihood = log(sys.float_info.min)
         self._likelihood = sys.float_info.min
         self._mahalanobis = None
 
@@ -403,7 +401,7 @@ class FadingKalmanFilter(object):
     def alpha(self):
         """ scaling factor for fading memory"""
 
-        return math.sqrt(self.alpha_sq)
+        return sqrt(self.alpha_sq)
 
     @property
     def log_likelihood(self):
@@ -424,7 +422,7 @@ class FadingKalmanFilter(object):
         number >= sys.float_info.min.
         """
         if self._likelihood is None:
-            self._likelihood = math.exp(self.log_likelihood)
+            self._likelihood = exp(self.log_likelihood)
             if self._likelihood == 0:
                 self._likelihood = sys.float_info.min
         return self._likelihood
@@ -440,7 +438,7 @@ class FadingKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
+            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
         return self._mahalanobis
 
     def __repr__(self):

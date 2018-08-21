@@ -17,28 +17,24 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
-6"""
-
-
+"""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
-
 from math import cos, sin
 import matplotlib.pyplot as plt
 import numpy.random as random
 from numpy.random import randn
 from numpy import asarray
 import numpy as np
+from pytest import approx
+from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
 from filterpy.kalman import UnscentedKalmanFilter
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints, SimplexSigmaPoints,
                              KalmanFilter)
 from filterpy.common import Q_discrete_white_noise, Saver
 import filterpy.stats as stats
-
-
 
 DO_PLOT = False
 
@@ -143,8 +139,6 @@ def test_simplex_sigma_points_1D():
 
     sp = SimplexSigmaPoints(1)
 
-    #ukf = UKF(dim_x=1, dim_z=1, dt=0.1, hx=None, fx=None, kappa=kappa)
-
     Wm, Wc = sp.Wm, sp.Wc
     assert np.allclose(Wm, Wc, 1e-12)
     assert len(Wm) == 2
@@ -173,7 +167,7 @@ class RadarSim(object):
         self.dt = dt
 
     def get_range(self):
-        vel = 100  + 5*randn()
+        vel = 100 + 5*randn()
         alt = 1000 + 10*randn()
         self.x += vel*self.dt
 
@@ -202,7 +196,6 @@ def test_radar():
     # test __repr__ doesn't crash
     str(kf)
 
-
     kf.Q *= 0.01
     kf.R = 10
     kf.x = np.array([0., 90., 1100.])
@@ -210,22 +203,23 @@ def test_radar():
     radar = RadarSim(dt)
 
     t = np.arange(0, 20+dt, dt)
-
     n = len(t)
-
     xs = np.zeros((n, 3))
 
     random.seed(200)
     rs = []
-    #xs = []
     for i in range(len(t)):
         r = radar.get_range()
-        #r = GetRadar(dt)
         kf.predict()
         kf.update(z=[r])
 
         xs[i, :] = kf.x
         rs.append(r)
+
+        # test mahalanobis
+        a = np.zeros(kf.y.shape)
+        maha = scipy_mahalanobis(a, kf.y, kf.SI)
+        assert kf.mahalanobis == approx(maha)
 
     if DO_PLOT:
         print(xs[:, 0].shape)
@@ -242,7 +236,6 @@ def test_radar():
 def test_linear_2d_merwe():
     """ should work like a linear KF if problem is linear """
 
-
     def fx(x, dt):
         F = np.array([[1, dt, 0, 0],
                       [0, 1, 0, 0],
@@ -254,15 +247,13 @@ def test_linear_2d_merwe():
     def hx(x):
         return np.array([x[0], x[2]])
 
-
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
-    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt,
+                               fx=fx, hx=hx, points=points)
 
     kf.x = np.array([-1., 1., -1., 1])
     kf.P *= 1.1
-
 
     # test __repr__ doesn't crash
     str(kf)
@@ -296,11 +287,10 @@ def test_linear_2d_simplex():
     def hx(x):
         return np.array([x[0], x[2]])
 
-
     dt = 0.1
     points = SimplexSigmaPoints(n=4)
-    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt,
+                               fx=fx, hx=hx, points=points)
 
     kf.x = np.array([-1., 1., -1., 1])
     kf.P *= 0.0001
@@ -315,11 +305,8 @@ def test_linear_2d_simplex():
 
     if DO_PLOT:
         zs = np.asarray(zs)
-
-        #plt.plot(zs[:,0])
         plt.plot(Ms[:, 0])
         plt.plot(smooth_x[:, 0], smooth_x[:, 2])
-
         print(smooth_x)
 
 
@@ -337,8 +324,8 @@ def test_linear_1d():
 
     dt = 0.1
     points = MerweScaledSigmaPoints(2, .1, 2., -1)
-    kf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
-
+    kf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt,
+                               fx=fx, hx=hx, points=points)
 
     kf.x = np.array([1, 2])
     kf.P = np.array([[1, 1.1],
@@ -361,10 +348,8 @@ def test_linear_1d():
         print('x', kf.x)
 
 
-
 def test_batch_missing_data():
     """ batch filter should accept missing data with None in the measurements """
-
 
     def fx(x, dt):
         F = np.array([[1, dt, 0, 0],
@@ -377,11 +362,10 @@ def test_batch_missing_data():
     def hx(x):
         return np.array([x[0], x[2]])
 
-
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
-    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-
+    kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt,
+                               fx=fx, hx=hx, points=points)
 
     kf.x = np.array([-1., 1., -1., 1])
     kf.P *= 0.0001
@@ -427,10 +411,8 @@ def test_rts():
 
     random.seed(200)
     rs = []
-    #xs = []
     for i in range(len(t)):
         r = radar.get_range()
-        #r = GetRadar(dt)
         kf.predict()
         kf.update(z=[r])
 
@@ -445,10 +427,8 @@ def test_rts():
     Qs = [kf.Q] * len(t)
     M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, Qs=Qs)
 
-
     if DO_PLOT:
         print(xs[:, 0].shape)
-
         plt.figure()
         plt.subplot(311)
         plt.plot(t, xs[:, 0])
@@ -497,7 +477,6 @@ def test_fixed_lag():
     flxs = []
     for i in range(len(t)):
         r = radar.get_range()
-        #r = GetRadar(dt)
         kf.predict()
         kf.update(z=[r])
 
@@ -509,7 +488,8 @@ def test_fixed_lag():
         print(i)
         if i == 20 and len(M) >= N:
             try:
-                M2, P2, K = kf.rts_smoother(Xs=np.asarray(M)[-N:], Ps=np.asarray(P)[-N:])
+                M2, P2, K = kf.rts_smoother(Xs=np.asarray(M)[-N:],
+                                            Ps=np.asarray(P)[-N:])
                 flxs[-N:] = M2
             except:
                 print('except', i)
@@ -520,7 +500,6 @@ def test_fixed_lag():
 
     Qs = [kf.Q]*len(t)
     M2, P2, K = kf.rts_smoother(Xs=M, Ps=P, Qs=Qs)
-
 
     flxs = np.asarray(flxs)
     print(xs[:, 0].shape)
@@ -544,6 +523,7 @@ def test_fixed_lag():
 def test_circle():
     from filterpy.kalman import KalmanFilter
     from math import radians
+
     def hx(x):
         radius = x[0]
         angle = x[1]
@@ -557,7 +537,8 @@ def test_circle():
     std_noise = .1
 
     sp = JulierSigmaPoints(n=3, kappa=0.)
-    f = UnscentedKalmanFilter(dim_x=3, dim_z=2, dt=.01, hx=hx, fx=fx, points=sp)
+    f = UnscentedKalmanFilter(dim_x=3, dim_z=2, dt=.01,
+                              hx=hx, fx=fx, points=sp)
     f.x = np.array([50., 90., 0])
     f.P *= 100
     f.R = np.eye(2)*(std_noise**2)
@@ -579,7 +560,6 @@ def test_circle():
     kf.P *= 100
     kf.H = np.array([[1, 0, 0, 0, 0, 0],
                      [0, 0, 0, 1, 0, 0]])
-
 
     kf.R = f.R
     kf.Q[0:3, 0:3] = Q_discrete_white_noise(3, 1., .00001)
@@ -606,7 +586,6 @@ def test_circle():
         # save data
         results.append(hx(f.x))
         kfxs.append(kf.x)
-        #print(f.x)
 
     results = np.asarray(results)
     zs = np.asarray(zs)
@@ -619,7 +598,6 @@ def test_circle():
         plt.plot(kfxs[:, 0], kfxs[:, 3], c='g', label='KF')
         plt.legend(loc='best')
         plt.axis('equal')
-
 
 
 def kf_circle():
@@ -636,22 +614,19 @@ def kf_circle():
     def fx(x, dt):
         return np.array([x[0], x[1] + x[2], x[2]])
 
-
     def hx_inv(x, y):
         angle = math.atan2(y, x)
         radius = math.sqrt(x*x + y*y)
         return np.array([radius, angle])
 
-
     std_noise = .1
-
 
     kf = KalmanFilter(dim_x=3, dim_z=2)
     kf.x = np.array([50., 0., 0.])
 
     F = np.array([[1., 0, 0.],
-                  [0., 1., 1.,],
-                  [0., 0., 1.,]])
+                  [0., 1., 1.],
+                  [0., 0., 1.]])
 
     kf.F = F
     kf.P *= 100
@@ -661,13 +636,11 @@ def kf_circle():
     kf.R = np.eye(2)*(std_noise**2)
     #kf.Q[0:3, 0:3] = Q_discrete_white_noise(3, 1., .00001)
 
-
-
     zs = []
     kfxs = []
     for t in range(2000):
         a = t / 30 + 90
-        x = cos(radians(a)) * 50.+ randn() * std_noise
+        x = cos(radians(a)) * 50. + randn() * std_noise
         y = sin(radians(a)) * 50. + randn() * std_noise
 
         z = hx_inv(x, y)
@@ -681,7 +654,6 @@ def kf_circle():
 
     zs = np.asarray(zs)
     kfxs = np.asarray(kfxs)
-
 
     if DO_PLOT:
         plt.plot(zs[:, 0], zs[:, 1], c='r', label='z')
@@ -713,7 +685,6 @@ def two_radar():
             self.range_std = range_std
             self.bearing_std = bearing_std
 
-
         def reading_of(self, ac_pos):
             """ Returns range and bearing to aircraft as tuple. bearing is in
             radians.
@@ -724,13 +695,11 @@ def two_radar():
             brg = atan2(diff[1], diff[0])
             return rng, brg
 
-
         def noisy_reading(self, ac_pos):
             rng, brg = self.reading_of(ac_pos)
             rng += randn() * self.range_std
             brg += randn() * self.bearing_std
             return rng, brg
-
 
     class ACSim(object):
 
@@ -738,7 +707,6 @@ def two_radar():
             self.pos = asarray(pos, dtype=float)
             self.vel = asarray(vel, dtype=float)
             self.vel_std = vel_std
-
 
         def update(self):
             vel = self.vel + (randn() * self.vel_std)
@@ -748,14 +716,11 @@ def two_radar():
 
     dt = 1.
 
-
     def hx(x):
         r1, b1 = hx.R1.reading_of((x[0], x[2]))
         r2, b2 = hx.R2.reading_of((x[0], x[2]))
 
         return array([r1, b1, r2, b2])
-        pass
-
 
     def fx(x, dt):
         x_est = x.copy()
@@ -763,15 +728,13 @@ def two_radar():
         x_est[2] += x[3]*dt
         return x_est
 
-
     vx, vy = 0.1, 0.1
 
     f = UnscentedKalmanFilter(dim_x=4, dim_z=4, dt=dt, hx=hx, fx=fx, kappa=0)
     aircraft = ACSim((100, 100), (vx*dt, vy*dt), 0.00000002)
 
-
     range_std = 0.001  # 1 meter
-    bearing_std = 1/1000 # 1mrad
+    bearing_std = 1./1000 # 1mrad
 
     R1 = RadarStation((0, 0), range_std, bearing_std)
     R2 = RadarStation((200, 0), range_std, bearing_std)
@@ -783,18 +746,14 @@ def two_radar():
 
     f.R = np.diag([range_std**2, bearing_std**2, range_std**2, bearing_std**2])
     q = Q_discrete_white_noise(2, var=0.0002, dt=dt)
-    #q = np.array([[0,0],[0,0.0002]])
     f.Q[0:2, 0:2] = q
     f.Q[2:4, 2:4] = q
     f.P = np.diag([.1, 0.01, .1, 0.01])
 
-
     track = []
     zs = []
 
-
     for i in range(int(300/dt)):
-
         pos = aircraft.update()
 
         r1, b1 = R1.noisy_reading(pos)
@@ -805,7 +764,6 @@ def two_radar():
         track.append(pos.copy())
 
     zs = asarray(zs)
-
 
     xs, Ps, Pxz, pM, pP = f.batch_filter(zs)
     ms, _, _ = f.rts_smoother(xs, Ps)
@@ -822,8 +780,6 @@ def two_radar():
     plt.ylabel('x position (m)')
     plt.tight_layout()
 
-
-
     plt.subplot(412)
     plt.plot(time, track[:, 1])
     plt.plot(time, xs[:, 2])
@@ -831,7 +787,6 @@ def two_radar():
     plt.xlabel('time (sec)')
     plt.ylabel('y position (m)')
     plt.tight_layout()
-
 
     plt.subplot(413)
     plt.plot(time, xs[:, 1])
@@ -864,7 +819,6 @@ def test_linear_rts():
     dt = 1.0
     F = np.array([[1., dt], [.0, 1]])
     H = np.array([[1., .0]])
-
 
     def t_func(x, dt):
         F = np.array([[1., dt], [.0, 1]])
@@ -901,7 +855,6 @@ def test_linear_rts():
     s.save()
     s.to_array()
 
-
     kf = KalmanFilter(dim_x=2, dim_z=1)
     kf.x = np.array([[0., 1]]).T
     kf.R = np.copy(oc)
@@ -909,13 +862,11 @@ def test_linear_rts():
     kf.H = np.copy(H)
     kf.F = np.copy(F)
 
-
     mu_ukf, cov_ukf = ukf.batch_filter(X_obs)
     x_ukf, _, _ = ukf.rts_smoother(mu_ukf, cov_ukf)
 
     mu_kf, cov_kf, _, _ = kf.batch_filter(X_obs)
     x_kf, _, _, _ = kf.rts_smoother(mu_kf, cov_kf)
-
 
     # check results of filtering are correct
     kfx = mu_kf[:, 0, 0]
@@ -945,7 +896,6 @@ def test_linear_rts():
     return ukf
 
 
-
 def _test_log_likelihood():
 
     from filterpy.common import Saver
@@ -960,7 +910,6 @@ def _test_log_likelihood():
 
     def hx(x):
         return np.array([x[0], x[2]])
-
 
     dt = 0.1
     points = MerweScaledSigmaPoints(4, .1, 2., -1)
@@ -980,9 +929,16 @@ def _test_log_likelihood():
         kf.update(z)
         print(kf.x, kf.log_likelihood, kf.P.diagonal())
         s.save()
-    s.to_array()
-    plt.plot(s.x[:, 0], s.x[:, 2])
 
+        # test mahalanobis
+        a = np.zeros(kf.y.shape)
+        maha = scipy_mahalanobis(a, kf.y, kf.SI)
+        assert kf.mahalanobis == approx(maha)
+
+    s.to_array()
+
+
+    plt.plot(s.x[:, 0], s.x[:, 2])
 
 
 if __name__ == "__main__":
