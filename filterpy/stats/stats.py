@@ -108,10 +108,8 @@ def mahalanobis(x, mean, cov):
     y = x - mean
     S = np.atleast_2d(cov)
 
-    # residual y is now 1D, so no need to transpose, and y @S^ @ y is a scalar
-    # so no array indexing required to get result
-    dist = np.dot(y, inv(S)).dot(y)
-    return np.sqrt(dist)
+    dist = float(np.dot(np.dot(y.T, inv(S)), y))
+    return math.sqrt(dist)
 
 
 def log_likelihood(z, x, P, H, R):

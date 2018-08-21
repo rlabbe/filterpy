@@ -265,18 +265,20 @@ def pretty_str(label, arr):
         except (AttributeError, IndexError):
             return False
 
-    if is_col(arr):
-        return str(arr.T).replace('\n', '') + '.T'
-
-    rows = str(arr).split('\n')
-    if not rows:
-        return ''
 
     if label is None:
         label = ''
 
     if label:
         label += ' = '
+
+    if is_col(arr):
+        return label + str(arr.T).replace('\n', '') + '.T'
+
+    rows = str(arr).split('\n')
+    if not rows:
+        return ''
+
 
     s = label + rows[0]
     pad = ' ' * len(label)

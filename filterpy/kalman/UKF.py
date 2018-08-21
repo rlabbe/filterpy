@@ -19,7 +19,7 @@ for more information.
 from __future__ import (absolute_import, division)
 
 from copy import deepcopy
-import math
+from math import log, exp, sqrt
 import sys
 import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
@@ -305,7 +305,7 @@ class UnscentedKalmanFilter(object):
         self.z_mean = z_mean_fn
 
         # Only computed only if requested via property
-        self._log_likelihood = math.log(sys.float_info.min)
+        self._log_likelihood = log(sys.float_info.min)
         self._likelihood = sys.float_info.min
         self._mahalanobis = None
 
@@ -737,7 +737,7 @@ class UnscentedKalmanFilter(object):
         number >= sys.float_info.min.
         """
         if self._likelihood is None:
-            self._likelihood = math.exp(self.log_likelihood)
+            self._likelihood = exp(self.log_likelihood)
             if self._likelihood == 0:
                 self._likelihood = sys.float_info.min
         return self._likelihood
@@ -753,7 +753,7 @@ class UnscentedKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = float(np.dot(np.dot(self.y.T, self.SI), self.y))
+            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
         return self._mahalanobis
 
     def __repr__(self):

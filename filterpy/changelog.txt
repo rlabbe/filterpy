@@ -1,3 +1,11 @@
+Version 1.4.3
+=============
+
+* GitHub #152 fixed docstring for unscented_transform()
+* GitHub #154 Fixed bug in LeastSquaresFilter causing it to diverge
+* GitHub #155 Mahalanobis computations in several filters did not include
+taking the sqrt .
+
 Version 1.4.2
 =============
 
@@ -40,7 +48,7 @@ across all classes.
 
 * added .gitattributes to force all files to use unix-style line endings
 
-* GitHub #138. Attributes were not being set when z == None on call to 
+* GitHub #138. Attributes were not being set when z == None on call to
 update(), meaning things like log-likelihood and mahalanobis had incorrect
 values.
 
