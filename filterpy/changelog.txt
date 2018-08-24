@@ -1,3 +1,11 @@
+Version 1.4.4
+=============
+
+* GitHub #60  - Added separate computation of prior and posterior
+with the IMM.
+
+* various pylint compliance changes.
+
 Version 1.4.3
 =============
 
