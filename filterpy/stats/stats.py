@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=C0103, R0913, R0902, C0326, C0302, C0321, R0914, R0912
-#
-# disable snake_case warning, too many arguments, too many attributes,
-# one space before assignment, too many lines, more than one statement
-# on line, too many local variables, too many branches
-
+# pylint: disable=invalid-name, too-many-arguments, bad-whitespace
+# pylint: disable=too-many-lines, too-many-locals, len-as-condition
 
 """Copyright 2015 Roger R Labbe Jr.
 

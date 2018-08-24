@@ -111,14 +111,14 @@ class Saver(object):
         # need to save all properties since it is possible that the property
         # is computed only on access. I use this trick a lot to minimize
         # computing unused information.
-        self.properties = inspect.getmembers(type(kf), lambda o: isinstance(o, property))
+        self.properties = inspect.getmembers(
+            type(kf), lambda o: isinstance(o, property))
 
         if save_current:
             self.save()
 
     def save(self):
         """ save the current state of the Kalman filter"""
-
 
         kf = self._kf
 
@@ -151,14 +151,11 @@ class Saver(object):
         self.__dict__.update(self._DL)
         self._len += 1
 
-
     def __getitem__(self, key):
         return self._DL[key]
 
-
     def __len__(self):
         return self._len
-
 
     @property
     def keys(self):
@@ -184,7 +181,8 @@ class Saver(object):
                 # get back to lists so we are in a valid state
                 self.__dict__.update(self._DL)
 
-                raise ValueError("could not convert {} into np.array".format(key))
+                raise ValueError(
+                    "could not convert {} into np.array".format(key))
 
     def flatten(self):
         """
@@ -207,11 +205,9 @@ class Saver(object):
                 # not an ndarray or not a column vector
                 pass
 
-
     def __repr__(self):
         return '<Saver object at {}\n  Keys: {}>'.format(
-                hex(id(self)),
-                ' '.join(self.keys))
+            hex(id(self)), ' '.join(self.keys))
 
 
 def runge_kutta4(y, x, dx, f):
@@ -265,7 +261,6 @@ def pretty_str(label, arr):
         except (AttributeError, IndexError):
             return False
 
-
     if label is None:
         label = ''
 
@@ -278,7 +273,6 @@ def pretty_str(label, arr):
     rows = str(arr).split('\n')
     if not rows:
         return ''
-
 
     s = label + rows[0]
     pad = ' ' * len(label)

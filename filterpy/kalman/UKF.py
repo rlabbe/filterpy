@@ -665,7 +665,7 @@ class UnscentedKalmanFilter(object):
             (mu, cov, _, _) = kalman.batch_filter(zs)
             (x, P, K) = rts_smoother(mu, cov, fk.F, fk.Q)
         """
-        #pylint: disable=too-many-locals
+        #pylint: disable=too-many-locals, too-many-arguments
 
         if len(Xs) != len(Ps):
             raise ValueError('Xs and Ps must have the same length')
