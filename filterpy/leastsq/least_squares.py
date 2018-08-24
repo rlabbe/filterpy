@@ -189,7 +189,7 @@ class LeastSquaresFilter(object):
             std[1] = (sigma/dt) * sqrt(12. / (n*(n*n-1)))
 
         elif order == 2:
-            dt2 = self.dt2
+            dt2 = dt * dt
 
             if n >= 3:
                 error[0] = sigma * sqrt(3*(3*n*n-3*n+2) / (n*(n+1)*(n+2)))
