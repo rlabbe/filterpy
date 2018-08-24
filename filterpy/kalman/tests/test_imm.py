@@ -20,18 +20,18 @@ for more information.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from math import sin, cos, radians
 import numpy.random as random
 import numpy as np
+from numpy import array
+from numpy.random import randn
 import matplotlib.pyplot as plt
 from filterpy.kalman import IMMEstimator, KalmanFilter
-from numpy import array
 from filterpy.common import Q_discrete_white_noise, Saver
-import matplotlib.pyplot as plt
-from numpy.random import randn
-from math import sin, cos, radians
 
 
 DO_PLOT = False
+
 
 class NoisySensor(object):
     def __init__(self, noise_factor=1):
@@ -42,9 +42,9 @@ class NoisySensor(object):
                 pos[1] + randn()*self.noise_factor)
 
 
-
 def angle_between(x, y):
-  return min(y-x, y-x+360, y-x-360, key=abs)
+    return min(y-x, y-x+360, y-x-360, key=abs)
+
 
 class ManeuveringTarget(object):
     def __init__(self, x0, y0, v0, heading):
@@ -59,7 +59,6 @@ class ManeuveringTarget(object):
         self.hdg_step = 0
         self.vel_delta = 0
         self.hdg_delta = 0
-
 
     def update(self):
         vx = self.vel * cos(radians(90-self.hdg))
@@ -76,7 +75,6 @@ class ManeuveringTarget(object):
             self.vel += self.vel_delta
         return (self.x, self.y)
 
-
     def set_commanded_heading(self, hdg_degrees, steps):
         self.cmd_hdg = hdg_degrees
         self.hdg_delta = angle_between(self.cmd_hdg,
@@ -85,7 +83,6 @@ class ManeuveringTarget(object):
             self.hdg_step = steps
         else:
             self.hdg_step = 0
-
 
     def set_commanded_speed(self, speed, steps):
         self.cmd_vel = speed
@@ -120,7 +117,6 @@ def make_ca_filter(dt, noise_factor):
     return cafilter
 
 
-
 def generate_data(steady_count, noise_factor):
     t = ManeuveringTarget(x0=0, y0=0, v0=0.3, heading=0)
     xs = []
@@ -145,9 +141,8 @@ def generate_data(steady_count, noise_factor):
     return pos, zs
 
 
-
 def test_imm():
-    """ this test is drawn from Crassidis [1], example 4.6.
+    """ This test is drawn from Crassidis [1], example 4.6.
 
     ** References**
 
@@ -155,7 +150,7 @@ def test_imm():
     Second edition.
     """
 
-    r = 1.
+    r = 100.
     dt = 1.
     phi_sim = np.array(
         [[1, dt, 0, 0],
@@ -178,19 +173,20 @@ def test_imm():
             x += np.dot(gam, np.array([[.075, .075]]).T)
         simxs.append(x)
     simxs = np.array(simxs)
-    #x = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/mycode/x.csv', delimiter=',')
 
     zs = np.zeros((N, 2))
     for i in range(len(zs)):
         zs[i, 0] = simxs[i, 0] + randn()*r
         zs[i, 1] = simxs[i, 2] + randn()*r
 
+    '''
     try:
-        #data to test against crassidis' IMM matlab code
+        # data to test against crassidis' IMM matlab code
         zs_tmp = np.genfromtxt('c:/users/rlabbe/dropbox/Crassidis/mycode/xx.csv', delimiter=',')[:-1]
         zs = zs_tmp
     except:
         pass
+    '''
     ca = KalmanFilter(6, 2)
     cano = KalmanFilter(6, 2)
     dt2 = (dt**2)/2
@@ -211,9 +207,9 @@ def test_imm():
     ca.R *= r**2
     cano.R *= r**2
     cano.Q *= 0
-    q = np.array([[.05, .125, 1/6],
-         [.125, 1/3, .5],
-         [1/6, .5, 1]])*1.e-3
+    q = np.array([[.05, .125, 1./6],
+                  [.125, 1/3, .5],
+                  [1./6, .5, 1.]])*1.e-3
 
     ca.Q[0:3, 0:3] = q
     ca.Q[3:6, 3:6] = q
@@ -227,48 +223,41 @@ def test_imm():
     trans = np.array([[0.97, 0.03],
                       [0.03, 0.97]])
 
-
     bank = IMMEstimator(filters, (0.5, 0.5), trans)
-
 
     # ensure __repr__ doesn't have problems
     str(bank)
 
-    xs, probs = [], []
-    cvxs, caxs = [], []
     s = Saver(bank)
-    for i, z in enumerate(zs[0:10]):
+    ca_s = Saver(ca)
+    cano_s = Saver(cano)
+    for i, z in enumerate(zs):
         z = np.array([z]).T
         bank.update(z)
-        #print(ca.likelihood, cano.likelihood)
-        #print(ca.x.T)
-        xs.append(bank.x.copy())
-        cvxs.append(ca.x.copy())
-        caxs.append(cano.x.copy())
-        #print(i, ca.likelihood, cano.likelihood, bank.w)
+        bank.predict()
 
-        #print('p', bank.p)
-        probs.append(bank.mu.copy())
         s.save()
-    s.to_array()
+        ca_s.save()
+        cano_s.save()
 
     if DO_PLOT:
-        xs = np.array(xs)
-        cvxs = np.array(cvxs)
-        caxs = np.array(caxs)
-        probs = np.array(probs)
+        s.to_array()
+        ca_s.to_array()
+        cano_s.to_array()
+
+        plt.figure()
+
         plt.subplot(121)
-        plt.plot(xs[:, 0], xs[:, 3], 'k')
+        plt.plot(s.x[:, 0], s.x[:, 3], 'k')
         #plt.plot(cvxs[:, 0], caxs[:, 3])
         #plt.plot(simxs[:, 0], simxs[:, 2], 'g')
         plt.scatter(zs[:, 0], zs[:, 1], marker='+', alpha=0.2)
 
         plt.subplot(122)
-        plt.plot(probs[:, 0])
-        plt.plot(probs[:, 1])
-        plt.ylim(-1.5, 1.5)
+        plt.plot(s.mu[:, 0])
+        plt.plot(s.mu[:, 1])
+        plt.ylim(0, 1)
         plt.title('probability ratio p(cv)/p(ca)')
-
 
         '''plt.figure()
         plt.plot(cvxs, label='CV')
@@ -279,8 +268,6 @@ def test_imm():
         plt.figure()
         plt.plot(xs)
         plt.plot(xs[:, 0])'''
-
-        return bank
 
 
 def test_misshapen():
@@ -301,7 +288,6 @@ def test_misshapen():
     except ValueError:
         pass
 
-
     try:
         IMMEstimator([], (0.5, 0.5), trans)
         assert "Should raise ValueError on empty bank"
@@ -312,6 +298,6 @@ def test_misshapen():
 
 if __name__ == '__main__':
 
-    test_misshapen()
+    #test_misshapen()
     DO_PLOT = True
     test_imm()
