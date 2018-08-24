@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=invalid-name, too-many-instance-attributes
 """
 Created on Mon Aug  6 07:53:34 2018
 
@@ -139,7 +140,7 @@ class IMMEstimator(object):
         for f in filters:
             if x_shape != f.x.shape:
                 raise ValueError(
-                        'All filters must have the same state dimension')
+                    'All filters must have the same state dimension')
 
         self.x = zeros(filters[0].x.shape)
         self.P = zeros(filters[0].P.shape)
@@ -155,7 +156,7 @@ class IMMEstimator(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
-    def update(self, z, u=None):
+    def update(self, z):
         """
         Add a new measurement (z) to the Kalman filter. If z is None, nothing
         is changed.
@@ -165,13 +166,7 @@ class IMMEstimator(object):
 
         z : np.array
             measurement for this update.
-
-        u : np.array, optional
-            u[i] contains the control input for the ith filter
         """
-        # pylint: disable=too-many-locals
-
-        # each element j = sum M_ij * mu_i
 
         # run update on each filter, and save the likelihood
         for i, f in enumerate(self.filters):
@@ -268,26 +263,3 @@ class IMMEstimator(object):
             pretty_str('likelihood', self.likelihood),
             pretty_str('omega', self.omega)
             ])
-
-
-if __name__ == '__main__':
-    import numpy as np
-    from filterpy.common import kinematic_kf
-    kf1 = kinematic_kf(2, 2)
-    kf2 = kinematic_kf(2, 2)
-    # do some settings of x, R, P etc. here, I'll just use the defaults
-    kf2.Q *= 0   # no prediction error in second filter
-
-    filters = [kf1, kf2]
-    trans = np.array([[0.97, 0.03], [0.03, 0.97]])
-    imm = IMMEstimator(filters, (0.5, 0.5), trans)
-
-    '''for i in range(100):
-        x = i + np.random.randn()*np.sqrt(kf1.R[0, 0])
-        y = i + np.random.randn()*np.sqrt(kf1.R[1, 1])
-        z = np.array([[x], [y]])
-        imm.predict()
-        print('prir', imm.x.T)
-        imm.update(z)
-        print('post', imm.x.T)'''
-
