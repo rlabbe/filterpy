@@ -43,7 +43,7 @@ P : ndarray (dim_x, dim_x), default eye(dim_x)
 Q : ndarray (dim_x, dim_x), default eye(dim_x)
     Process uncertainty/noise
 
-R : ndarray (dim_z, dim_z), default eye(dim_x)
+R : ndarray (dim_z, dim_z), default eye(dim_z)
     measurement uncertainty/noise
 
 H : ndarray (dim_z, dim_x)
