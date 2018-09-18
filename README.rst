@@ -174,7 +174,7 @@ uses this library, and is the place to go if you are trying to learn
 about Kalman filtering and/or this library. These two are not exactly in 
 sync - my normal development cycle is to add files here, test them, figure 
 out how to present them pedalogically, then write the appropriate section
-or chapterin the book. So there is code here that is not discussed
+or chapter in the book. So there is code here that is not discussed
 yet in the book.
 
 
