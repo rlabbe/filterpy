@@ -4,6 +4,7 @@ FilterPy - Kalman filters and other optimal and non-optimal estimation filters i
 .. image:: https://img.shields.io/pypi/v/filterpy.svg
         :target: https://pypi.python.org/pypi/filterpy
 
+**NOTE**: Imminent drop of support of Python 2.7, 3.4. See section below for details.
 
 This library provides Kalman filtering and various related optimal and
 non-optimal filtering software written in Python. It contains Kalman
@@ -174,7 +175,7 @@ uses this library, and is the place to go if you are trying to learn
 about Kalman filtering and/or this library. These two are not exactly in 
 sync - my normal development cycle is to add files here, test them, figure 
 out how to present them pedalogically, then write the appropriate section
-or chapterin the book. So there is code here that is not discussed
+or chapter in the book. So there is code here that is not discussed
 yet in the book.
 
 
