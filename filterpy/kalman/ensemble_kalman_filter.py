@@ -294,6 +294,7 @@ class EnsembleKalmanFilter(object):
             sx = s - self.x
             P += outer(sx, sx)
 
+        self.x = np.mean(self.sigmas, axis=0)
         self.P = P / (N-1)
 
         # save prior
