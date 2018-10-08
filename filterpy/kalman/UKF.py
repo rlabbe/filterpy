@@ -444,7 +444,7 @@ class UnscentedKalmanFilter(object):
         for s in self.sigmas_f:
             sigmas_h.append(hx(s, **hx_args))
 
-        self.sigmas_h = np.atleast_2d(sigmas_h)
+        self.sigmas_h = np.atleast_2d(sigmas_h).T
 
         # mean and covariance of prediction passed through unscented transform
         zp, self.S = UT(self.sigmas_h, self.Wm, self.Wc, R, self.z_mean, self.residual_z)
