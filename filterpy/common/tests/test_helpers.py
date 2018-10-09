@@ -14,7 +14,7 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-from filterpy.common import kinematic_kf, Saver, inv_diagonal
+from filterpy.common import kinematic_kf, Saver, inv_diagonal, outer_product_sum
 
 import numpy as np
 from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
@@ -180,6 +180,22 @@ def test_save_properties():
     assert s.a[1] == f.a
     assert s.ll[1] == f.a
     assert f.a == 4
+
+
+def test_outer_product():
+    sigmas = np.random.randn(1000000, 2)
+    x = np.random.randn(2)
+
+    P1 = outer_product_sum(sigmas-x)
+
+    P2 = 0
+    for s in sigmas:
+        y = s - x
+        P2 += np.outer(y, y)
+    assert np.allclose(P1, P2)
+
+
+
 
 
 if __name__ == "__main__":
