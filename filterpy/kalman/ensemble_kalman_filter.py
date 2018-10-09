@@ -133,8 +133,8 @@ class EnsembleKalmanFilter(object):
         x = np.array([0., 1.])
         P = np.eye(2) * 100.
         dt = 0.1
-        f = EnKF(x=x, P=P, dim_z=1, dt=dt, N=8,
-                 hx=hx, fx=fx)
+        f = EnsembleKalmanFilter(x=x, P=P, dim_z=1, dt=dt, 
+                                 N=8, hx=hx, fx=fx)
 
         std_noise = 3.
         f.R *= std_noise**2
@@ -289,12 +289,11 @@ class EnsembleKalmanFilter(object):
         e = multivariate_normal(self._mean, self.Q, N)
         self.sigmas += e
 
-        P = 0
-        for s in self.sigmas:
-            sx = s - self.x
-            P += outer(sx, sx)
-
         self.x = np.mean(self.sigmas, axis=0)
+
+        P = 0
+        for y in (self.sigmas - self.x):
+            P += outer(y, y)
         self.P = P / (N-1)
 
         # save prior
