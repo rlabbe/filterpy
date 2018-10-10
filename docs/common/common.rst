@@ -45,3 +45,8 @@ will find useful when you build your filters.
 
 .. autofunction:: inv_diagonal
 
+
+-----
+
+.. autofunction:: outer_product_sum
+

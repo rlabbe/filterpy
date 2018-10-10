@@ -1,7 +1,14 @@
-Version 
+Version 1.4.5
 =============
+
 * Removed deprecated filterpy.kalman.Saver class (use 
 filterpy.common.Saver instead)
+
+* GitHub #165 Bug in computation of prior state x.
+
+* Sped up computation in Cubature and Ensemble filters by using 
+einsum instead of a for loop.
+
 
 Version 1.4.4
 =============
