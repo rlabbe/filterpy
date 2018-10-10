@@ -360,11 +360,11 @@ def inv_diagonal(S):
     return si
 
 
-def outer_product_sum(A):
+def outer_product_sum(A, B=None):
     """
-    Computes the sum of the outer products of the rows in A.
+    Computes the sum of the outer products of the rows in A and B
 
-        P = \Sum {A[i] A[i].T} for i in 0..N
+        P = \Sum {A[i] B[i].T} for i in 0..N
 
         Notionally:
 
@@ -384,10 +384,14 @@ def outer_product_sum(A):
     A : np.array, shape (M, N)
         rows of N-vectors to have the outer product summed
 
+    B : np.array, shape (M, N)
+        rows of N-vectors to have the outer product summed
+        If it is `None`, it is set to A.
+
     Returns
     -------
     P : np.array, shape(N, N)
-        sum of the outer product of the rows of A
+        sum of the outer product of the rows of A and B
 
     Examples
     --------
@@ -403,5 +407,8 @@ def outer_product_sum(A):
     >>>     P += np.outer(y, y)
     """
 
-    outer = np.einsum('ij,ik->ijk', A, A)
+    if B is None:
+        B = A
+
+    outer = np.einsum('ij,ik->ijk', A, B)
     return np.sum(outer, axis=0)

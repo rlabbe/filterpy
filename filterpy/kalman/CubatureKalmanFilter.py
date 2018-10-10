@@ -26,7 +26,7 @@ import numpy as np
 from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import inv, cholesky
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, outer_product_sum
 
 
 def spherical_radial_sigmas(x, P):
@@ -363,21 +363,14 @@ class CubatureKalmanFilter(object):
             self.sigmas_h[k] = self.hx(self.sigmas_f[k], *hx_args)
 
         # mean and covariance of prediction passed through unscented transform
-        #zp, Pz = UT(self.sigmas_h, self.Wm, self.Wc, R, self.z_mean, self.residual_z)
         zp, self.S = ckf_transform(self.sigmas_h, R)
         self.SI = inv(self.S)
 
         # compute cross variance of the state and the measurements
-        Pxz = zeros((self.dim_x, self.dim_z))
         m = self._num_sigmas  # literaure uses m for scaling factor
         xf = self.x.flatten()
         zpf = zp.flatten()
-        for k in range(m):
-            dx = self.sigmas_f[k] - xf
-            dz = self.sigmas_h[k] - zpf
-            Pxz += outer(dx, dz)
-
-        Pxz /= m
+        Pxz = outer_product_sum(self.sigmas_f - xf, self.sigmas_h - zpf) / m
 
         self.K = dot(Pxz, self.SI)        # Kalman gain
         self.y = self.residual_z(z, zp)   # residual

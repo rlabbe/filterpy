@@ -23,9 +23,9 @@ from __future__ import (absolute_import, division, print_function,
 
 from copy import deepcopy
 import numpy as np
-from numpy import dot, zeros, eye, outer
+from numpy import array, zeros, eye, dot
 from numpy.random import multivariate_normal
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, outer_product_sum
 
 
 class EnsembleKalmanFilter(object):
@@ -133,7 +133,7 @@ class EnsembleKalmanFilter(object):
         x = np.array([0., 1.])
         P = np.eye(2) * 100.
         dt = 0.1
-        f = EnsembleKalmanFilter(x=x, P=P, dim_z=1, dt=dt, 
+        f = EnsembleKalmanFilter(x=x, P=P, dim_z=1, dt=dt,
                                  N=8, hx=hx, fx=fx)
 
         std_noise = 3.
@@ -169,19 +169,20 @@ class EnsembleKalmanFilter(object):
         self.N = N
         self.hx = hx
         self.fx = fx
-        self.K = np.zeros((dim_x, dim_z))
-        self.z = np.array([[None]*self.dim_z]).T
-        self.S = np.zeros((dim_z, dim_z))   # system uncertainty
-        self.SI = np.zeros((dim_z, dim_z))  # inverse system uncertainty
+        self.K = zeros((dim_x, dim_z))
+        self.z = array([[None] * self.dim_z]).T
+        self.S = zeros((dim_z, dim_z))   # system uncertainty
+        self.SI = zeros((dim_z, dim_z))  # inverse system uncertainty
 
         self.initialize(x, P)
         self.Q = eye(dim_x)       # process uncertainty
         self.R = eye(dim_z)       # state uncertainty
         self.inv = np.linalg.inv
 
-        # used to create error terms centered at 0 mean for state and measurement
-        self._mean = np.zeros(dim_x)
-        self._mean_z = np.zeros(dim_z)
+        # used to create error terms centered at 0 mean for
+        # state and measurement
+        self._mean = zeros(dim_x)
+        self._mean_z = zeros(dim_z)
 
     def initialize(self, x, P):
         """
@@ -227,11 +228,11 @@ class EnsembleKalmanFilter(object):
 
         R : np.array, scalar, or None
             Optionally provide R to override the measurement noise for this
-            one call, otherwise  self.R will be used.
+            one call, otherwise self.R will be used.
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -251,28 +252,20 @@ class EnsembleKalmanFilter(object):
 
         z_mean = np.mean(sigmas_h, axis=0)
 
-        P_zz = 0
-        for sigma in sigmas_h:
-            s = sigma - z_mean
-            P_zz += outer(s, s)
-        P_zz = P_zz / (N-1) + R
+        P_zz = (outer_product_sum(sigmas_h - z_mean) / (N-1)) + R
+        P_xz = outer_product_sum(
+                self.sigmas - self.x, sigmas_h - z_mean) / (N - 1)
+
         self.S = P_zz
         self.SI = self.inv(self.S)
-
-
-        P_xz = 0
-        for i in range(N):
-            P_xz += outer(self.sigmas[i] - self.x, sigmas_h[i] - z_mean)
-        P_xz /= N-1
-
-        self.K = dot(P_xz, self.inv(P_zz))
+        self.K = dot(P_xz, self.SI)
 
         e_r = multivariate_normal(self._mean_z, R, N)
         for i in range(N):
             self.sigmas[i] += dot(self.K, z + e_r[i] - sigmas_h[i])
 
         self.x = np.mean(self.sigmas, axis=0)
-        self.P = self.P - dot(dot(self.K, P_zz), self.K.T)
+        self.P = self.P - dot(dot(self.K, self.S), self.K.T)
 
         # save measurement and posterior state
         self.z = deepcopy(z)
@@ -290,11 +283,7 @@ class EnsembleKalmanFilter(object):
         self.sigmas += e
 
         self.x = np.mean(self.sigmas, axis=0)
-
-        P = 0
-        for y in (self.sigmas - self.x):
-            P += outer(y, y)
-        self.P = P / (N-1)
+        self.P = outer_product_sum(self.sigmas - self.x) / (N - 1)
 
         # save prior
         self.x_prior = np.copy(self.x)
