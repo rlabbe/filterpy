@@ -56,7 +56,7 @@ class Saver(object):
         any object with a __dict__ attribute, but intended to be one of the
         filtering classes
 
-    save_current : bool, default=True
+    save_current : bool, default=False
         save the current state of `kf` when the object is created;
 
     skip_private: bool, default=False
