@@ -68,8 +68,8 @@ class MerweScaledSigmaPoints(object):
     subtract : callable (x, y), optional
         Function that computes the difference between x and y.
         You will have to supply this if your state variable cannot support
-        subtraction, such as angles (359-1 degreees is 2, not 358). x and y
-        are state vectors, not scalars.
+        subtraction, such as angles (e.g. 359-1 degrees is -2, not 358). 
+        x and y are state vectors, not scalars.
 
     Attributes
     ----------
