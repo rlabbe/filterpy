@@ -445,7 +445,7 @@ class UnscentedKalmanFilter2(object):
 
 
     def rts_smoother(self, Xs, Ps, Qs=None, dt=None):
-        """ Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        """ Runs the Rauch-Tung-Striebel Kalman smoother on a set of
         means and covariances computed by the UKF. The usual input
         would come from the output of `batch_filter()`.
 

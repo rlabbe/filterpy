@@ -166,7 +166,7 @@ filterpy.kalman
 The classes in this submodule implement the various Kalman filters. There is
 also support for smoother functions. The smoothers are methods of the classes.
 For example, the KalmanFilter class contains rts_smoother to perform 
-Rauch-Tung-Striebal smoothing. 
+Rauch-Tung-Striebel smoothing.
    
   
 Linear Kalman Filters
