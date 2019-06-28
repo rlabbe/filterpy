@@ -106,7 +106,7 @@ def stratified_resample(weights):
     cumulative_sum = np.cumsum(weights)
     i, j = 0, 0
     while i < N:
-        if positions[i] < cumulative_sum[j]:
+        if positions[i] <= cumulative_sum[j]:
             indexes[i] = j
             i += 1
         else:
@@ -142,7 +142,7 @@ def systematic_resample(weights):
     cumulative_sum = np.cumsum(weights)
     i, j = 0, 0
     while i < N:
-        if positions[i] < cumulative_sum[j]:
+        if positions[i] <= cumulative_sum[j]:
             indexes[i] = j
             i += 1
         else:
