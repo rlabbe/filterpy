@@ -318,9 +318,9 @@ class CubatureKalmanFilter(object):
 
         # evaluate cubature points
         for k in range(self._num_sigmas):
-            self.sigmas_f[k] = self.fx(sigmas[k], dt, *fx_args)
+            sigmas_f[k] = self.fx(sigmas[k], dt, *fx_args)
 
-        self.x, self.P = ckf_transform(self.sigmas_f, self.Q)
+        self.x, self.P = ckf_transform(sigmas_f, self.Q)
 
         # save prior
         self.x_prior = self.x.copy()
@@ -358,6 +358,8 @@ class CubatureKalmanFilter(object):
             R = self.R
         elif isscalar(R):
             R = eye(self.dim_z) * R
+
+        self.sigmas_f = spherical_radial_sigmas(self.x, self.P)
 
         for k in range(self._num_sigmas):
             self.sigmas_h[k] = self.hx(self.sigmas_f[k], *hx_args)
