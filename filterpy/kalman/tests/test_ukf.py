@@ -160,6 +160,27 @@ def test_simplex_sigma_points_1D():
 
     assert Xi.shape == (2, 1)
 
+def test_simplex_sigma_points_2D():
+    """ tests passing 1D data into sigma_points"""
+
+    sp = SimplexSigmaPoints(4)
+
+    Wm, Wc = sp.Wm, sp.Wc
+    assert np.allclose(Wm, Wc, 1e-12)
+    assert len(Wm) == 5
+
+    mean = np.array([-1, 2, 0, 5])
+    cov = np.eye(4)
+    cov[0, 1] = 0.5
+    cov[1, 0] = 0.5
+    cov[1, 1] = 5
+    cov[2, 2] = 3
+
+    Xi = sp.sigma_points(mean, cov)
+    xm, ucov = unscented_transform(Xi, Wm, Wc, 0)
+
+    assert np.allclose(xm, mean)
+    assert np.allclose(ucov, cov)
 
 class RadarSim(object):
     def __init__(self, dt):
