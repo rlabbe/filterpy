@@ -391,6 +391,9 @@ class UnscentedKalmanFilter(object):
         self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
                             self.x_mean, self.residual_x)
 
+        # update sigma points to reflect the new variance of the points
+        self.sigmas_f = self.points_fn.sigma_points(self.x, self.P)
+
         # save prior
         self.x_prior = np.copy(self.x)
         self.P_prior = np.copy(self.P)
