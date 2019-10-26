@@ -410,7 +410,7 @@ class KalmanFilter(object):
         self.H = zeros((dim_z, dim_x))    # Measurement function
         self.R = eye(dim_z)               # state uncertainty
         self._alpha_sq = 1.               # fading memory control
-        self.M = np.zeros((dim_z, dim_z)) # process-measurement cross correlation
+        self.M = np.zeros((dim_x, dim_z)) # process-measurement cross correlation
         self.z = np.array([[None]*self.dim_z]).T
 
         # gain and residual are computed during the innovation step. We
@@ -676,6 +676,8 @@ class KalmanFilter(object):
         process noise and measurement noise are correlated as defined in
         the `self.M` matrix.
 
+        A partial derivation can be found in [1]
+
         If z is None, nothing is changed.
 
         Parameters
@@ -691,6 +693,12 @@ class KalmanFilter(object):
         H : np.array,  or None
             Optionally provide H to override the measurement function for this
             one call, otherwise  self.H will be used.
+
+        References
+        ----------
+
+        .. [1] Bulut, Y. (2011). Applied Kalman filter theory (Doctoral dissertation, Northeastern University).
+               http://people.duke.edu/~hpgavin/SystemID/References/Balut-KalmanFilter-PhD-NEU-2011.pdf
         """
 
         # set to None to force recompute
