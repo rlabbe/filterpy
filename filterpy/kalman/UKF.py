@@ -61,11 +61,11 @@ class UnscentedKalmanFilter(object):
 
 
 
-    hx : function(x)
+    hx : function(x,**hx_args)
         Measurement function. Converts state vector x into a measurement
         vector of shape (dim_z).
 
-    fx : function(x,dt)
+    fx : function(x,dt,**fx_args)
         function that returns the state x transformed by the
         state transistion function. dt is the time step in seconds.
 
@@ -364,7 +364,7 @@ class UnscentedKalmanFilter(object):
             If specified, the time step to be used for this prediction.
             self._dt is used if this is not provided.
 
-        fx : callable f(x, **fx_args), optional
+        fx : callable f(x, dt, **fx_args), optional
             State transition function. If not provided, the default
             function passed in during construction will be used.
 
@@ -415,6 +415,10 @@ class UnscentedKalmanFilter(object):
             points passed through hx. Typically the default function will
             work - you can use x_mean_fn and z_mean_fn to alter the behavior
             of the unscented transform.
+
+        hx : callable h(x, **hx_args), optional
+            Measurement function. If not provided, the default
+            function passed in during construction will be used.
 
         **hx_args : keyword argument
             arguments to be passed into h(x) after x -> h(x, **hx_args)
