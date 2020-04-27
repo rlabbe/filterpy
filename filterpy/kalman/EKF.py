@@ -318,7 +318,8 @@ class ExtendedKalmanFilter(object):
 
         PHT = dot(self.P, H.T)
         self.S = dot(H, PHT) + R
-        self.K = PHT.dot(linalg.inv(self.S))
+        self.SI = linalg.inv(self.S)
+        self.K = PHT.dot(self.SI)
 
         hx = Hx(self.x, *hx_args)
         self.y = residual(z, hx)
