@@ -919,7 +919,7 @@ class KalmanFilter(object):
 
     def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, inv=np.linalg.inv):
         """
-        Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+        Runs the Rauch-Tung-Striebel Kalman smoother on a set of
         means and covariances computed by a Kalman filter. The usual input
         would come from the output of `KalmanFilter.batch_filter()`.
 
@@ -1687,7 +1687,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
 
 def rts_smoother(Xs, Ps, Fs, Qs):
     """
-    Runs the Rauch-Tung-Striebal Kalman smoother on a set of
+    Runs the Rauch-Tung-Striebel Kalman smoother on a set of
     means and covariances computed by a Kalman filter. The usual input
     would come from the output of `KalmanFilter.batch_filter()`.
 
