@@ -29,6 +29,7 @@ from numpy import asarray
 import numpy as np
 from pytest import approx
 from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
+from filterpy.kalman import ExtendedKalmanFilter
 from filterpy.kalman import UnscentedKalmanFilter
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints, SimplexSigmaPoints,
@@ -160,6 +161,27 @@ def test_simplex_sigma_points_1D():
 
     assert Xi.shape == (2, 1)
 
+def test_simplex_sigma_points_2D():
+    """ tests passing 1D data into sigma_points"""
+
+    sp = SimplexSigmaPoints(4)
+
+    Wm, Wc = sp.Wm, sp.Wc
+    assert np.allclose(Wm, Wc, 1e-12)
+    assert len(Wm) == 5
+
+    mean = np.array([-1, 2, 0, 5])
+    cov = np.eye(4)
+    cov[0, 1] = 0.5
+    cov[1, 0] = 0.5
+    cov[1, 1] = 5
+    cov[2, 2] = 3
+
+    Xi = sp.sigma_points(mean, cov)
+    xm, ucov = unscented_transform(Xi, Wm, Wc, 0)
+
+    assert np.allclose(xm, mean)
+    assert np.allclose(ucov, cov)
 
 class RadarSim(object):
     def __init__(self, dt):
@@ -252,7 +274,7 @@ def test_linear_2d_merwe():
     kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt,
                                fx=fx, hx=hx, points=points)
 
-    kf.x = np.array([-1., 1., -1., 1])
+    kf.x = np.array([-1., 1, -1, 1])
     kf.P *= 1.1
 
     # test __repr__ doesn't crash
@@ -295,9 +317,20 @@ def test_linear_2d_simplex():
     kf.x = np.array([-1., 1., -1., 1])
     kf.P *= 0.0001
 
+    mss = MerweScaledSigmaPoints(4, .1, 2., -1)
+    ukf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt,
+                               fx=fx, hx=hx, points=mss)
+
+    ukf.x = np.array([-1., 1., -1., 1])
+    ukf.P *= 1
+
+    x = kf.x
     zs = []
+
     for i in range(20):
-        z = np.array([i+randn()*0.1, i+randn()*0.1])
+        x = fx(x, dt)
+        z = np.array([x[0]+randn()*0.1, x[2]+randn()*0.1])
+
         zs.append(z)
 
     Ms, Ps = kf.batch_filter(zs)
@@ -309,6 +342,47 @@ def test_linear_2d_simplex():
         plt.plot(smooth_x[:, 0], smooth_x[:, 2])
         print(smooth_x)
 
+
+def test_ukf_ekf_comparison():
+    def fx(x, dt):
+        # state transition function - predict next state based
+        # on constant velocity model x = vt + x_0
+        F = np.array([[1.]], dtype=np.float32)
+        return np.dot(F, x)
+
+    def hx(x):
+        # measurement function - convert state into a measurement
+        # where measurements are [x_pos, y_pos]
+        return np.array([x[0]])
+
+    dt = 1.0
+    # create sigma points to use in the filter. This is standard for Gaussian processes
+    points = MerweScaledSigmaPoints(1, alpha=1, beta=2., kappa=0.1)
+
+    ukf = UnscentedKalmanFilter(dim_x=1, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    ukf.x = np.array([0.]) # initial state
+    ukf.P = np.array([[1]]) # initial uncertainty
+    ukf.R = np.diag([1]) # 1 standard
+    ukf.Q = np.diag([1]) # 1 standard
+
+    ekf = ExtendedKalmanFilter(dim_x=1, dim_z=1)
+    ekf.F = np.array([[1]])
+
+    ekf.x = np.array([0.]) # initial state
+    ekf.P = np.array([[1]]) # initial uncertainty
+    ekf.R = np.diag([1]) # 1 standard
+    ekf.Q = np.diag([1]) # 1 standard
+
+    np.random.seed(0)
+    zs = [[np.random.randn()] for i in range(50)] # measurements
+    for z in zs:
+        ukf.predict()
+        ekf.predict()
+        assert np.allclose(ekf.P, ukf.P), 'ekf and ukf differ after prediction'
+
+        ukf.update(z)
+        ekf.update(z, lambda x: np.array([[1]]), hx)
+        assert np.allclose(ekf.P, ukf.P), 'ekf and ukf differ after update'
 
 def test_linear_1d():
     """ should work like a linear KF if problem is linear """
@@ -828,7 +902,7 @@ def test_linear_rts():
         return np.dot(H, x)
 
     sig_t = .1    # peocess
-    sig_o = .00000001   # measurement
+    sig_o = .0001   # measurement
 
     N = 50
     X_true, X_obs = [], []
@@ -942,7 +1016,6 @@ def _test_log_likelihood():
 
 
 if __name__ == "__main__":
-
     plt.close('all')
     test_scaled_weights()
     _test_log_likelihood()
@@ -952,6 +1025,7 @@ if __name__ == "__main__":
     DO_PLOT = True
     test_sigma_plot()
     test_linear_1d()
+    test_ukf_ekf_comparison()
     test_batch_missing_data()
     #
     #est_linear_2d()
@@ -963,6 +1037,10 @@ if __name__ == "__main__":
     kf_circle()
     test_circle()
 
+    test_simplex_sigma_points_2D()
+
+    test_linear_2d_merwe()
+    test_linear_2d_simplex()
 
     '''test_1D_sigma_points()
     plot_sigma_test ()
