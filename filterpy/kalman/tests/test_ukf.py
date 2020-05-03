@@ -28,6 +28,7 @@ from numpy.random import randn
 from numpy import asarray
 import numpy as np
 from pytest import approx
+import scipy.linalg as linalg
 from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
 from filterpy.kalman import ExtendedKalmanFilter
 from filterpy.kalman import UnscentedKalmanFilter
@@ -161,6 +162,7 @@ def test_simplex_sigma_points_1D():
 
     assert Xi.shape == (2, 1)
 
+
 def test_simplex_sigma_points_2D():
     """ tests passing 1D data into sigma_points"""
 
@@ -171,17 +173,21 @@ def test_simplex_sigma_points_2D():
     assert len(Wm) == 5
 
     mean = np.array([-1, 2, 0, 5])
-    cov = np.eye(4)
-    cov[0, 1] = 0.5
-    cov[1, 0] = 0.5
-    cov[1, 1] = 5
-    cov[2, 2] = 3
+
+    cov1 = np.array([[1, 0.5],
+                     [0.5, 1]])
+
+    cov2 = np.array([[5, 0.5],
+                     [0.5, 3]])
+
+    cov = linalg.block_diag(cov1, cov2)
 
     Xi = sp.sigma_points(mean, cov)
-    xm, ucov = unscented_transform(Xi, Wm, Wc, 0)
+    xm, ucov = unscented_transform(Xi, Wm, Wc)
 
     assert np.allclose(xm, mean)
-    assert np.allclose(ucov, cov)
+    assert np.allclose(cov, ucov)
+
 
 class RadarSim(object):
     def __init__(self, dt):
@@ -384,6 +390,7 @@ def test_ukf_ekf_comparison():
         ekf.update(z, lambda x: np.array([[1]]), hx)
         assert np.allclose(ekf.P, ukf.P), 'ekf and ukf differ after update'
 
+
 def test_linear_1d():
     """ should work like a linear KF if problem is linear """
 
@@ -578,20 +585,21 @@ def test_fixed_lag():
     flxs = np.asarray(flxs)
     print(xs[:, 0].shape)
 
-    plt.figure()
-    plt.subplot(311)
-    plt.plot(t, xs[:, 0])
-    plt.plot(t, flxs[:, 0], c='r')
-    plt.plot(t, M2[:, 0], c='g')
-    plt.subplot(312)
-    plt.plot(t, xs[:, 1])
-    plt.plot(t, flxs[:, 1], c='r')
-    plt.plot(t, M2[:, 1], c='g')
+    if DO_PLOT:
+        plt.figure()
+        plt.subplot(311)
+        plt.plot(t, xs[:, 0])
+        plt.plot(t, flxs[:, 0], c='r')
+        plt.plot(t, M2[:, 0], c='g')
+        plt.subplot(312)
+        plt.plot(t, xs[:, 1])
+        plt.plot(t, flxs[:, 1], c='r')
+        plt.plot(t, M2[:, 1], c='g')
 
-    plt.subplot(313)
-    plt.plot(t, xs[:, 2])
-    plt.plot(t, flxs[:, 2], c='r')
-    plt.plot(t, M2[:, 2], c='g')
+        plt.subplot(313)
+        plt.plot(t, xs[:, 2])
+        plt.plot(t, flxs[:, 2], c='r')
+        plt.plot(t, M2[:, 2], c='g')
 
 
 def test_circle():
@@ -845,40 +853,41 @@ def two_radar():
     track = asarray(track)
     time = np.arange(0, len(xs) * dt, dt)
 
-    plt.figure()
-    plt.subplot(411)
-    plt.plot(time, track[:, 0])
-    plt.plot(time, xs[:, 0])
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.ylabel('x position (m)')
-    plt.tight_layout()
+    if DO_PLOT:
+        plt.figure()
+        plt.subplot(411)
+        plt.plot(time, track[:, 0])
+        plt.plot(time, xs[:, 0])
+        plt.legend(loc=4)
+        plt.xlabel('time (sec)')
+        plt.ylabel('x position (m)')
+        plt.tight_layout()
 
-    plt.subplot(412)
-    plt.plot(time, track[:, 1])
-    plt.plot(time, xs[:, 2])
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.ylabel('y position (m)')
-    plt.tight_layout()
+        plt.subplot(412)
+        plt.plot(time, track[:, 1])
+        plt.plot(time, xs[:, 2])
+        plt.legend(loc=4)
+        plt.xlabel('time (sec)')
+        plt.ylabel('y position (m)')
+        plt.tight_layout()
 
-    plt.subplot(413)
-    plt.plot(time, xs[:, 1])
-    plt.plot(time, ms[:, 1])
-    plt.legend(loc=4)
-    plt.ylim([0, 0.2])
-    plt.xlabel('time (sec)')
-    plt.ylabel('x velocity (m/s)')
-    plt.tight_layout()
+        plt.subplot(413)
+        plt.plot(time, xs[:, 1])
+        plt.plot(time, ms[:, 1])
+        plt.legend(loc=4)
+        plt.ylim([0, 0.2])
+        plt.xlabel('time (sec)')
+        plt.ylabel('x velocity (m/s)')
+        plt.tight_layout()
 
-    plt.subplot(414)
-    plt.plot(time, xs[:, 3])
-    plt.plot(time, ms[:, 3])
-    plt.ylabel('y velocity (m/s)')
-    plt.legend(loc=4)
-    plt.xlabel('time (sec)')
-    plt.tight_layout()
-    plt.show()
+        plt.subplot(414)
+        plt.plot(time, xs[:, 3])
+        plt.plot(time, ms[:, 3])
+        plt.ylabel('y velocity (m/s)')
+        plt.legend(loc=4)
+        plt.xlabel('time (sec)')
+        plt.tight_layout()
+        plt.show()
 
 
 def test_linear_rts():
@@ -1011,33 +1020,35 @@ def _test_log_likelihood():
 
     s.to_array()
 
-
-    plt.plot(s.x[:, 0], s.x[:, 2])
+    if DO_PLOT:
+        plt.plot(s.x[:, 0], s.x[:, 2])
 
 
 if __name__ == "__main__":
     plt.close('all')
+    test_simplex_sigma_points_2D()
+
+    test_julier_sigma_points_1D()
+    test_simplex_sigma_points_1D()
+
     test_scaled_weights()
     _test_log_likelihood()
 
     test_linear_rts()
 
-    DO_PLOT = True
+    DO_PLOT = False
     test_sigma_plot()
     test_linear_1d()
     test_ukf_ekf_comparison()
     test_batch_missing_data()
     #
     #est_linear_2d()
-    test_julier_sigma_points_1D()
-    test_simplex_sigma_points_1D()
     test_fixed_lag()
     # DO_PLOT = True
     test_rts()
     kf_circle()
     test_circle()
 
-    test_simplex_sigma_points_2D()
 
     test_linear_2d_merwe()
     test_linear_2d_simplex()
