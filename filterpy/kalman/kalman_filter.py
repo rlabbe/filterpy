@@ -452,7 +452,7 @@ class KalmanFilter(object):
             Optional control vector. If not `None`, it is multiplied by B
             to create the control input into the system.
 
-        B : np.array(dim_x, dim_z), or None
+        B : np.array(dim_x, dim_u), or None
             Optional control transition matrix; a value of None
             will cause the filter to use `self.B`.
 
@@ -578,7 +578,7 @@ class KalmanFilter(object):
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
 
-        B : np.array(dim_x, dim_z), or None
+        B : np.array(dim_x, dim_u), or None
             Optional control transition matrix; a value of None
             will cause the filter to use `self.B`.
         """
