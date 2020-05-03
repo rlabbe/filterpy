@@ -17,6 +17,10 @@ for more information.
 from __future__ import division
 
 from math import exp
+import warnings
+from mpl_toolkits.mplot3d import axes3d
+import matplotlib.pyplot as plt
+
 import numpy as np
 from numpy.linalg import inv
 import scipy
@@ -85,38 +89,42 @@ def test_mahalanobis():
 
 def test_multivariate_gaussian():
 
-    # test that we treat lists and arrays the same
-    mean= (0, 0)
-    cov=[[1, .5], [.5, 1]]
-    a = [[multivariate_gaussian((i, j), mean, cov)
-          for i in (-1, 0, 1)]
-          for j in (-1, 0, 1)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    b = [[multivariate_gaussian((i, j), mean, np.asarray(cov))
-          for i in (-1, 0, 1)]
-          for j in (-1, 0, 1)]
 
-    assert np.allclose(a, b)
+        # test that we treat lists and arrays the same
+        mean= (0, 0)
+        cov=[[1, .5], [.5, 1]]
+        a = [[multivariate_gaussian((i, j), mean, cov)
+              for i in (-1, 0, 1)]
+              for j in (-1, 0, 1)]
 
-    a = [[multivariate_gaussian((i, j), np.asarray(mean), cov)
-          for i in (-1, 0, 1)]
-          for j in (-1, 0, 1)]
-    assert np.allclose(a, b)
+        b = [[multivariate_gaussian((i, j), mean, np.asarray(cov))
+              for i in (-1, 0, 1)]
+              for j in (-1, 0, 1)]
 
-    try:
-        multivariate_gaussian(1, 1, -1)
-    except:
-        pass
-    else:
-        assert False, "negative variances are meaningless"
+        assert np.allclose(a, b)
 
-    # test that we get the same results as scipy.stats.multivariate_normal
-    xs = np.random.randn(1000)
-    mean = np.random.randn(1000)
-    var = np.random.random(1000) * 5
+        a = [[multivariate_gaussian((i, j), np.asarray(mean), cov)
+              for i in (-1, 0, 1)]
+              for j in (-1, 0, 1)]
+        assert np.allclose(a, b)
 
-    for x, m, v in zip(xs, mean, var):
-        assert abs(multivariate_gaussian(x, m, v) - scipy.stats.multivariate_normal(m, v).pdf(x)) < 1.e-12
+        try:
+            multivariate_gaussian(1, 1, -1)
+        except:
+            pass
+        else:
+            assert False, "negative variances are meaningless"
+
+        # test that we get the same results as scipy.stats.multivariate_normal
+        xs = np.random.randn(1000)
+        mean = np.random.randn(1000)
+        var = np.random.random(1000) * 5
+
+        for x, m, v in zip(xs, mean, var):
+            assert abs(multivariate_gaussian(x, m, v) - scipy.stats.multivariate_normal(m, v).pdf(x)) < 1.e-12
 
 
 def _is_inside_ellipse(x, y, ex, ey, orientation, width, height):
