@@ -21,14 +21,17 @@ from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
                              ExtendedKalmanFilter)
 
 def test_kinematic_filter():
-    global kf
-
     # make sure the default matrices are shaped correctly
-    for dim_x in range(1,4):
-        for order in range (0, 3):
-            kf = kinematic_kf(dim=dim_x, order=order)
-            kf.predict()
-            kf.update(np.zeros((dim_x, 1)))
+    for dim_z in range(1, 4):
+        for dim_x in range(1, 4):
+            for order in range (0, 3):
+                kf = kinematic_kf(dim=dim_x, order=order, dim_z=dim_z)
+                kf.predict()
+                kf.update(np.zeros((dim_z, 1)))
+
+                kf = kinematic_kf(dim=dim_x, order=order, dim_z=dim_z, order_by_dim=False)
+                kf.predict()
+                kf.update(np.zeros((dim_z, 1)))
 
 
     # H is tricky, make sure it is shaped and assigned correctly
@@ -37,18 +40,31 @@ def test_kinematic_filter():
     assert kf.F.shape == (6, 6)
     assert kf.P.shape == (6, 6)
     assert kf.Q.shape == (6, 6)
-    assert kf.R.shape == (2, 2)
-    assert kf.H.shape == (2, 6)
+    assert kf.R.shape == (1, 1)
+    assert kf.H.shape == (1, 6)
 
-    H = np.array([[1, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 1, 0, 0]], dtype=float)
-    assert np.array_equal(H, kf.H)
+    H = np.array([[1., 0, 0, 1, 0, 0]])
+    assert np.array_equal(H, kf.H), "H is {}, should be {}".format(kf.H, H)
 
-    kf = kinematic_kf(dim=3, order=2, order_by_dim=False)
-    H = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 1, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 1, 0, 0, 0, 0, 0, 0]], dtype=float)
-    assert np.array_equal(H, kf.H)
+
+    kf = kinematic_kf(dim=2, order=2, order_by_dim=False)
+    assert kf.x.shape == (6, 1)
+    assert kf.F.shape == (6, 6)
+    assert kf.P.shape == (6, 6)
+    assert kf.Q.shape == (6, 6)
+    assert kf.R.shape == (1, 1)
+    assert kf.H.shape == (1, 6)
+
+    H = np.array([[1., 1, 0, 0, 0, 0]])
+    assert np.array_equal(H, kf.H), "H is\n{}\nshould be\n{}".format(kf.H, H)
+
+
+    kf = kinematic_kf(dim=1, order=2, dim_z=3, order_by_dim=False)
+    H = np.array([[1, 0, 0],
+                  [1, 0, 0],
+                  [1, 0, 0.]])
+    assert np.array_equal(H, kf.H), "H is\n{}\nshould be\n{}".format(kf.H, H)
+
 
 
 def test_saver_UKF():

@@ -151,7 +151,6 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
     if order_by_dim:
         diag = [F] * dim
         kf.F = block_diag(*diag)
-
     else:
         kf.F.fill(0.0)
         for i, x in enumerate(F.ravel()):
@@ -161,18 +160,13 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
             kf.F[ix:ix+dim, iy:iy+dim] = f
 
     if order_by_dim:
-        for i in range(dim):
-            kf.H[i, i * dim_x] = 1.
+        for i in range(dim_z):
+            for j in range(dim):
+                kf.H[i, j * dim_x] = 1.
     else:
-        for i in range(dim):
-            kf.H[i, i] = 1.
+        for i in range(dim_z):
+            for j in range(dim):
+                kf.H[i, j] = 1.
 
     return kf
 
-
-if __name__ == "__main__":
-    _kf = kinematic_kf(2, 1, dt=3., order_by_dim=False)
-    print(_kf.F)
-    print('\n\n')
-    _kf = kinematic_kf(3, 1, dt=3., order_by_dim=False)
-    print(_kf.F)

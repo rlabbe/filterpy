@@ -308,7 +308,7 @@ def reshape_z(z, dim_z, ndim):
         z = z.T
 
     if z.shape != (dim_z, 1):
-        raise ValueError('z must be convertible to shape ({}, 1)'.format(dim_z))
+        raise ValueError('z (shape {}) must be convertible to shape ({}, 1)'.format(z.shape, dim_z))
 
     if ndim == 1:
         z = z[:, 0]
