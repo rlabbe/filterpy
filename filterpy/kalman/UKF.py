@@ -133,7 +133,7 @@ class UnscentedKalmanFilter(object):
                 if y > np.pi:
                     y -= 2*np.pi
                 if y < -np.pi:
-                    y = 2*np.pi
+                    y += 2*np.pi
                 return y
 
     Attributes
