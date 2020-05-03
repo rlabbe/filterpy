@@ -16,7 +16,7 @@ for more information.
 
 __version__ = "1.4.5"
 
-_all__ = ['common', 'discrete_bayes', 'gh', 'hinfinity',
+__all__ = ['common', 'discrete_bayes', 'gh', 'hinfinity',
            'kalman', 'leastsq', 'memory', 'monte_carlo', 'stats']
 
 from . import common
