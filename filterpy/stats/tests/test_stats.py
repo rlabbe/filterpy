@@ -18,9 +18,8 @@ from __future__ import division
 
 from math import exp
 import warnings
-from mpl_toolkits.mplot3d import axes3d
 import matplotlib.pyplot as plt
-
+from mpl_toolkits.mplot3d import axes3d
 import numpy as np
 from numpy.linalg import inv
 import scipy
