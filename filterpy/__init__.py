@@ -15,3 +15,15 @@ for more information.
 """
 
 __version__ = "1.4.5"
+
+_all__ = ['common', 'discrete_bayes', 'gh', 'hinfinity',
+           'kalman', 'leastsq', 'memory', 'monte_carlo', 'stats']
+
+from . import common
+from . import discrete_bayes
+from . import gh
+from . import hinfinity
+from . import leastsq
+from . import memory
+from . import monte_carlo
+from . import stats
