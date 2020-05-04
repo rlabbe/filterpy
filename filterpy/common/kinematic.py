@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#pylint: disable=invalid-name
+#pylint: disable=invalid-name, too-many-locals, import-outside-toplevel
 
 """Copyright 2018 Roger R Labbe Jr.
 
@@ -137,6 +137,7 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
     """
 
     from filterpy.kalman import KalmanFilter
+
     if dim < 1:
         raise ValueError("dim must be >= 1")
     if order < 0:
@@ -169,4 +170,3 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
                 kf.H[i, j] = 1.
 
     return kf
-

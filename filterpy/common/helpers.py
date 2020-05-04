@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#pylint: disable=invalid-name
+#pylint: disable=invalid-name, bare-except
 
 """Copyright 2015 Roger R Labbe Jr.
 
@@ -361,7 +361,7 @@ def inv_diagonal(S):
 
 
 def outer_product_sum(A, B=None):
-    """
+    r"""
     Computes the sum of the outer products of the rows in A and B
 
         P = \Sum {A[i] B[i].T} for i in 0..N

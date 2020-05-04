@@ -3,7 +3,8 @@ Steps to Create Release
 
 * run pytest
 
-* run pylint --disable=similarities filterpy
+* run pylint --disable=similarities --disable=R0205 filterpy
+  R0205 turns off warning about deriving from object. We still support 2.7, so it is needed
 
 * update filterpy/filterpy/__init__.py with the version number.
 

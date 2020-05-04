@@ -23,7 +23,7 @@ from copy import deepcopy
 from math import log, exp, sqrt
 import sys
 import numpy as np
-from numpy import eye, zeros, dot, isscalar, outer
+from numpy import eye, zeros, dot, isscalar
 from scipy.linalg import inv, cholesky
 from filterpy.stats import logpdf
 from filterpy.common import pretty_str, outer_product_sum
@@ -376,7 +376,8 @@ class CubatureKalmanFilter(object):
         self.y = self.residual_z(z, zp)   # residual
 
         self.x = self.x + dot(self.K, self.y)
-        self.P = self.P - dot(self.K, self.S).dot(self.K.T)
+        self.P = self.P - dot(self.K, self.S).dot(self.K.T) # pylint: disable=no-member
+
 
         # save measurement and posterior state
         self.z = deepcopy(z)

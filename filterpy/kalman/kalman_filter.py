@@ -123,7 +123,6 @@ from __future__ import absolute_import, division
 from copy import deepcopy
 from math import log, exp, sqrt
 import sys
-import warnings
 import numpy as np
 from numpy import dot, zeros, eye, isscalar, shape
 import numpy.linalg as linalg
@@ -1295,7 +1294,7 @@ class KalmanFilter(object):
 
         if H.shape[0] == 1:
             # r can be scalar, 1D, or 2D in this case
-            assert r_shape == () or r_shape == (1,) or r_shape == (1, 1), \
+            assert r_shape in [(), (1,), (1, 1)], \
             "R must be scalar or one element array, but is shaped {}".format(
                 r_shape)
         else:

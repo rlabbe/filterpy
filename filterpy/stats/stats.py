@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name, too-many-arguments, bad-whitespace
 # pylint: disable=too-many-lines, too-many-locals, len-as-condition
+# pylint: disable=import-outside-toplevel
 
 """Copyright 2015 Roger R Labbe Jr.
 

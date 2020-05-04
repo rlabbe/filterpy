@@ -254,7 +254,7 @@ class EnsembleKalmanFilter(object):
 
         P_zz = (outer_product_sum(sigmas_h - z_mean) / (N-1)) + R
         P_xz = outer_product_sum(
-                self.sigmas - self.x, sigmas_h - z_mean) / (N - 1)
+            self.sigmas - self.x, sigmas_h - z_mean) / (N - 1)
 
         self.S = P_zz
         self.SI = self.inv(self.S)

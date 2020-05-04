@@ -502,9 +502,9 @@ class SimplexSigmaPoints(object):
         Istar = np.array([[-1/np.sqrt(2*lambda_), 1/np.sqrt(2*lambda_)]])
 
         for d in range(2, n+1):
-            row = np.ones((1, Istar.shape[1] + 1)) * 1. / np.sqrt(lambda_*d*(d + 1))
+            row = np.ones((1, Istar.shape[1] + 1)) * 1. / np.sqrt(lambda_*d*(d + 1)) # pylint: disable=unsubscriptable-object
             row[0, -1] = -d / np.sqrt(lambda_ * d * (d + 1))
-            Istar = np.r_[np.c_[Istar, np.zeros((Istar.shape[0]))], row]
+            Istar = np.r_[np.c_[Istar, np.zeros((Istar.shape[0]))], row] # pylint: disable=unsubscriptable-object
 
         I = np.sqrt(n)*Istar
         scaled_unitary = (U.T).dot(I)

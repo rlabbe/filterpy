@@ -124,7 +124,7 @@ def Q_discrete_white_noise(dim, dt=1., var=1., block_size=1, order_by_dim=True):
     John Wiley & Sons, 2001. Page 274.
     """
 
-    if not (dim == 2 or dim == 3 or dim == 4):
+    if dim not in [2, 3, 4]:
         raise ValueError("dim must be between 2 and 4")
 
     if dim == 2:
@@ -195,7 +195,7 @@ def Q_continuous_white_noise(dim, dt=1., spectral_density=1.,
            [0.        , 0.        , 0.        , 0.        , 0.005     , 0.1       ]])
     """
 
-    if not (dim == 2 or dim == 3 or dim == 4):
+    if dim not in [2, 3, 4]:
         raise ValueError("dim must be between 2 and 4")
 
     if dim == 2:
@@ -288,6 +288,10 @@ def van_loan_discretization(F, G, dt):
 
 
 def linear_ode_discretation(F, L=None, Q=None, dt=1.):
+    """
+    Not sure what this does, probably should be removed
+    """
+
     n = F.shape[0]
 
     if L is None:

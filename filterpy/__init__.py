@@ -23,6 +23,7 @@ from . import common
 from . import discrete_bayes
 from . import gh
 from . import hinfinity
+from . import kalman
 from . import leastsq
 from . import memory
 from . import monte_carlo
