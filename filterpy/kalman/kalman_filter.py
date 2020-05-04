@@ -501,6 +501,9 @@ class KalmanFilter(object):
             measurement for this update. z can be a scalar if dim_z is 1,
             otherwise it must be convertible to a column vector.
 
+            If you pass in a value of H, z must be a column vector the
+            of the correct size.
+
         R : np.array, scalar, or None
             Optionally provide R to override the measurement noise for this
             one call, otherwise  self.R will be used.
@@ -522,14 +525,13 @@ class KalmanFilter(object):
             self.y = zeros((self.dim_z, 1))
             return
 
-        z = reshape_z(z, self.dim_z, self.x.ndim)
-
         if R is None:
             R = self.R
         elif isscalar(R):
             R = eye(self.dim_z) * R
 
         if H is None:
+            z = reshape_z(z, self.dim_z, self.x.ndim)
             H = self.H
 
         # y = z - Hx
@@ -713,8 +715,6 @@ class KalmanFilter(object):
             self.y = zeros((self.dim_z, 1))
             return
 
-        z = reshape_z(z, self.dim_z, self.x.ndim)
-
         if R is None:
             R = self.R
         elif isscalar(R):
@@ -722,6 +722,7 @@ class KalmanFilter(object):
 
         # rename for readability and a tiny extra bit of speed
         if H is None:
+            z = reshape_z(z, self.dim_z, self.x.ndim)
             H = self.H
 
         # handle special case: if z is in form [[z]] but x is not a column
