@@ -1024,8 +1024,59 @@ def _test_log_likelihood():
         plt.plot(s.x[:, 0], s.x[:, 2])
 
 
+def test_vhartman():
+    """
+    Code provided by vhartman on github #172
+
+    https://github.com/rlabbe/filterpy/issues/172
+    """
+
+    def fx(x, dt):
+        # state transition function - predict next state based
+        # on constant velocity model x = vt + x_0
+        F = np.array([[1.]], dtype=np.float32)
+        return np.dot(F, x)
+
+    def hx(x):
+       # measurement function - convert state into a measurement
+       # where measurements are [x_pos, y_pos]
+       return np.array([x[0]])
+
+    dt = 1.0
+    # create sigma points to use in the filter. This is standard for Gaussian processes
+    points = MerweScaledSigmaPoints(1, alpha=1, beta=2., kappa=0.1)
+
+    kf = UnscentedKalmanFilter(dim_x=1, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    kf.x = np.array([0.]) # initial state
+    kf.P = np.array([[1]]) # initial uncertainty
+    kf.R = np.diag([1]) # 1 standard
+    kf.Q = np.diag([1]) # 1 standard
+
+    ekf = ExtendedKalmanFilter(dim_x=1, dim_z=1)
+    ekf.F = np.array([[1]])
+
+    ekf.x = np.array([0.]) # initial state
+    ekf.P = np.array([[1]]) # initial uncertainty
+    ekf.R = np.diag([1]) # 1 standard
+    ekf.Q = np.diag([1]) # 1 standard
+
+    np.random.seed(0)
+    zs = [[np.random.randn()] for i in range(50)] # measurements
+    for z in zs:
+        kf.predict()
+        ekf.predict()
+        assert np.allclose(ekf.P, kf.P)
+        assert np.allclose(ekf.x, kf.x)
+
+        kf.update(z)
+        ekf.update(z, lambda x: np.array([[1]]), hx)
+        assert np.allclose(ekf.P, kf.P)
+        assert np.allclose(ekf.x, kf.x)
+
 if __name__ == "__main__":
     plt.close('all')
+
+    test_vhartman()
     test_simplex_sigma_points_2D()
 
     test_julier_sigma_points_1D()
