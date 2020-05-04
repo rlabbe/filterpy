@@ -448,9 +448,8 @@ class KalmanFilter(object):
         Parameters
         ----------
 
-        u : np.array
-            Optional control vector. If not `None`, it is multiplied by B
-            to create the control input into the system.
+        u : np.array, default 0
+            Optional control vector.
 
         B : np.array(dim_x, dim_u), or None
             Optional control transition matrix; a value of None
@@ -473,6 +472,7 @@ class KalmanFilter(object):
             Q = self.Q
         elif isscalar(Q):
             Q = eye(self.dim_x) * Q
+
 
         # x = Fx + Bu
         if B is not None and u is not None:
@@ -1006,16 +1006,28 @@ class KalmanFilter(object):
 
         return (x, P, K, Pp)
 
-    def get_prediction(self, u=0):
+    def get_prediction(self, u=None, B=None, F=None, Q=None):
         """
-        Predicts the next state of the filter and returns it without
-        altering the state of the filter.
+        Predict next state (prior) using the Kalman filter state propagation
+        equations and returns it without modifying the object.
 
         Parameters
         ----------
 
-        u : np.array
-            optional control input
+        u : np.array, default 0
+            Optional control vector.
+
+        B : np.array(dim_x, dim_u), or None
+            Optional control transition matrix; a value of None
+            will cause the filter to use `self.B`.
+
+        F : np.array(dim_x, dim_x), or None
+            Optional state transition matrix; a value of None
+            will cause the filter to use `self.F`.
+
+        Q : np.array(dim_x, dim_x), scalar, or None
+            Optional process noise matrix; a value of None will cause the
+            filter to use `self.Q`.
 
         Returns
         -------
@@ -1024,9 +1036,25 @@ class KalmanFilter(object):
             State vector and covariance array of the prediction.
         """
 
-        x = dot(self.F, self.x) + dot(self.B, u)
-        P = self._alpha_sq * dot(dot(self.F, self.P), self.F.T) + self.Q
-        return (x, P)
+        if B is None:
+            B = self.B
+        if F is None:
+            F = self.F
+        if Q is None:
+            Q = self.Q
+        elif isscalar(Q):
+            Q = eye(self.dim_x) * Q
+
+        # x = Fx + Bu
+        if B is not None and u is not None:
+            x = dot(F, self.x) + dot(B, u)
+        else:
+            x = dot(F, self.x)
+
+        # P = FPF' + Q
+        P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
+
+        return x, P
 
     def get_update(self, z=None):
         """
