@@ -136,6 +136,12 @@ class UnscentedKalmanFilter(object):
                     y += 2*np.pi
                 return y
 
+    state_add: callable (x, y), optional, default np.add
+        Function that subtracts two state vectors, returning a new
+        state vector. Used during update to compute `x + K@y`
+        You will have to supply this if your state variable does not
+        suport addition, such as it contains angles.
+
     Attributes
     ----------
 
@@ -278,7 +284,8 @@ class UnscentedKalmanFilter(object):
     def __init__(self, dim_x, dim_z, dt, hx, fx, points,
                  sqrt_fn=None, x_mean_fn=None, z_mean_fn=None,
                  residual_x=None,
-                 residual_z=None):
+                 residual_z=None,
+                 state_add=None):
         """
         Create a Kalman filter. You are responsible for setting the
         various state variables to reasonable values; the defaults below will
@@ -326,6 +333,11 @@ class UnscentedKalmanFilter(object):
             self.residual_z = np.subtract
         else:
             self.residual_z = residual_z
+
+        if state_add is None:
+            self.state_add = np.add
+        else:
+            self.state_add = state_add
 
         # sigma points transformed through f(x) and h(x)
         # variables for efficiency so we don't recreate every update
@@ -465,7 +477,7 @@ class UnscentedKalmanFilter(object):
         self.y = self.residual_z(z, zp)   # residual
 
         # update Gaussian state estimate (x, P)
-        self.x = self.x + dot(self.K, self.y)
+        self.x = self.state_add(self.x, dot(self.K, self.y))
         self.P = self.P - dot(self.K, dot(self.S, self.K.T))
 
         # save measurement and posterior state
