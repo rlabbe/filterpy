@@ -1273,7 +1273,7 @@ class KalmanFilter(object):
                    self.dim_x, self.dim_x, P.shape)
 
         assert Q.shape == (self.dim_x, self.dim_x), \
-               "Shape of P must be ({},{}), but is {}".format(
+               "Shape of Q must be ({},{}), but is {}".format(
                    self.dim_x, self.dim_x, P.shape)
 
         assert F.shape == (self.dim_x, self.dim_x), \
