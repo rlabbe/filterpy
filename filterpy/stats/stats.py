@@ -156,17 +156,17 @@ def logpdf(x, mean=None, cov=1, allow_singular=True):
 
 def gaussian(x, mean, var, normed=True):
     """
-    returns normal distribution (pdf) for x given a Gaussian with the
+    returns probability density function (pdf) for x given a Gaussian with the
     specified mean and variance. All must be scalars.
 
-    gaussian (1,2,3) is equivalent to scipy.stats.norm(2,math.sqrt(3)).pdf(1)
+    gaussian (1,2,3) is equivalent to scipy.stats.norm(2, math.sqrt(3)).pdf(1)
     It is quite a bit faster albeit much less flexible than the latter.
 
     Parameters
     ----------
 
     x : scalar or array-like
-        The value for which we compute the probability
+        The value(s) for which we compute the distribution
 
     mean : scalar
         Mean of the Gaussian
@@ -174,14 +174,14 @@ def gaussian(x, mean, var, normed=True):
     var : scalar
         Variance of the Gaussian
 
-    norm : bool, default True
+    normed : bool, default True
         Normalize the output if the input is an array of values.
 
     Returns
     -------
 
-    probability : float
-        probability of x for the Gaussian (mean, var). E.g. 0.101 denotes
+    pdf : float
+        probability distribution of x for the Gaussian (mean, var). E.g. 0.101 denotes
         10.1%.
 
     Examples
@@ -194,11 +194,11 @@ def gaussian(x, mean, var, normed=True):
     array([1.34985669e-06, 3.48132630e-05, 3.17455867e-08])
     """
 
-    g = ((2*math.pi*var)**-.5) * np.exp((-0.5*(np.asarray(x)-mean)**2.) / var)
-    if normed and len(np.shape(g)) > 0:
-        g = g / sum(g)
+    pdf = ((2*math.pi*var)**-.5) * np.exp((-0.5*(np.asarray(x)-mean)**2.) / var)
+    if normed and len(np.shape(pdf)) > 0:
+        pdf = pdf / sum(pdf)
 
-    return g
+    return pdf
 
 
 
