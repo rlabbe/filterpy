@@ -132,7 +132,7 @@ class CubatureKalmanFilter(object):
 
     fx : function(x, dt)
         function that returns the state x transformed by the
-        state transistion function. dt is the time step in seconds.
+        state transition function. dt is the time step in seconds.
 
     x_mean_fn : callable  (sigma_points, weights), optional
         Function that computes the mean of the provided sigma points
