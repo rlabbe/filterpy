@@ -23,7 +23,7 @@ from filterpy.common import (linear_ode_discretation, Q_discrete_white_noise,
 from numpy import array
 
 def near_eq(x,y):
-    return abs(x-y) < 1.e-18
+    return abs(x-y) < 1.e-17
 
 
 def test_kinematic():
