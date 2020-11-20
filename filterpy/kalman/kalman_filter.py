@@ -866,7 +866,7 @@ class KalmanFilter(object):
             Fs = [np.array([[1., dt], [0, 1]] for dt in dts]
 
             (mu, cov, _, _) = kf.batch_filter(zs, Fs=Fs)
-            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs)
+            (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs)
         """
 
         #pylint: disable=too-many-statements
@@ -1669,7 +1669,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
 
         (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
                                           Bs=None, us=None, update_first=False)
-        (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+        (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
 
     """
 
