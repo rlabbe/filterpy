@@ -756,6 +756,66 @@ class KalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
+    def update_sequential(self, i, z_i, R_ii=None, H_i=None):
+        """
+        Add a single input measurement (z_i) to the Kalman filter.
+        In sequential processing, inputs are processed one at a time.
+
+        If z is None, nothing is computed. However, x_post and P_post are
+        updated with the prior (x_prior, P_prior), and self.z is set to None.
+
+        Parameters
+        ----------
+        i : integer
+            Index of the measurement input.
+
+        z_i : scalar
+            Measurement of input #i for this partial update.
+
+        R_ii : scalar, or None
+            Optionally provide R[i, i] to override the measurement noise of
+            input #i for this one call, otherwise self.R[i, i] will be used.
+            Sequential processing assumes R is diagonal.
+
+        H_i : np.array, or None
+            Optionally provide H[i] to override the partial measurement
+            function for this one call, otherwise self.H[i] will be used.
+        """
+
+        if R_ii is None:
+            R_ii = self.R[i, i]
+
+        if H_i is None:
+            H_i = self.H[i]
+
+        H_i = np.reshape(H_i, [1, self.dim_x])
+
+        # y_i = z_i - H_i @ x
+        # error (residual) between measurement and prediction
+        y_i = z_i - dot(H_i, self.x)
+        self.y[i] = y_i
+
+        # common subexpression for speed
+        PHT = dot(self.P, H_i.T)
+
+        # project system uncertainty onto the measurement input #i
+        S_i = dot(H_i, PHT) + R_ii
+        K_i = PHT * (1.0 / S_i)
+        self.K[:,i] = K_i[:,0]
+        I_KH = self._I - np.dot(K_i, H_i)
+
+        # x = x + K_i @ y_i
+        # update state estimation with residual scaled by the kalman gain
+        self.x += dot(K_i, y_i)
+
+        # compute the posterior covariance
+        self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(K_i * R_ii, K_i.T)
+
+        # save measurement component #i and the posterior state
+        self.z[i] = z_i
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
+
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
                      Rs=None, Bs=None, us=None, update_first=False,
                      saver=None):
