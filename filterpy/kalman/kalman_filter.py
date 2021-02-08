@@ -161,7 +161,9 @@ class KalmanFilter(object):
     Here is a filter that tracks position and velocity using a sensor that only
     reads position.
 
-    First construct the object with the required dimensionality.
+    First construct the object with the required dimensionality. Here the state
+    (`dim_x`) has 2 coefficients (position and velocity), and the measurement
+    (`dim_z`) has one. In FilterPy `x` is the state, `z` is the measurement.
 
     .. code::
 
@@ -191,27 +193,19 @@ class KalmanFilter(object):
             f.F = np.array([[1.,1.],
                             [0.,1.]])
 
-    Define the measurement function:
+    Define the measurement function. Here we need to convert a position-velocity
+    vector into just a position vector, so we use:
 
         .. code::
 
-        f.H = np.array([[1.,0.]])
+        f.H = np.array([[1., 0.]])
 
-    Define the covariance matrix. Here I take advantage of the fact that
-    P already contains np.eye(dim_x), and just multiply by the uncertainty:
-
-    .. code::
-
-        f.P *= 1000.
-
-    I could have written:
+    Define the state's covariance matrix P. 
 
     .. code::
 
         f.P = np.array([[1000.,    0.],
                         [   0., 1000.] ])
-
-    You decide which is more readable and understandable.
 
     Now assign the measurement noise. Here the dimension is 1x1, so I can
     use a scalar
@@ -226,7 +220,7 @@ class KalmanFilter(object):
 
         f.R = np.array([[5.]])
 
-    Note that this must be a 2 dimensional array, as must all the matrices.
+    Note that this must be a 2 dimensional array.
 
     Finally, I will assign the process noise. Here I will take advantage of
     another FilterPy library function:
@@ -239,15 +233,14 @@ class KalmanFilter(object):
 
     Now just perform the standard predict/update loop:
 
-    while some_condition_is_true:
-
     .. code::
 
-        z = get_sensor_reading()
-        f.predict()
-        f.update(z)
+        while some_condition_is_true:
+            z = get_sensor_reading()
+            f.predict()
+            f.update(z)
 
-        do_something_with_estimate (f.x)
+            do_something_with_estimate (f.x)
 
 
     **Procedural Form**
@@ -309,7 +302,7 @@ class KalmanFilter(object):
 
     x_prior : numpy.array(dim_x, 1)
         Prior (predicted) state estimate. The *_prior and *_post attributes
-        are for convienence; they store the  prior and posterior of the
+        are for convenience; they store the  prior and posterior of the
         current epoch. Read Only.
 
     P_prior : numpy.array(dim_x, dim_x)
@@ -325,16 +318,18 @@ class KalmanFilter(object):
         Last measurement used in update(). Read only.
 
     R : numpy.array(dim_z, dim_z)
-        Measurement noise matrix
+        Measurement noise covariance matrix. Also known as the
+        observation covariance.
 
     Q : numpy.array(dim_x, dim_x)
-        Process noise matrix
+        Process noise covariance matrix. Also known as the transition
+        covariance.
 
     F : numpy.array()
-        State Transition matrix
+        State Transition matrix. Also known as `A` in some formulation.
 
     H : numpy.array(dim_z, dim_x)
-        Measurement function
+        Measurement function. Also known as the observation matrix, or as `C`.
 
     y : numpy.array
         Residual of the update step. Read only.
