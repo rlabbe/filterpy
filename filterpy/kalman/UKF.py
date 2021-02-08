@@ -67,7 +67,7 @@ class UnscentedKalmanFilter(object):
 
     fx : function(x,dt,**fx_args)
         function that returns the state x transformed by the
-        state transistion function. dt is the time step in seconds.
+        state transition function. dt is the time step in seconds.
 
     points : class
         Class which computes the sigma points and weights for a UKF

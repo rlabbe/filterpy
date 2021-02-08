@@ -50,7 +50,7 @@ H : ndarray (dim_z, dim_x)
     measurement function
 
 F : ndarray (dim_x, dim_x)
-    state transistion matrix
+    state transition matrix
 
 B : ndarray (dim_x, dim_u), default 0
     control transition matrix

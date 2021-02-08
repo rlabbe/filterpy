@@ -401,8 +401,8 @@ class KalmanFilter(object):
         self.Q = eye(dim_x)               # process uncertainty
         self.B = None                     # control transition matrix
         self.F = eye(dim_x)               # state transition matrix
-        self.H = zeros((dim_z, dim_x))    # Measurement function
-        self.R = eye(dim_z)               # state uncertainty
+        self.H = zeros((dim_z, dim_x))    # measurement function
+        self.R = eye(dim_z)               # measurement uncertainty
         self._alpha_sq = 1.               # fading memory control
         self.M = np.zeros((dim_x, dim_z)) # process-measurement cross correlation
         self.z = np.array([[None]*self.dim_z]).T
@@ -861,7 +861,7 @@ class KalmanFilter(object):
             Fs = [np.array([[1., dt], [0, 1]] for dt in dts]
 
             (mu, cov, _, _) = kf.batch_filter(zs, Fs=Fs)
-            (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs)
+            (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs)
         """
 
         #pylint: disable=too-many-statements
@@ -1664,7 +1664,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
 
         (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
                                           Bs=None, us=None, update_first=False)
-        (xs, Ps, Ks) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+        (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
 
     """
 
