@@ -13,7 +13,7 @@ https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
 
 This is licensed under an MIT license. See the readme.MD file
 for more information.
-6"""
+"""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
@@ -697,7 +697,7 @@ class MerweScaledSigmaPoints2(object):
  
         return Wm, Wc
  
- def unscented_transform2(sigmas, Wm, Wc, noise_cov=None,
+def unscented_transform2(sigmas, Wm, Wc, noise_cov=None,
                         mean_fn=np.dot, residual_fn=None):
     """ Computes unscented transform of a set of sigma points and weights.
     returns the mean and covariance in a tuple.
