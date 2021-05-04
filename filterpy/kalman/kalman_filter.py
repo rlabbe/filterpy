@@ -1105,6 +1105,7 @@ class KalmanFilter(object):
         Returns the residual for the given measurement (z). Does not alter
         the state of the filter.
         """
+        z = reshape_z(z, self.dim_z, self.x.ndim)
         return z - dot(self.H, self.x_prior)
 
     def measurement_of_state(self, x):
