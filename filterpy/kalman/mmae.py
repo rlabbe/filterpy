@@ -199,7 +199,6 @@ class MMAEFilterBank(object):
         else:
             self.x = np.zeros((self.dim_x, 1))
             for f, p in zip(self.filters, self.p):
-                self.x = np.zeros((self.dim_x, 1))
                 self.x += np.dot(f.x, p)
 
         for x, f, p in zip(self.x, self.filters, self.p):
