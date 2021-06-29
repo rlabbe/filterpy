@@ -334,6 +334,11 @@ class SquareRootKalmanFilter(object):
         """ system uncertainty (P projected to measurement space) """
         return dot(self.S1_2, self.S1_2.T)
 
+    @property
+    def SI(self):
+        """ inverse system uncertainty (P projected to measurement space) """
+        return dot(self.SI1_2.T, self.SI1_2)
+
     def __repr__(self):
         return '\n'.join([
             'SquareRootKalmanFilter object',
@@ -349,6 +354,7 @@ class SquareRootKalmanFilter(object):
             pretty_str('K', self.K),
             pretty_str('y', self.y),
             pretty_str('S', self.S),
+            pretty_str('SI', self.SI),
             pretty_str('M', self.M),
             pretty_str('B', self.B),
             ])
