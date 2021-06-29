@@ -274,7 +274,7 @@ class SquareRootKalmanFilter(object):
     @property
     def Q(self):
         """ Process uncertainty"""
-        return dot(self._Q1_2.T, self._Q1_2)
+        return dot(self._Q1_2, self._Q1_2.T)
 
     @property
     def Q1_2(self):
@@ -290,17 +290,17 @@ class SquareRootKalmanFilter(object):
     @property
     def P(self):
         """ covariance matrix"""
-        return dot(self._P1_2.T, self._P1_2)
+        return dot(self._P1_2, self._P1_2.T)
 
     @property
     def P_prior(self):
         """ covariance matrix of the prior"""
-        return dot(self._P1_2_prior.T, self._P1_2_prior)
+        return dot(self._P1_2_prior, self._P1_2_prior.T)
 
     @property
     def P_post(self):
         """ covariance matrix of the posterior"""
-        return dot(self._P1_2_prior.T, self._P1_2_prior)
+        return dot(self._P1_2_prior, self._P1_2_prior.T)
 
     @property
     def P1_2(self):
@@ -316,7 +316,7 @@ class SquareRootKalmanFilter(object):
     @property
     def R(self):
         """ measurement uncertainty"""
-        return dot(self._R1_2.T, self._R1_2)
+        return dot(self._R1_2, self._R1_2.T)
 
     @property
     def R1_2(self):
