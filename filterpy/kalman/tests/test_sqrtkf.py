@@ -82,7 +82,8 @@ def test_noisy_1d():
     s.to_array()
 
     for i in range(f.P.shape[0]):
-        assert abs(f.P[i,i] - fsq.P[i,i]) < 0.01
+        for j in range(f.P.shape[1]):
+            assert abs(f.P[i,j] - fsq.P[i,j]) < 0.01
 
 
     # now do a batch run with the stored z values so we can test that
