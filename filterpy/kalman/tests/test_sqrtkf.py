@@ -75,6 +75,13 @@ def test_noisy_1d():
         assert abs(f.x[0,0] - fsq.x[0,0]) < 1.e-12
         assert abs(f.x[1,0] - fsq.x[1,0]) < 1.e-12
 
+        S_from_sqrt = fsq.S
+        SI_from_sqrt = fsq.SI
+        for i in range(f.S.shape[0]):
+            for j in range(f.S.shape[1]):
+                assert abs(f.S[i,j] - S_from_sqrt[i,j]) < 1e-6
+                assert abs(f.SI[i,j] - SI_from_sqrt[i,j]) < 1e-6
+
         # save data
         results.append (f.x[0,0])
         measurements.append(z)
