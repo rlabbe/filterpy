@@ -25,7 +25,7 @@ from filterpy.kalman import SquareRootKalmanFilter, KalmanFilter
 
 DO_PLOT = False
 def test_noisy_1d():
-    f = KalmanFilter (dim_x=2, dim_z=1)
+    f = KalmanFilter (dim_x=2, dim_z=2)
 
     f.x = np.array([[2.],
                     [0.]])       # initial state (location and velocity)
@@ -33,12 +33,13 @@ def test_noisy_1d():
     f.F = np.array([[1.,1.],
                     [0.,1.]])    # state transition matrix
 
-    f.H = np.array([[1.,0.]])    # Measurement function
+    f.H = np.array([[1.,0.],
+                    [0.,1.]])    # Measurement function
     f.P *= 1000.                  # covariance matrix
     f.R *= 5                       # state uncertainty
     f.Q *= 0.0001                 # process uncertainty
 
-    fsq = SquareRootKalmanFilter (dim_x=2, dim_z=1)
+    fsq = SquareRootKalmanFilter (dim_x=2, dim_z=2)
 
     fsq.x = np.array([[2.],
                       [0.]])     # initial state (location and velocity)
@@ -46,7 +47,8 @@ def test_noisy_1d():
     fsq.F = np.array([[1.,1.],
                       [0.,1.]])  # state transition matrix
 
-    fsq.H = np.array([[1.,0.]])  # Measurement function
+    fsq.H = np.array([[1.,0.],
+                      [0.,1.]])  # Measurement function
     fsq.P = np.eye(2) * 1000.    # covariance matrix
     fsq.R *= 5                    # state uncertainty
     fsq.Q *= 0.0001               # process uncertainty
@@ -61,8 +63,9 @@ def test_noisy_1d():
     zs = []
     s = Saver(fsq)
     for t in range (100):
-        # create measurement = t plus white noise
-        z = t + random.randn()*20
+        # create measurement = t plus white noise for position and 1 +
+        # white noise for velocity
+        z = np.array([[t], [1.]]) + random.randn(2, 1)*20
         zs.append(z)
 
         # perform kalman filtering
