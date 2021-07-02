@@ -143,7 +143,7 @@ class MerweScaledSigmaPoints(object):
         Returns
         -------
 
-        sigmas : np.array, of size (n, 2n+1)
+        sigmas : np.array, of size (2n+1, n)
             Two dimensional array of sigma points. Each column contains all of
             the sigmas for one dimension in the problem space.
 
@@ -311,7 +311,7 @@ class JulierSigmaPoints(object):
         Returns
         -------
 
-        sigmas : np.array, of size (n, 2n+1)
+        sigmas : np.array, of size (2n+1, n)
             2D array of sigma points :math:`\chi`. Each column contains all of
             the sigmas for one dimension in the problem space. They
             are ordered as:
@@ -474,7 +474,7 @@ class SimplexSigmaPoints(object):
         Returns
         -------
 
-        sigmas : np.array, of size (n, n+1)
+        sigmas : np.array, of size (n+1, n)
             Two dimensional array of sigma points. Each column contains all of
             the sigmas for one dimension in the problem space.
 
