@@ -533,7 +533,7 @@ class SimplexSigmaPoints(object):
             pretty_str('sqrt', self.sqrt)
             ])
 
-class EbeigbeSigmaPoints(object):
+class GeneralizedSigmaPoints(object):
     '''
     Generates sigma points and weights according to the generalized unscented
     transformation method presented in [1]. It utilizes the first four 
@@ -576,11 +576,25 @@ class EbeigbeSigmaPoints(object):
     '''
     def __init__(self, n, P, S, K, positively_constrained=False, k=None, x=None):
         self.n = n
+        # NOTE: add dimention verification
         
-        self.x = x
-        self.P = P
-        self.S = S
-        self.K = K
+        if x is not None:
+            if np.isscalar(x):
+                x = np.asarray([x])
+            x = x.reshape(-1, 1)
+
+        if np.isscalar(P):
+            P = np.eye(n) * P
+        else:
+            P = np.atleast_2d(P)
+        
+        if np.isscalar(S):
+            S = np.asarray([S])
+        
+        if np.isscalar(K):
+            K = np.asarray([K])
+        
+        self.x, self.P, self.S, self.K = x, P, S, K
         
         self.k = k
         self.positively_constrained = positively_constrained
@@ -625,22 +639,39 @@ class EbeigbeSigmaPoints(object):
             Ordered by Xi_0, Xi_{1..n}
         """
               
+        if self.n != np.size(x):
+            raise ValueError("expected size(x) {}, but size is {}".format(
+                self.n, np.size(x)))
+
         n = self.n
+
+        if np.isscalar(x):
+            x = np.asarray([x])
+        # x = x.reshape(-1, 1)
+
+        if np.isscalar(P):
+            P = np.eye(n) * P
+        else:
+            P = np.atleast_2d(P)
         
+        # NOTE: add warning when x is different.
+        
+        sigmas = np.zeros((2*n+1, n))
         for i in range(1, self.n+1):
-            sigmas = np.zeros(2*n+1)
-        
+            i_=i-1
             sigmas[0]   = x
-            sigmas[i]   = x - self.s[i  ]*np.sqrt(P)
-            sigmas[i+n] = x + self.s[i+1]*np.sqrt(P)
+            sigmas[i]   = x - self.s[i  ]*np.sqrt(P[:, i_])
+            sigmas[i+n] = x + self.s[i+n]*np.sqrt(P[:, i_])
         
         if self.positively_constrained:
             self._redefine_scale_param(sigmas)
             self._compute_weights(compute_free_parameter=False)
             
-            sigmas[0]   = x
-            sigmas[i]   = x - self.s[i  ]*np.sqrt(P)
-            sigmas[i+n] = x + self.s[i+1]*np.sqrt(P)
+            for i in range(1, self.n+1):
+                i_=i-1
+                sigmas[0]   = x
+                sigmas[i]   = x - self.s[i  ]*np.sqrt(P[:, i_])
+                sigmas[i+n] = x + self.s[i+n]*np.sqrt(P[:, i_])
         
         return sigmas
     
@@ -658,23 +689,24 @@ class EbeigbeSigmaPoints(object):
         
         n = self.n
         
+        std = np.sqrt(np.diag(self.P))
+            
+        # standarized values        
+        S_ = self.S/std**3.0
+        K_ = self.K/std**4.0
+        
+        w = np.zeros(2*n+1)
         for i in range(1, self.n+1):
-            std = np.sqrt(self.P)
-            
-            # standarized values        
-            S_ = self.S/std**3.0
-            K_ = self.K/std**4.0
-            
+            i_ = i - 1
             # free parameter
             if compute_free_parameter:
-                self.s[i] = 0.5*(-S_ + np.sqrt(4*K_ - 3*S_**2.0))
+                self.s[i] = 0.5*(-S_[i_] + np.sqrt(4*K_[i_] - 3*S_[i_]**2.0))
             
             # weights
-            w = np.zeros(2*n+1)
-            self.s[i+n] = self.s[i] + S_
+            self.s[i+n] = self.s[i] + S_[i_]
             w[i+n] = 1.0/(self.s[i+n]*(self.s[i] + self.s[i+n]))
             w[i] = self.s[i+n]/self.s[i]*w[i+n]
-            w[0] = 1 - np.sum(w)
+        w[0] = 1 - np.sum(w)
         
         self.Wm = w
         self.Wc = w
@@ -696,12 +728,13 @@ class EbeigbeSigmaPoints(object):
         
     def __repr__(self):
         return '\n'.join([
-            'EbeigbeSigmaPoints object',
+            'GeneralizedSigmaPoints object',
             pretty_str('n', self.n),
             pretty_str('x', self.x),
             pretty_str('P', self.P),
             pretty_str('S', self.S),
             pretty_str('K', self.K),
+            pretty_str('s', self.s),
             pretty_str('Positively constrained', self.positively_constrained),
             pretty_str('k', self.k),
             pretty_str('Wm', self.Wm),
