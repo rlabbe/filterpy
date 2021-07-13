@@ -581,7 +581,7 @@ class GeneralizedSigmaPoints(object):
         if x is not None:
             if np.isscalar(x):
                 x = np.asarray([x])
-            x = x.reshape(-1, 1)
+            # x = x.reshape(-1, 1)
 
         if np.isscalar(P):
             P = np.eye(n) * P
@@ -723,8 +723,9 @@ class GeneralizedSigmaPoints(object):
 
         """
         for i in range(len(sigmas)):
-            if sigmas[i] < 0:
-                self.s[i] = self.k*np.min(self.x/np.sqrt(self.P))
+            i_=i-1
+            if np.min(sigmas[i]) < 0:
+                self.s[i] = self.k*np.min(self.x/np.sqrt(self.P)[:, i_])
         
     def __repr__(self):
         return '\n'.join([
