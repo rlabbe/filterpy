@@ -635,7 +635,7 @@ class EbeigbeSigmaPoints(object):
             sigmas[i+n] = x + self.s[i+1]*np.sqrt(P)
         
         if self.positively_constrained:
-            self._redefine_scale_param(sigmas, x, P)
+            self._redefine_scale_param(sigmas)
             self._compute_weights(compute_free_parameter=False)
             
             sigmas[0]   = x
