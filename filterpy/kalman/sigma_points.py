@@ -532,3 +532,79 @@ class SimplexSigmaPoints(object):
             pretty_str('subtract', self.subtract),
             pretty_str('sqrt', self.sqrt)
             ])
+
+class EbeigbeSigmaPoints(object):
+    '''
+    '''
+    def __init__(self, n, positively_constrained=False, k=0.9):
+        self.n = n
+        self.k = k
+        self.positively_constrained = positively_constrained
+        
+        # scaling parameter inicialization
+        self.s = np.zeros(2*n+1)
+        
+    def num_sigmas(self):
+        return 2*self.n + 1
+    
+    def sigma_points(self, x, P, S, K):
+        
+        for i in range(1, self.n+1):
+            std = np.sqrt(P)
+            
+            # standarized values        
+            S_ = S/std**3.0
+            K_ = K/std**4.0
+            
+            # free parameter
+            self.s[i] = 0.5*(-S_ + np.sqrt(4*K_ - 3*S_**2.0))
+                  
+            self._compute_weights(i, S_)
+            
+            sigmas = self._compute_sigmas(i, x, P)
+        
+        if self.positively_constrained:
+            self._redefine_scale_param(sigmas, x, P)
+            self._compute_weights(i, S_)
+            sigmas = self._compute_sigmas(i, x, P)
+        
+        return sigmas
+    
+    def _compute_weights(self, i, S_):
+        n = self.n
+        w = np.zeros(2*n+1)
+        self.s[i+n] = self.s[i] + S_
+        w[i+n] = 1.0/(self.s[i+n]*(self.s[i] + self.s[i+n]))
+        w[i] = self.s[i+n]/self.s[i]*w[i+n]
+        w[0] = 1 - np.sum(w)
+        self.Wm = w
+        self.Wc = w
+        
+    def _compute_sigmas(self, i, x, P):
+        """ Number of sigma points for each variable in the state x"""
+        n = self.n
+        sigmas = np.zeros(2*n+1)
+        
+        sigmas[0]   = x
+        sigmas[i]   = x - self.s[i  ]*np.sqrt(P)
+        sigmas[i+n] = x + self.s[i+1]*np.sqrt(P)
+        
+        return sigmas
+    
+    def _redefine_scale_param(self, sigmas, x, P):
+        for i in range(2*self.n+1):
+            sigma_point = sigmas[i]
+    
+            if sigma_point < 0:
+                self.s[i] = self.k*np.min(x/np.sqrt(P))
+        
+    def __repr__(self):
+        return '\n'.join([
+            'EbeigbeSigmaPoints object',
+            pretty_str('n', self.n),
+            pretty_str('s', self.s),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
+            pretty_str('Positively constrained', self.positively_constrained),
+            pretty_str('k', self.k),
+            ])
