@@ -654,8 +654,11 @@ class GeneralizedSigmaPoints(object):
         else:
             P = np.atleast_2d(P)
         
-        # NOTE: add warning when x is different.
-        
+        if x != self.x:
+            raise Warning(f"input x is different from previous data. \n-initial: {self.x} \n-input  : {x}")
+        if x != self.x:
+            raise Warning(f"input P is different from previous data. \n-initial: {self.P} \n-input  : {P}")
+            
         sigmas = np.zeros((2*n+1, n))
         for i in range(1, self.n+1):
             i_=i-1
