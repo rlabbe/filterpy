@@ -34,7 +34,7 @@ from filterpy.kalman import ExtendedKalmanFilter
 from filterpy.kalman import UnscentedKalmanFilter
 from filterpy.kalman import (unscented_transform, MerweScaledSigmaPoints,
                              JulierSigmaPoints, SimplexSigmaPoints,
-                             KalmanFilter)
+                             GeneralizedSigmaPoints, KalmanFilter)
 from filterpy.common import Q_discrete_white_noise, Saver
 import filterpy.stats as stats
 
@@ -188,6 +188,71 @@ def test_simplex_sigma_points_2D():
     assert np.allclose(xm, mean)
     assert np.allclose(cov, ucov)
 
+def test_generalized_sigma_points_weights_1D():
+    ''' test for Ebeigbe weights (example from paper: III.B)'''
+    
+    P, S, K = 0.2, -0.5, 1.3
+    sp = GeneralizedSigmaPoints(1, P, S, K)
+    
+    
+    Wm, Wc, s = sp.Wm, sp.Wc, sp.s
+    assert np.allclose(Wm, Wc, 1e-12)
+    
+    ref_w = np.array([0.2, 0.0286, 0.7714])
+    ref_s = np.array([0.0, 5.8055, 0.2153])
+    
+    assert np.allclose(ref_w, Wm, 1e-4)
+    assert np.allclose(ref_w, Wc, 1e-4)
+    assert np.allclose(ref_s, s, 1e-4) 
+    
+def test_generalized_sigma_points_2D():
+    ''' test for Ebeigbe weights (example from paper: Example V.1)'''
+    n = 2
+    x = [1.5, 1.0]
+    P = [[1.5, 0.0], 
+         [0.0, 1.0]]
+    S = [1.5, 1.0]
+    K = [3.0*1.5**2 + 1.5, 3.0*1.0**2 + 1.0]
+    
+    sp = GeneralizedSigmaPoints(n, P, S, K, positively_constrained=False, x=x)
+    
+    ref_w  = np.array([0.3333, 0.2049, 0.2129, 0.1284, 0.1204])
+    ref_s  = np.array([0.0, 1.3713, 1.3028, 2.1878, 2.3028])
+    ref_X = np.array([[1.5000, -0.1794, 1.5000, 4.1794, 1.5000],
+                       [1.0000, 1.0000, -0.3028, 1.0000, 3.3028]])
+
+    Wm, Wc, s = sp.Wm, sp.Wc, sp.s
+    X = sp.sigma_points(x, P)
+    
+    assert np.allclose(Wc,Wm, 1e-3)
+    assert np.allclose(ref_w, Wc, 1e-3)
+    assert np.allclose(ref_s, s, 1e-3)
+    assert np.allclose(ref_X.T, X, 1e-3)
+
+def test_generalized_sigma_points_2D_positively_constrained():
+    ''' test for Ebeigbe weights (example from paper: Example V.2)'''
+    n = 2
+    x = [1.5, 1.0]
+    P = [[1.5, 0.0], 
+         [0.0, 1.0]]
+    S = [1.5, 1.0]
+    K = [3.0*1.5**2 + 1.5, 3.0*1.0**2 + 1.0]
+    
+    sp = GeneralizedSigmaPoints(n, P, S, K, positively_constrained=True, k=0.9, x=x)
+    
+    ref_w  = np.array([-0.0576, 0.3003, 0.3968, 0.1725, 0.1880])
+    ref_s  = np.array([0.0, 1.1023, 0.9000, 1.9188, 1.9000])
+    ref_X = np.array([[1.5000, 0.1500, 1.5000, 3.8500, 1.5000],
+                       [1.0000, 1.0000, 0.1000, 1.0000, 2.9000]])
+    
+    Wm, Wc, s = sp.Wm, sp.Wc, sp.s
+    X = sp.sigma_points(x, P)
+    
+    assert np.allclose(Wc,Wm, 1e-3)
+    assert np.allclose(ref_w, Wc, 1e-3)
+    assert np.allclose(ref_s, s, 1e-3)
+    assert np.allclose(ref_X.T, X, 1e-3)
+    
 
 class RadarSim(object):
     def __init__(self, dt):
