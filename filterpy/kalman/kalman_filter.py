@@ -8,6 +8,10 @@ oriented and procedural form. The KalmanFilter class implements
 the filter by storing the various matrices in instance variables,
 minimizing the amount of bookkeeping you have to do.
 
+The Kalman Filter is used to solve the following system of equations:
+Measurement Equation:   z(t)   = c(t) + H(t)x(t) + Q(t) N(0,I)
+Transition Equation:    x(t+1) = d(t) + F(t)x(t) + B(t)u(t) + R(t) N(0,I)
+
 All Kalman filters operate with a predict->update cycle. The
 predict step, implemented with the method or function predict(),
 uses the state transition matrix F to predict the state in the next
@@ -134,6 +138,10 @@ class KalmanFilter(object):
     r""" Implements a Kalman filter. You are responsible for setting the
     various state variables to reasonable values; the defaults  will
     not give you a functional filter.
+
+    The Kalman Filter is used to solve the following system of equations:
+    Measurement Equation:   z(t)   = c(t) + H(t)x(t) + Q(t) N(0,I)
+    Transition Equation:    x(t+1) = d(t) + F(t)x(t) + B(t)u(t) + R(t) N(0,I)
 
     For now the best documentation is my free book Kalman and Bayesian
     Filters in Python [2]_. The test files in this directory also give you a
@@ -343,6 +351,12 @@ class KalmanFilter(object):
     SI :  numpy.array
         Inverse system uncertainty. Read only.
 
+    c : numpy.array
+        Measurement equation intercept function.
+
+    d : numpy.array
+        Transition equation intercept function.
+
     log_likelihood : float
         log-likelihood of the last measurement. Read only.
 
@@ -407,6 +421,9 @@ class KalmanFilter(object):
         self.M = np.zeros((dim_x, dim_z)) # process-measurement cross correlation
         self.z = np.array([[None]*self.dim_z]).T
 
+        self.c = np.zeros((dim_x, 1))     # measurement equation intercept
+        self.d = np.zeros((dim_x, 1))     # transition equation intercept
+
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
         # purposes
@@ -434,7 +451,7 @@ class KalmanFilter(object):
         self.inv = np.linalg.inv
 
 
-    def predict(self, u=None, B=None, F=None, Q=None):
+    def predict(self, u=None, B=None, F=None, Q=None, d=None):
         """
         Predict next state (prior) using the Kalman filter state propagation
         equations.
@@ -456,6 +473,10 @@ class KalmanFilter(object):
         Q : np.array(dim_x, dim_x), scalar, or None
             Optional process noise matrix; a value of None will cause the
             filter to use `self.Q`.
+
+        d : np.array(dim_x, 1) or None
+            Optionally, provide an intercept for the transition equation
+
         """
 
         if B is None:
@@ -466,13 +487,15 @@ class KalmanFilter(object):
             Q = self.Q
         elif isscalar(Q):
             Q = eye(self.dim_x) * Q
+        if d in None:
+            d = self.d
 
 
-        # x = Fx + Bu
+        # x = d + Fx + Bu
         if B is not None and u is not None:
-            self.x = dot(F, self.x) + dot(B, u)
+            self.x = d + dot(F, self.x) + dot(B, u)
         else:
-            self.x = dot(F, self.x)
+            self.x = d + dot(F, self.x)
 
         # P = FPF' + Q
         self.P = self._alpha_sq * dot(dot(F, self.P), F.T) + Q
@@ -482,7 +505,7 @@ class KalmanFilter(object):
         self.P_prior = self.P.copy()
 
 
-    def update(self, z, R=None, H=None):
+    def update(self, z, R=None, H=None, c=None):
         """
         Add a new measurement (z) to the Kalman filter.
 
@@ -505,6 +528,10 @@ class KalmanFilter(object):
         H : np.array, or None
             Optionally provide H to override the measurement function for this
             one call, otherwise self.H will be used.
+
+        c : np.array, or None
+            Optionally, provide an intercept for the measurement equation.
+
         """
 
         # set to None to force recompute
@@ -528,9 +555,12 @@ class KalmanFilter(object):
             z = reshape_z(z, self.dim_z, self.x.ndim)
             H = self.H
 
-        # y = z - Hx
+        if c is None:
+            c = self.c
+
+        # y = z - Hx - c
         # error (residual) between measurement and prediction
-        self.y = z - dot(H, self.x)
+        self.y = z - dot(H, self.x) - c
 
         # common subexpression for speed
         PHT = dot(self.P, H.T)
