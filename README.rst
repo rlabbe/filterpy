@@ -3,6 +3,10 @@ FilterPy - Kalman filters and other optimal and non-optimal estimation filters i
 
 .. image:: https://img.shields.io/pypi/v/filterpy.svg
         :target: https://pypi.python.org/pypi/filterpy
+        
+.. image:: https://readthedocs.org/projects/pip/badge/?version=latest&style=flat
+        :target: https://filterpy.readthedocs.io/en/latest/        
+     
 
 **NOTE**: Imminent drop of support of Python 2.7, 3.4. See section below for details.
 
