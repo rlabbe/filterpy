@@ -188,7 +188,7 @@ class SquareRootKalmanFilter(object):
             be used.
         """
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self._P1_2_post = np.copy(self._P1_2)

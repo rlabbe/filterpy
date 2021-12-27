@@ -101,7 +101,7 @@ class HInfinityFilter(object):
             measurement for this update.
         """
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             return
 
         # rename for readability and a tiny extra bit of speed
