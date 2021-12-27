@@ -430,7 +430,11 @@ def test_linear_1d():
 
 
 def test_batch_missing_data():
-    """ batch filter should accept missing data with None in the measurements """
+    """
+    Batch filter should accept missing data with None in the measurements
+
+    Alternatively, a masked array can be used.
+    """
 
     def fx(x, dt):
         F = np.array([[1, dt, 0, 0],
@@ -456,9 +460,15 @@ def test_batch_missing_data():
         z = np.array([i + randn()*0.1, i + randn()*0.1])
         zs.append(z)
 
+    # Test with None for missing measurments
     zs[2] = None
     Rs = [1]*len(zs)
     Rs[2] = None
+    Ms, Ps = kf.batch_filter(zs)
+
+    # Test with masked array for missing measurments
+    zs[2] = np.nan
+    zs = np.ma.masked_invalid([np.nan, 1., 2.])
     Ms, Ps = kf.batch_filter(zs)
 
 

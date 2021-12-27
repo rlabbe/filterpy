@@ -268,10 +268,15 @@ def test_batch_filter():
     f.R = 5                       # state uncertainty
     f.Q = 0.0001                  # process uncertainty
 
+    # Test with None for missing measurments
     zs = [None, 1., 2.]
     m, c, _, _ = f.batch_filter(zs, update_first=False)
     m, c, _, _ = f.batch_filter(zs, update_first=True)
 
+    # Test with masked array for missing measurments
+    zs = np.ma.masked_invalid([np.nan, 1., 2.])
+    m, c, _, _ = f.batch_filter(zs, update_first=False)
+    m, c, _, _ = f.batch_filter(zs, update_first=True)
 
 def test_univariate():
     f = KalmanFilter(dim_x=1, dim_z=1, dim_u=1)
