@@ -55,7 +55,7 @@ class ExtendedKalmanFilter(object):
         This is used to set the default size of P, Q, and u
 
     dim_z : int
-        Number of of measurement inputs. For example, if the sensor
+        Number of measurement inputs. For example, if the sensor
         provides you with position in (x,y), dim_z would be 2.
 
     Attributes
