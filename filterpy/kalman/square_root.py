@@ -110,9 +110,6 @@ class SquareRootKalmanFilter(object):
     K : numpy.array(dim_x, dim_z)
         Kalman gain of the update step. Read only.
 
-    S :  numpy.array
-        Systen uncertaintly projected to measurement space. Read only.
-
     Examples
     --------
 
@@ -151,8 +148,9 @@ class SquareRootKalmanFilter(object):
         self._R = eye(dim_z)      # state uncertainty
         self.z = np.array([[None]*self.dim_z]).T
 
-        self.K = 0.
-        self.S = 0.
+        self.K = np.zeros((dim_x, dim_z)) # kalman gain
+        self.S1_2 = np.zeros((dim_z, dim_z)) # sqrt system uncertainty
+        self.SI1_2 = np.zeros((dim_z, dim_z)) # Inverse sqrt system uncertainty
 
         # Residual is computed during the innovation (update) step. We
         # save it so that in case you want to inspect it for various
@@ -207,9 +205,10 @@ class SquareRootKalmanFilter(object):
         M[dim_z:, 0:dim_z] = dot(self.H, self._P1_2).T
         M[dim_z:, dim_z:] = self._P1_2.T
 
-        _, self.S = qr(M)
-        self.K = self.S[0:dim_z, dim_z:].T
-        N = self.S[0:dim_z, 0:dim_z].T
+        _, r_decomp = qr(M)
+        self.S1_2 = r_decomp[0:dim_z, 0:dim_z].T
+        self.SI1_2 = pinv(self.S1_2)
+        self.K = dot(r_decomp[0:dim_z, dim_z:].T, self.SI1_2)
 
         # y = z - Hx
         # error (residual) between measurement and prediction
@@ -217,8 +216,8 @@ class SquareRootKalmanFilter(object):
 
         # x = x + Ky
         # predict new x with residual scaled by the kalman gain
-        self.x += dot(self.K, pinv(N)).dot(self.y)
-        self._P1_2 = self.S[dim_z:, dim_z:].T
+        self.x += dot(self.K, self.y)
+        self._P1_2 = r_decomp[dim_z:, dim_z:].T
 
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
@@ -275,7 +274,7 @@ class SquareRootKalmanFilter(object):
     @property
     def Q(self):
         """ Process uncertainty"""
-        return dot(self._Q1_2.T, self._Q1_2)
+        return dot(self._Q1_2, self._Q1_2.T)
 
     @property
     def Q1_2(self):
@@ -291,17 +290,17 @@ class SquareRootKalmanFilter(object):
     @property
     def P(self):
         """ covariance matrix"""
-        return dot(self._P1_2.T, self._P1_2)
+        return dot(self._P1_2, self._P1_2.T)
 
     @property
     def P_prior(self):
         """ covariance matrix of the prior"""
-        return dot(self._P1_2_prior.T, self._P1_2_prior)
+        return dot(self._P1_2_prior, self._P1_2_prior.T)
 
     @property
     def P_post(self):
         """ covariance matrix of the posterior"""
-        return dot(self._P1_2_prior.T, self._P1_2_prior)
+        return dot(self._P1_2_prior, self._P1_2_prior.T)
 
     @property
     def P1_2(self):
@@ -317,7 +316,7 @@ class SquareRootKalmanFilter(object):
     @property
     def R(self):
         """ measurement uncertainty"""
-        return dot(self._R1_2.T, self._R1_2)
+        return dot(self._R1_2, self._R1_2.T)
 
     @property
     def R1_2(self):
@@ -329,6 +328,16 @@ class SquareRootKalmanFilter(object):
         """ measurement uncertainty"""
         self._R = value
         self._R1_2 = cholesky(self._R, lower=True)
+
+    @property
+    def S(self):
+        """ system uncertainty (P projected to measurement space) """
+        return dot(self.S1_2, self.S1_2.T)
+
+    @property
+    def SI(self):
+        """ inverse system uncertainty (P projected to measurement space) """
+        return dot(self.SI1_2.T, self.SI1_2)
 
     def __repr__(self):
         return '\n'.join([
@@ -345,6 +354,7 @@ class SquareRootKalmanFilter(object):
             pretty_str('K', self.K),
             pretty_str('y', self.y),
             pretty_str('S', self.S),
+            pretty_str('SI', self.SI),
             pretty_str('M', self.M),
             pretty_str('B', self.B),
             ])
