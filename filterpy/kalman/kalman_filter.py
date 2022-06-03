@@ -751,6 +751,78 @@ class KalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
+    def update_sequential(self, start, z_i, R_i=None, H_i=None):
+        """
+        Add a single input measurement (z_i) to the Kalman filter.
+        In sequential processing, inputs are processed one at a time.
+
+        Parameters
+        ----------
+        start : integer
+            Index of the first measurement input updated by this call.
+
+        z_i : np.array or scalar
+            Measurement of inputs for this partial update.
+
+        R_i : np.array, scalar, or None
+            Optionally provide R_i to override the measurement noise of
+            inputs for this one call, otherwise a slice of self.R will
+            be used.
+
+        H_i : np.array, or None
+            Optionally provide H[i] to override the partial measurement
+            function for this one call, otherwise a slice of self.H will
+            be used.
+        """
+
+        if isscalar(z_i):
+            length = 1
+        else:
+            length = len(z_i)
+        z_i = np.reshape(z_i, [length, 1])
+        stop = start + length
+
+        if R_i is None:
+            R_i = self.R[start:stop, start:stop]
+        elif isscalar(R_i):
+            R_i = eye(length) * R_i
+
+        if H_i is None:
+            H_i = self.H[start:stop]
+
+        H_i = np.reshape(H_i, [length, self.dim_x])
+
+        # y_i = z_i - H_i @ x
+        # error (residual) between measurement and prediction
+        y_i = z_i - dot(H_i, self.x)
+        self.y[start:stop] = y_i
+
+        # common subexpression for speed
+        PHT = dot(self.P, H_i.T)
+
+        # project system uncertainty into the measurement subspace
+        S_i = dot(H_i, PHT) + R_i
+
+        if length == 1:
+            K_i = PHT * (1.0 / S_i)
+        else:
+            K_i = dot(PHT, linalg.inv(S_i))
+
+        self.K[:,start:stop] = K_i
+        I_KH = self._I - np.dot(K_i, H_i)
+
+        # x = x + K_i @ y_i
+        # update state estimation with residual scaled by the kalman gain
+        self.x += dot(K_i, y_i)
+
+        # compute the posterior covariance
+        self.P = dot(dot(I_KH, self.P), I_KH.T) + dot(dot(K_i, R_i), K_i.T)
+
+        # save measurement component #i and the posterior state
+        self.z[start:stop] = z_i
+        self.x_post = self.x.copy()
+        self.P_post = self.P.copy()
+
     def batch_filter(self, zs, Fs=None, Qs=None, Hs=None,
                      Rs=None, Bs=None, us=None, update_first=False,
                      saver=None):
