@@ -532,3 +532,216 @@ class SimplexSigmaPoints(object):
             pretty_str('subtract', self.subtract),
             pretty_str('sqrt', self.sqrt)
             ])
+
+class GeneralizedSigmaPoints(object):
+    '''
+    Generates sigma points and weights according to the generalized unscented
+    transformation method presented in [1]. It utilizes the first four 
+    statistical moments to generate the sigma points and their weights for 
+    most of probability distributions.
+    
+    
+    Parameters
+    ----------
+
+    n : int
+        Dimensionality of the state. n+1 weights will be generated.
+    P : scalar, or np.array
+        Covariance of the filter. If scalar, is treated as eye(n)*P.
+    S : scalar, or np.array
+        third central moment, skewness
+    K : scalar, or np.array
+        fourth central moment, kurtosis
+    positively_constrained : bool
+        enable positively constrained sigma points. It recompute the weights 
+        and scales parameters in order to avoid negative sigmas points. Useful
+        for function that does not accept negative values, although it is only 
+        only accurate up to third order.
+        It redifines the scale parameter 's[i]' and consequently 's[i+n]' and
+        weights.
+    k : float
+        slack parameter. Where value k=1 ensures that at least one of the 
+        sigma points is zero. The sigma points gets futher away from zero as
+        k->0.
+    x : An array-like object of the means of length n
+        used for sigmas points recalculation when 'positively_constrained' is 
+        True. 
+        
+    References
+    ----------
+    
+    .. [1] Donald Ebeigbe et al. "Generalized Unscented Transformation for 
+           Probability Distributions"
+           arXiv:2104.01958v1 [stat.ME]
+    '''
+    def __init__(self, n, P, S, K, positively_constrained=False, k=None, x=None):
+        self.n = n
+        # NOTE: add dimention verification
+        
+        if x is not None:
+            if np.isscalar(x):
+                x = np.asarray([x])
+            # x = x.reshape(-1, 1)
+
+        if np.isscalar(P):
+            P = np.eye(n) * P
+        else:
+            P = np.atleast_2d(P)
+        
+        if np.isscalar(S):
+            S = np.asarray([S])
+        
+        if np.isscalar(K):
+            K = np.asarray([K])
+        
+        self.x, self.P, self.S, self.K = x, P, S, K
+        
+        self.k = k
+        self.positively_constrained = positively_constrained
+        
+        self.s = np.zeros(2*self.n+1)
+        
+        self._compute_weights()
+        if positively_constrained:
+            self.sigma_points(x, P)
+        
+    def num_sigmas(self):
+        """ Number of sigma points for each variable in the state x"""
+        return 2*self.n + 1
+    
+    def sigma_points(self, x, P):
+        """
+        Computes the implex sigma points for an unscented Kalman filter
+        given the mean (x) and covariance(P) of the filter.
+        Returns tuple of the sigma points and weights.
+
+        Works with both scalar and array inputs:
+        sigma_points (5, 9, 2) # mean 5, covariance 9
+        sigma_points ([5, 2], 9*eye(2), 2) # means 5 and 2, covariance 9I
+
+        Parameters
+        ----------
+
+        x : An array-like object of the means of length n
+            Can be a scalar if 1D.
+            examples: 1, [1,2], np.array([1,2])
+
+        P : scalar, or np.array
+           Covariance of the filter. If scalar, is treated as eye(n)*P.
+
+        Returns
+        -------
+
+        sigmas : np.array, of size (n, n+1)
+            Two dimensional array of sigma points. Each column contains all of
+            the sigmas for one dimension in the problem space.
+
+            Ordered by Xi_0, Xi_{1..n}
+        """
+              
+        if self.n != np.size(x):
+            raise ValueError("expected size(x) {}, but size is {}".format(
+                self.n, np.size(x)))
+
+        n = self.n
+
+        if np.isscalar(x):
+            x = np.asarray([x])
+        # x = x.reshape(-1, 1)
+
+        if np.isscalar(P):
+            P = np.eye(n) * P
+        else:
+            P = np.atleast_2d(P)
+        
+        if x != self.x:
+            raise Warning(f"input x is different from previous data. \n-initial: {self.x} \n-input  : {x}")
+        if x != self.x:
+            raise Warning(f"input P is different from previous data. \n-initial: {self.P} \n-input  : {P}")
+            
+        sigmas = np.zeros((2*n+1, n))
+        for i in range(1, self.n+1):
+            i_=i-1
+            sigmas[0]   = x
+            sigmas[i]   = x - self.s[i  ]*np.sqrt(P[:, i_])
+            sigmas[i+n] = x + self.s[i+n]*np.sqrt(P[:, i_])
+        
+        if self.positively_constrained:
+            self._redefine_scale_param(sigmas)
+            self._compute_weights(compute_free_parameter=False)
+            
+            for i in range(1, self.n+1):
+                i_=i-1
+                sigmas[0]   = x
+                sigmas[i]   = x - self.s[i  ]*np.sqrt(P[:, i_])
+                sigmas[i+n] = x + self.s[i+n]*np.sqrt(P[:, i_])
+        
+        return sigmas
+    
+    def _compute_weights(self, compute_free_parameter=True):
+        """ 
+        Computes the weights and scale parameters for the scaled unscented 
+        Kalman filter. 
+        
+        Parameters
+        ----------
+        
+        compute_free_parameter : bool
+            compute the free parameter s[i] for partially match kurtosis
+        """
+        
+        n = self.n
+        
+        std = np.sqrt(np.diag(self.P))
+            
+        # standarized values        
+        S_ = self.S/std**3.0
+        K_ = self.K/std**4.0
+        
+        w = np.zeros(2*n+1)
+        for i in range(1, self.n+1):
+            i_ = i - 1
+            # free parameter
+            if compute_free_parameter:
+                self.s[i] = 0.5*(-S_[i_] + np.sqrt(4*K_[i_] - 3*S_[i_]**2.0))
+            
+            # weights
+            self.s[i+n] = self.s[i] + S_[i_]
+            w[i+n] = 1.0/(self.s[i+n]*(self.s[i] + self.s[i+n]))
+            w[i] = self.s[i+n]/self.s[i]*w[i+n]
+        w[0] = 1 - np.sum(w)
+        
+        self.Wm = w
+        self.Wc = w
+        
+    
+    def _redefine_scale_param(self, sigmas):
+        """
+        Evaluate and redifine all negative sigma points
+
+        Parameters
+        ----------
+        sigmas : np.array
+            sigma points.
+
+        """
+        for i in range(len(sigmas)):
+            i_=i-1
+            if np.min(sigmas[i]) < 0:
+                self.s[i] = self.k*np.min(self.x/np.sqrt(self.P)[:, i_])
+        
+    def __repr__(self):
+        return '\n'.join([
+            'GeneralizedSigmaPoints object',
+            pretty_str('n', self.n),
+            pretty_str('x', self.x),
+            pretty_str('P', self.P),
+            pretty_str('S', self.S),
+            pretty_str('K', self.K),
+            pretty_str('s', self.s),
+            pretty_str('Positively constrained', self.positively_constrained),
+            pretty_str('k', self.k),
+            pretty_str('Wm', self.Wm),
+            pretty_str('Wc', self.Wc),
+            
+            ])
