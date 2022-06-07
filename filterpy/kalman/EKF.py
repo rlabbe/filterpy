@@ -315,13 +315,16 @@ class ExtendedKalmanFilter(object):
             z = np.asarray([z], float)
 
         H = HJacobian(self.x, *args)
+        if isinstance(H, tuple):
+            H, hx = H  # then it must be both H and Hx, split them out
+        else:
+            hx = Hx(self.x, *hx_args)
 
         PHT = dot(self.P, H.T)
         self.S = dot(H, PHT) + R
         self.SI = linalg.inv(self.S)
         self.K = PHT.dot(self.SI)
 
-        hx = Hx(self.x, *hx_args)
         self.y = residual(z, hx)
         self.x = self.x + dot(self.K, self.y)
 
