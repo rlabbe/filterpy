@@ -456,7 +456,7 @@ class GHFilter(object):
 
 
     def VRF_prediction(self):
-        """
+        r"""
         Returns the Variance Reduction Factor of the prediction
         step of the filter. The VRF is the
         normalized variance for the filter, as given in the equation below.
@@ -479,7 +479,7 @@ class GHFilter(object):
 
 
     def VRF(self):
-        """
+        r"""
         Returns the Variance Reduction Factor (VRF) of the state variable
         of the filter (x) and its derivatives (dx, ddx). The VRF is the
         normalized variance for the filter, as given in the equations below.
@@ -749,7 +749,7 @@ class GHKFilter(object):
 
 
     def VRF_prediction(self):
-        """
+        r"""
         Returns the Variance Reduction Factor for x of the prediction
         step of the filter.
 
@@ -795,7 +795,7 @@ class GHKFilter(object):
 
 
     def VRF(self):
-        """
+        r"""
         Returns the Variance Reduction Factor (VRF) of the state variable
         of the filter (x) and its derivatives (dx, ddx). The VRF is the
         normalized variance for the filter, as given in the equations below.
@@ -943,7 +943,7 @@ def least_squares_parameters(n):
 
 
 def critical_damping_parameters(theta, order=2):
-    """ Computes values for g and h (and k for g-h-k filter) for a
+    r""" Computes values for g and h (and k for g-h-k filter) for a
     critically damped filter.
 
     The idea here is to create a filter that reduces the influence of
