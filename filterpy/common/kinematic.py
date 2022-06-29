@@ -58,7 +58,7 @@ def kinematic_state_transition(order, dt):
     return F
 
 
-def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
+def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True, kf=None):
     """
     Returns a KalmanFilter using newtonian kinematics of arbitrary order
     for any number of dimensions. For example, a constant velocity filter
@@ -134,6 +134,10 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
         whereas `False` interleaves the dimensions
 
         [x y z x' y' z' x'' y'' z'']
+
+    kf : kalman filter like object, optional, default None
+        Provide your own pre-created filter. This lets you use classes other
+        than KalmanFilter.
     """
 
     from filterpy.kalman import KalmanFilter
@@ -147,7 +151,11 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True):
 
     dim_x = order + 1
 
-    kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim_z)
+    if kf is None:
+        kf = KalmanFilter(dim_x=dim * dim_x, dim_z=dim_z)
+    assert kf.dim_x == dim * dim_x
+    assert kf.dim_z == dim_z
+
     F = kinematic_state_transition(order, dt)
     if order_by_dim:
         diag = [F] * dim
