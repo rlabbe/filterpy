@@ -261,6 +261,9 @@ def pretty_str(label, arr):
         except (AttributeError, IndexError):
             return False
 
+    if type(arr) is list or type(arr) is tuple:
+        return '\n'.join([pretty_str(label+'['+str(i)+']', x) for (i, x) in enumerate(arr)])
+
     if label is None:
         label = ''
 
