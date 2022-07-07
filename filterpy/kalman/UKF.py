@@ -603,7 +603,8 @@ class UnscentedKalmanFilter(object):
                 raise TypeError(
                     'each element in zs must be a 1D array of length {}'.format(self._dim_z))
 
-        z_n = np.size(zs, 0)
+        z_n = len(zs)
+
         if Rs is None:
             Rs = [self.R] * z_n
 
