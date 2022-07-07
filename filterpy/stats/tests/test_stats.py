@@ -23,12 +23,29 @@ from mpl_toolkits.mplot3d import axes3d
 import numpy as np
 from numpy.linalg import inv
 import scipy
-from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
-from filterpy.stats import norm_cdf, multivariate_gaussian, logpdf, mahalanobis
+from scipy.spatial.distance import mahalanobis as _scipy_mahalanobis
+from filterpy.stats import (norm_cdf, multivariate_gaussian, logpdf,
+                            mahalanobis)
 from scipy import linalg
 
 
 ITERS = 10000
+
+
+def scipy_mahalanobis(x, mean, cov):
+    # scipy 1.9 will not accept scalars as input, so force the correct
+    # behavior so we don't get deprecation warnings or exceptions
+
+    def validate_vector(u):
+        u = np.asarray(u).squeeze()
+        # Ensure values such as u=1 and u=[1] still return 1-D arrays.
+        u = np.atleast_1d(u)
+        return u
+
+    x = validate_vector(x)
+    mean = validate_vector(mean)
+    return _scipy_mahalanobis(x, mean, cov)
+
 
 def test_mahalanobis():
     global a, b, S
@@ -91,7 +108,6 @@ def test_multivariate_gaussian():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-
 
         # test that we treat lists and arrays the same
         mean= (0, 0)
@@ -294,6 +310,8 @@ def covariance_3d_plot_test():
     plot_3d_covariance(mu, C, alpha=.4, std=3, limit_xyz=True, ax=ax)
 
 if __name__ == "__main__":
+    test_multivariate_gaussian()
+    test_mahalanobis()
     test_logpdf2()
     covariance_3d_plot_test()
     plt.figure()

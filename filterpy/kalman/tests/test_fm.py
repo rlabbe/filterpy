@@ -21,8 +21,8 @@ import numpy.random as random
 import numpy as np
 import matplotlib.pyplot as plt
 from filterpy.kalman import FadingKalmanFilter
+from filterpy.stats import mahalanobis
 from pytest import approx
-from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
 
 DO_PLOT = False
 def test_noisy_1d():
@@ -59,7 +59,7 @@ def test_noisy_1d():
 
         # test mahalanobis
         a = np.zeros(f.y.shape)
-        maha = scipy_mahalanobis(a, f.y, f.SI)
+        maha = mahalanobis(a, f.y, f.S)
         assert f.mahalanobis == approx(maha)
         print(z, maha, f.y, f.S)
         assert maha < 4

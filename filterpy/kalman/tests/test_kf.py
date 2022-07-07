@@ -24,8 +24,8 @@ import matplotlib.pyplot as plt
 from pytest import approx
 from filterpy.kalman import KalmanFilter, update, predict, batch_filter
 from filterpy.common import Q_discrete_white_noise, kinematic_kf, Saver
+from filterpy.stats import mahalanobis
 from scipy.linalg import block_diag, norm
-from scipy.spatial.distance import mahalanobis as scipy_mahalanobis
 
 DO_PLOT = False
 
@@ -121,7 +121,7 @@ def test_noisy_1d():
 
         # test mahalanobis
         a = np.zeros(f.y.shape)
-        maha = scipy_mahalanobis(a, f.y, f.SI)
+        maha = mahalanobis(a, f.y, f.S)
         assert f.mahalanobis == approx(maha)
 
 
@@ -233,7 +233,7 @@ def test_noisy_11d():
 
         # test mahalanobis
         a = np.zeros(f.y.shape)
-        maha = scipy_mahalanobis(a, f.y, f.SI)
+        maha = mahalanobis(a, f.y, f.S)
         assert f.mahalanobis == approx(maha)
 
     # now do a batch run with the stored z values so we can test that
@@ -443,7 +443,7 @@ def test_steadystate():
         cv.update_steadystate([i])
         # test mahalanobis
         a = np.zeros(cv.y.shape)
-        maha = scipy_mahalanobis(a, cv.y, cv.SI)
+        maha = mahalanobis(a, cv.y, cv.S)
         assert cv.mahalanobis == approx(maha)
 
 
