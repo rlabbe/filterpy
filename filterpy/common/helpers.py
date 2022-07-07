@@ -415,3 +415,67 @@ def outer_product_sum(A, B=None):
 
     outer = np.einsum('ij,ik->ijk', A, B)
     return np.sum(outer, axis=0)
+
+
+def compare_kf(kf1, kf2, log=True, **kwargs):
+    """ Compare two Kalman filters.
+
+    For each variable each object has in common (x, P, S, K, etc) compare
+    them using np.allclose().
+
+    Prints a report if `log` is true, and returns a list of names if any
+    are different, otherwise prints nothing and returns None.
+    """
+
+    # get variables common to both objects
+    v1, v2 = vars(kf1), vars(kf2)
+    k1, k2 = set(v1.keys()), set(v2.keys())
+    attrs = k2.intersection(k1)
+
+    different_keys = []
+    for attr in attrs:
+        if not np.allclose(v1[attr], v2[attr], **kwargs):
+            if log:
+                print(attr, 'is different')
+                print(pretty_str(attr, v1[attr]))
+                print(pretty_str(attr, v2[attr]))
+                print()
+            different_keys.append(attr)
+
+    if len(different_keys) > 0:
+        return different
+    else:
+        return None
+
+
+def copy_states(dst, src):
+    """Copy filter states from `src` to `dst`.
+
+    for each variable that `dst` and `src` have in common, use
+    np.copy() to copy from the source to the destination.
+
+    This has the potential of breaking things if you are using two different
+    types - the destination could end up in an incorrect state since not
+    all variables may be initalized correctly.
+
+    The main use case is for testing or comparing different algorithms
+
+        kf1 = KalmanFilter()
+        kf1.F = ...
+        kf1.P = ...
+        kf2 = KalmanFilter()
+        # reuse F, P, etc from kf1
+        copy_states(kf2, kf1)
+
+        for z in obs:
+            kf1.predict()
+            kf2.predict()
+            ...
+    """
+    # get variables common to both objects
+    v1, v2 = vars(dst), vars(src)
+    k1, k2 = set(v1.keys()), set(v2.keys())
+    attrs = k2.intersection(k1)
+
+    for attr in attrs:
+        dst.__dict__[attr] = np.copy(src.__dict__[attr])
