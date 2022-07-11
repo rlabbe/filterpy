@@ -157,7 +157,6 @@ class Saver(object):
     def __setitem__(self, key, newvalue):
         self._DL[key] = newvalue
         self.__dict__.update(self._DL)
-        print('set item', key, newvalue)
 
     def __len__(self):
         return self._len
