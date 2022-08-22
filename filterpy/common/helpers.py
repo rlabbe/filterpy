@@ -205,6 +205,10 @@ class Saver(object):
                 shape = arr.shape
                 if shape[2] == 1:
                     self.__dict__[key] = arr.reshape(shape[0], shape[1])
+                arr = self.__dict__[key]
+                shape = arr.shape
+                if len(shape) == 2 and shape[1] == 1:
+                    self.__dict__[key] = arr.ravel()
             except:
                 # not an ndarray or not a column vector
                 pass
