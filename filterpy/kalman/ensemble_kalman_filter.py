@@ -231,7 +231,7 @@ class EnsembleKalmanFilter(object):
             one call, otherwise self.R will be used.
         """
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             self.z = array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()

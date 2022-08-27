@@ -200,7 +200,7 @@ class KalmanFilter(object):
 
         f.H = np.array([[1., 0.]])
 
-    Define the state's covariance matrix P. 
+    Define the state's covariance matrix P.
 
     .. code::
 
@@ -512,7 +512,7 @@ class KalmanFilter(object):
         self._likelihood = None
         self._mahalanobis = None
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
@@ -641,7 +641,7 @@ class KalmanFilter(object):
         self._likelihood = None
         self._mahalanobis = None
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
@@ -702,7 +702,7 @@ class KalmanFilter(object):
         self._likelihood = None
         self._mahalanobis = None
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             self.z = np.array([[None]*self.dim_z]).T
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
@@ -1142,7 +1142,7 @@ class KalmanFilter(object):
             State vector and covariance array of the update.
        """
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             return self.x, self.P
         z = reshape_z(z, self.dim_z, self.x.ndim)
 
@@ -1255,7 +1255,7 @@ class KalmanFilter(object):
         after a call to update(). Calling after predict() will yield an
         incorrect result."""
 
-        if z is None:
+        if z is None or z is np.ma.masked:
             return log(sys.float_info.min)
         return logpdf(z, dot(self.H, self.x), self.S)
 
@@ -1459,7 +1459,7 @@ def update(x, P, z, R, H=None, return_all=False):
 
     #pylint: disable=bare-except
 
-    if z is None:
+    if z is None or z is np.ma.masked:
         if return_all:
             return x, P, None, None, None, None
         return x, P
@@ -1548,8 +1548,7 @@ def update_steadystate(x, z, K, H=None):
     >>> update_steadystate(x, P, z, H)
     """
 
-
-    if z is None:
+    if z is None or z is np.ma.masked:
         return x
 
     if H is None:
