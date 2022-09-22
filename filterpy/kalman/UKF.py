@@ -361,7 +361,7 @@ class UnscentedKalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
-    def predict(self, dt=None, UT=None, fx=None, **fx_args):
+    def predict(self, dt=None, Q=None, UT=None, fx=None, **fx_args):
         r"""
         Performs the predict step of the UKF. On return, self.x and
         self.P contain the predicted state (x) and covariance (P). '
@@ -375,6 +375,10 @@ class UnscentedKalmanFilter(object):
         dt : double, optional
             If specified, the time step to be used for this prediction.
             self._dt is used if this is not provided.
+
+        Q : numpy.array((dim_x, dim_x)), optional
+            Process noise. If provided, overrides self.Q for
+            this function call.
 
         fx : callable f(x, dt, **fx_args), optional
             State transition function. If not provided, the default
@@ -393,6 +397,9 @@ class UnscentedKalmanFilter(object):
         if dt is None:
             dt = self._dt
 
+        if Q is None:
+            Q = self.Q
+
         if UT is None:
             UT = unscented_transform
 
@@ -400,7 +407,7 @@ class UnscentedKalmanFilter(object):
         self.compute_process_sigmas(dt, fx, **fx_args)
 
         #and pass sigmas through the unscented transform to compute prior
-        self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
+        self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, Q,
                             self.x_mean, self.residual_x)
 
         # update sigma points to reflect the new variance of the points
@@ -718,7 +725,7 @@ class UnscentedKalmanFilter(object):
                 sigmas_f[i] = self.fx(sigmas[i], dts[k])
 
             xb, Pb = UT(
-                sigmas_f, self.Wm, self.Wc, self.Q,
+                sigmas_f, self.Wm, self.Wc, Qs[k],
                 self.x_mean, self.residual_x)
 
             # compute cross variance
