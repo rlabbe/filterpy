@@ -285,11 +285,6 @@ class KalmanFilter(object):
         size of the control input, if it is being used.
         Default value of 0 indicates it is not used.
 
-    compute_log_likelihood : bool (default = True)
-        Computes log likelihood by default, but this can be a slow
-        computation, so if you never use it you can turn this computation
-        off.
-
     Attributes
     ----------
     x : numpy.array(dim_x, 1)
