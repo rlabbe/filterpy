@@ -20,7 +20,7 @@ This is code I am developing in conjunction with my book Kalman and
 Bayesian Filter in Python, which you can read/download at
 https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/
 
-My aim is largely pedalogical - I opt for clear code that matches the
+My aim is largely pedagogical - I opt for clear code that matches the
 equations in the relevant texts on a 1-to-1 basis, even when that has a
 performance cost. There are places where this tradeoff is unclear - for
 example, I find it somewhat clearer to write a small set of equations
