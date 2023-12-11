@@ -1,0 +1,4 @@
+-r ./requirements.readthedocs.txt
+-r ./requirements.txt
+pytest
+matplotlib

@@ -115,8 +115,6 @@ Note: I make no guarantees that everything works if you install from here.
 I'm the only developer, and so I don't worry about dev/release branches and
 the like. Unless I fix a bug for you and tell you to get this version because
 I haven't made a new release yet, I strongly advise not installing from git.
-
-
     
 
 Basic use
@@ -195,6 +193,27 @@ using pretty basic Python - numpy.array, maybe a list comprehension in
 my tests.
 
 I import from **__future__** to ensure the code works in Python 2 and 3.
+
+
+Development
+-----------
+
+For development purposes, setting up a virtual environment is recommended:
+
+.. code-block::
+
+    python -m venv .venv
+    source .venv/bin/activate
+
+    # make sure that the python exectutable is running from the .venv directory
+    which python  
+
+    pip install --upgrade pip
+
+    pip install -r requirements-dev.txt
+
+    # run tests
+    pytest ./filterpy/
 
 
 Testing
