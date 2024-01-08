@@ -340,7 +340,7 @@ class ExtendedKalmanFilter(object):
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
-    
+
     def FJacobian(self, u=0):
         """
         Calculates the Jacobian of the transition matrix. Override if F is not sufficient.
