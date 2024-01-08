@@ -212,7 +212,7 @@ class ExtendedKalmanFilter(object):
         if np.isscalar(z) and self.dim_z == 1:
             z = np.asarray([z], float)
 
-        F = self.F
+        F = self.FJacobian()
         B = self.B
         P = self.P
         Q = self.Q
@@ -340,6 +340,12 @@ class ExtendedKalmanFilter(object):
         self.z = deepcopy(z)
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
+    
+    def FJacobian(self, u=0):
+        """
+        Calculates the Jacobian of the transition matrix. Override if F is not sufficient.
+        """
+        return self.F
 
     def predict_x(self, u=0):
         """
@@ -348,7 +354,8 @@ class ExtendedKalmanFilter(object):
         need to do this, for example, if the usual Taylor expansion to
         generate F is not providing accurate results for you.
         """
-        self.x = dot(self.F, self.x) + dot(self.B, u)
+        F = self.FJacobian()
+        self.x = dot(F, self.x) + dot(self.B, u)
 
     def predict(self, u=0):
         """
@@ -364,7 +371,8 @@ class ExtendedKalmanFilter(object):
         """
 
         self.predict_x(u)
-        self.P = dot(self.F, self.P).dot(self.F.T) + self.Q
+        F = self.FJacobian()
+        self.P = dot(F, self.P).dot(F.T) + self.Q
 
         # save prior
         self.x_prior = np.copy(self.x)
@@ -416,7 +424,7 @@ class ExtendedKalmanFilter(object):
             pretty_str('P', self.P),
             pretty_str('x_prior', self.x_prior),
             pretty_str('P_prior', self.P_prior),
-            pretty_str('F', self.F),
+            pretty_str('F', self.FJacobian()),
             pretty_str('Q', self.Q),
             pretty_str('R', self.R),
             pretty_str('K', self.K),
