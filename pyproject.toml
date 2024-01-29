@@ -1,0 +1,83 @@
+[build-system]
+
+# requires is a list of packages that are needed to build your package.
+# You don’t need to install them;
+# build frontends like pip will install them automatically in a temporary,
+# isolated virtual environment for use during the build process
+requires = ["setuptools", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["filterpy"]
+
+[tool.setuptools.package-data]
+"filterpy" = ["README.rst", "filterpy/changelog.txt", "LICENSE", "filterpy/kalman/tests/*.py"]
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E265"]
+# Ignore block comment should start with '# ' because it causes issues with environment definition for scripts
+
+[tool.autopep8]
+max_line_length = 120
+in-place = 1
+aggressive = 1
+ignore = ""
+
+# this is the [project] table
+[project]
+# add the distribution name of the package, the tar ball and python wheel use this name, this name goes the /home/$USER/.local/lib/python3.8/site-packages/
+name = "filterpy"
+
+dynamic = ["dependencies", "optional-dependencies"]
+
+# version is the package version. See the version specifier specification
+# for more details on versions. Some build backends allow it to be
+# specified another way, such as from a file or a git tag.
+version = "0.2.0"
+authors = [
+  { name="Roger Labbe", email="rlabbejr@gmail.com" }
+]
+description = "Kalman filtering and optimal estimation library"
+readme = "README.rst"
+license = { file="LICENSE" }
+
+# installers like pip use this to check for matching python versions
+requires-python = ">=3.7"
+classifiers = [
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    "Development Status :: 5 - Production/Stable",
+
+    # Indicate who your project is intended for
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Utilities",
+
+
+    # Pick your license as you wish (should match "license" above)
+    "License :: OSI Approved :: MIT License",
+
+    # Specify the Python versions you support here. In particular, ensure
+    # that you indicate whether you support Python 2, Python 3 or both.
+    "Programming Language :: Python :: 3.7",
+    
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS"
+]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+optional-dependencies.readthedocs = {file = ["requirements.readthedocs.txt"]}
+
+[project.urls]
+"Homepage" = "http://github.com/rlabbe/filterpy"
+"Bug Tracker" = "http://github.com/rlabbe/filterpy/issues/"
