@@ -387,7 +387,7 @@ def outer_product_sum(A, B=None):
     r"""
     Computes the sum of the outer products of the rows in A and B
 
-        P = \Sum {A[i] B[i].T} for i in 0..N
+        P = \\Sum {A[i] B[i].T} for i in 0..N
 
         Notionally:
 
