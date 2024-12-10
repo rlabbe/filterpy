@@ -379,8 +379,8 @@ def multivariate_gaussian(x, mu, cov):
          "a future release of FilterPy"), DeprecationWarning)
 
     # force all to numpy.array type, and flatten in case they are vectors
-    x = np.array(x, copy=False, ndmin=1).flatten()
-    mu = np.array(mu, copy=False, ndmin=1).flatten()
+    x = np.asarray(x).flatten()
+    mu = np.asarray(mu).flatten()
 
     nx = len(mu)
     cov = _to_cov(cov, nx)
