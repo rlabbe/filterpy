@@ -58,19 +58,22 @@ using the Saver class to save the state of the filter at each epoch.
     from filterpy.kalman import KalmanFilter
     from filterpy.common import Q_discrete_white_noise, Saver
 
+    rng = np.random.RandomState(0)
+
     r_std, q_std = 2., 0.003
+    dt = 1
     cv = KalmanFilter(dim_x=2, dim_z=1)
-    cv.x = np.array([[0., 1.]]) # position, velocity
-    cv.F = np.array([[1, dt],[ [0, 1]])
-    cv.R = np.array([[r_std^^2]])
-    f.H = np.array([[1., 0.]])
-    f.P = np.diag([.1^^2, .03^^2)
-    f.Q = Q_discrete_white_noise(2, dt, q_std**2)
+    cv.x = np.array([[0., 1.]]).T # position, velocity
+    cv.F = np.array([[1, dt], [0, 1]])
+    cv.R = np.array([[r_std ** 2]])
+    cv.H = np.array([[1., 0.]])
+    cv.P = np.diag([.1 ** 2, .03 ** 2])
+    cv.Q = Q_discrete_white_noise(2, dt, q_std ** 2)
 
     saver = Saver(cv)
     for z in range(100):
         cv.predict()
-        cv.update([z + randn() * r_std])
+        cv.update([z + rng.randn() * r_std])
         saver.save() # save the filter's state
 
     saver.to_array()
@@ -85,16 +88,18 @@ using the Saver class to save the state of the filter at each epoch.
 
 This code implements the same filter using the procedural form
 
-    x = np.array([[0., 1.]]) # position, velocity
-    F = np.array([[1, dt],[ [0, 1]])
-    R = np.array([[r_std^^2]])
+    from filterpy.kalman import predict, update
+    x = np.array([[0., 1.]]).T # position, velocity
+    F = np.array([[1, dt], [0, 1]])
+    R = np.array([[r_std ** 2]])
     H = np.array([[1., 0.]])
-    P = np.diag([.1^^2, .03^^2)
-    Q = Q_discrete_white_noise(2, dt, q_std**2)
+    P = np.diag([.1 ** 2, .03 ** 2])
+    Q = Q_discrete_white_noise(2, dt, q_std ** 2)
 
+    xs = []
     for z in range(100):
         x, P = predict(x, P, F=F, Q=Q)
-        x, P = update(x, P, z=[z + randn() * r_std], R=R, H=H)
+        x, P = update(x, P, z=[z + rng.randn() * r_std], R=R, H=H)
         xs.append(x[0, 0])
     plt.plot(xs)
 
@@ -200,7 +205,7 @@ class KalmanFilter(object):
 
         f.H = np.array([[1., 0.]])
 
-    Define the state's covariance matrix P. 
+    Define the state's covariance matrix P.
 
     .. code::
 
@@ -240,7 +245,7 @@ class KalmanFilter(object):
             f.predict()
             f.update(z)
 
-            do_something_with_estimate (f.x)
+            do_something_with_estimate(f.x)
 
 
     **Procedural Form**
