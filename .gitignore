@@ -4,7 +4,6 @@
 *.aux
 *.out
 book_files/
-dist/
 *egg-info*
 _build/
 _static
@@ -20,4 +19,4 @@ osx-64/
 filterpy/kalman/i.py
 filterpy/inprogress.py
 .pytest_cache
-
+.idea/
