@@ -115,7 +115,8 @@ def unscented_transform(sigmas, Wm, Wc, noise_cov=None,
     # this is the fast way to do this - see 'else' for the slow way
     if residual_fn is np.subtract or residual_fn is None:
         y = sigmas - x[np.newaxis, :]
-        P = np.dot(y.T, np.dot(np.diag(Wc), y))
+        #P = np.dot(y.T, np.dot(np.diag(Wc), y)) #Numpy 2.4.0 memory leak in np.diag https://github.com/numpy/numpy/issues/30862
+        P = y.T @ (y * Wc[:, None]) # Achieves the same using broadcasting, avoids memory leak bug, saves memory and is faster
     else:
         P = np.zeros((n, n))
         for k in range(kmax):
