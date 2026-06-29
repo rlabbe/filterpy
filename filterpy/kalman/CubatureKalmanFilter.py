@@ -389,6 +389,116 @@ class CubatureKalmanFilter(object):
         self._likelihood = None
         self._mahalanobis = None
 
+    def rts_smoother(self, Xs, Ps, Qs=None, dts=None, fx_args=()):
+        """
+        Runs the Rauch-Tung-Striebel smoother on filtered CKF means and
+        covariances. The usual input would come from storing the outputs of
+        repeated calls to ``predict()`` and ``update()``.
+
+        Parameters
+        ----------
+        Xs : numpy.array
+            Filtered state means. Accepted shapes are ``(n, dim_x)`` and
+            ``(n, dim_x, 1)``.
+
+        Ps : numpy.array
+            Filtered state covariances of shape ``(n, dim_x, dim_x)``.
+
+        Qs : list-like collection of numpy.array, optional
+            Process noise covariance at each time step. If not provided,
+            ``self.Q`` is used for every step.
+
+        dts : float or array-like of float, optional
+            Time step for each prediction. If a scalar is provided, the same
+            step is used for all smoothing recursions. If omitted,
+            ``self._dt`` is used.
+
+        fx_args : tuple, optional, default (,)
+            Optional arguments passed into ``fx()`` after the state variable
+            and time step.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            Smoothed state means with the same dimensionality convention as
+            ``Xs``.
+
+        P : numpy.ndarray
+            Smoothed state covariances.
+
+        K : numpy.ndarray
+            Smoother gain at each step.
+
+        References
+        ----------
+        .. [1] Arasaratnam, I., Haykin, S. "Cubature Kalman Smoothers."
+           Automatica, 47(10), 2245-2250, 2011.
+        """
+
+        Xs = np.asarray(Xs)
+        Ps = np.asarray(Ps)
+
+        if len(Xs) != len(Ps):
+            raise ValueError('Xs and Ps must have the same length')
+
+        if Xs.ndim == 3 and Xs.shape[2] == 1:
+            reshape_output = True
+            xs = Xs[:, :, 0].copy()
+        elif Xs.ndim == 2:
+            reshape_output = False
+            xs = Xs.copy()
+        else:
+            raise ValueError('Xs must have shape (n, dim_x) or (n, dim_x, 1)')
+
+        if Ps.ndim != 3 or Ps.shape[1] != Ps.shape[2]:
+            raise ValueError('Ps must have shape (n, dim_x, dim_x)')
+
+        n, dim_x = xs.shape
+
+        if dts is None:
+            dts = [self._dt] * n
+        elif isscalar(dts):
+            dts = [dts] * n
+
+        if Qs is None:
+            Qs = [self.Q] * n
+        else:
+            Qs = np.asarray(Qs)
+            if Qs.ndim == 2:
+                Qs = [Qs] * n
+
+        if not isinstance(fx_args, tuple):
+            fx_args = (fx_args,)
+
+        ps = Ps.copy()
+        Ks = zeros((n, dim_x, dim_x))
+        sigmas_f = zeros((self._num_sigmas, dim_x))
+
+        for k in range(n - 2, -1, -1):
+            sigmas = spherical_radial_sigmas(xs[k], ps[k])
+            for i in range(self._num_sigmas):
+                sigmas_f[i] = self.fx(sigmas[i], dts[k], *fx_args)
+
+            xb, Pb = ckf_transform(sigmas_f, Qs[k])
+            xb = xb[:, 0]
+
+            Pxb = np.zeros((dim_x, dim_x))
+            for i in range(self._num_sigmas):
+                dx = self.residual_x(sigmas[i], xs[k])
+                dy = self.residual_x(sigmas_f[i], xb)
+                Pxb += np.outer(dx, dy)
+            Pxb /= self._num_sigmas
+
+            K = dot(Pxb, inv(Pb))
+            xs[k] += dot(K, self.residual_x(xs[k + 1], xb))
+            ps[k] += dot(K, ps[k + 1] - Pb).dot(K.T)
+            Ks[k] = K
+
+        if reshape_output:
+            xs = xs[:, :, None]
+
+        return xs, ps, Ks
+
     @property
     def log_likelihood(self):
         """
