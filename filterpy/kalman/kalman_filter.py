@@ -779,7 +779,9 @@ class KalmanFilter(object):
             length = 1
         else:
             length = len(z_i)
-        z_i = np.reshape(z_i, [length, 1])
+        z_i = reshape_z(z_i, length, self.x.ndim)
+        self.y = reshape_z(self.y, self.dim_z, self.x.ndim)
+        self.z = reshape_z(self.z, self.dim_z, self.x.ndim)
         stop = start + length
 
         if R_i is None:
