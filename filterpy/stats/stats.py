@@ -1127,11 +1127,15 @@ def _to_cov(x, n):
 def rand_student_t(df, mu=0, std=1):
     """
     return random number distributed by student's t distribution with
-    `df` degrees of freedom with the specified mean and standard deviation.
+    `df` degrees of freedom, location `mu`, and scale `std`.
+
+    `std` is the standard deviation of the normal variate used to generate
+    the sample, not the standard deviation of the Student's t distribution.
+    For df > 2, the returned variance is std**2 * df / (df - 2).
     """
 
     x = random.gauss(0, std)
-    y = 2.0*random.gammavariate(0.5 * df, 2.0)
+    y = random.gammavariate(0.5 * df, 2.0)
     return x / (math.sqrt(y / df)) + mu
 
 
