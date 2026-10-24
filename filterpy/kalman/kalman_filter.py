@@ -150,7 +150,7 @@ class KalmanFilter(object):
     assign directly: your_filter._R = a_3x3_matrix.)
 
     After construction the filter will have default matrices created for you,
-    but you must specify the values for each. It’s usually easiest to just
+    but you must specify the values for each. Itâ€™s usually easiest to just
     overwrite them rather than assign to each element yourself. This will be
     clearer in the example below. All are of type numpy.array.
 
@@ -1807,9 +1807,12 @@ def rts_smoother(Xs, Ps, Fs, Qs):
 
     Fs : list-like collection of numpy.array
         State transition matrix of the Kalman filter at each time step.
+        Fs[k] predicts the state at time k from the state at time k-1,
+        as in batch_filter.
 
     Qs : list-like collection of numpy.array, optional
         Process noise of the Kalman filter at each time step.
+        Qs[k] is the process noise for the prediction at time k.
 
     Returns
     -------
@@ -1848,11 +1851,11 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     x, P, pP = Xs.copy(), Ps.copy(), Ps.copy()
 
     for k in range(n-2, -1, -1):
-        pP[k] = dot(dot(Fs[k], P[k]), Fs[k].T) + Qs[k]
+        pP[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
         #pylint: disable=bad-whitespace
-        K[k]  = dot(dot(P[k], Fs[k].T), linalg.inv(pP[k]))
-        x[k] += dot(K[k], x[k+1] - dot(Fs[k], x[k]))
+        K[k]  = dot(dot(P[k], Fs[k+1].T), linalg.inv(pP[k]))
+        x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
         P[k] += dot(dot(K[k], P[k+1] - pP[k]), K[k].T)
 
     return (x, P, K, pP)
