@@ -150,7 +150,7 @@ class KalmanFilter(object):
     assign directly: your_filter._R = a_3x3_matrix.)
 
     After construction the filter will have default matrices created for you,
-    but you must specify the values for each. Itâ€™s usually easiest to just
+    but you must specify the values for each. It’s usually easiest to just
     overwrite them rather than assign to each element yourself. This will be
     clearer in the example below. All are of type numpy.array.
 
