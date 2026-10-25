@@ -129,7 +129,7 @@ class LeastSquaresFilter(object):
 
         if self._order == 0:
             K[0] = 1. / n
-            y = z - x
+            y = z - x[0]
             x[0] += K[0] * y
 
         elif self._order == 1:
