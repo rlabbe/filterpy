@@ -330,7 +330,7 @@ class InformationFilter(object):
         # this is a copy of the code from kalman_filter, it has not been
         # turned into the information filter yet. DO NOT USE.
 
-        n = np.size(zs, 0)
+        n = len(zs)
         if Rs is None:
             Rs = [None] * n
 

@@ -314,7 +314,7 @@ class FadingKalmanFilter(object):
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        n = np.size(zs, 0)
+        n = len(zs)
         if Rs is None:
             Rs = [None] * n
 
