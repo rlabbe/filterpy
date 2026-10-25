@@ -152,6 +152,8 @@ class LeastSquaresFilter(object):
             x[0] += (K[0] * y) + (x[1] * dt) + (.5 * dt**2 * x[2])
             x[1] += (K[1] * y) + (x[2] * dt)
             x[2] += (K[2] * y)
+
+        self.y = y
         return self.x
 
     def errors(self):
