@@ -440,7 +440,7 @@ class UnscentedKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self._dim_z]).T
+            self.z = reshape_z(np.array([None]*self._dim_z), self._dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return

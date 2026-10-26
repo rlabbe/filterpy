@@ -170,7 +170,7 @@ class EnsembleKalmanFilter(object):
         self.hx = hx
         self.fx = fx
         self.K = zeros((dim_x, dim_z))
-        self.z = array([[None] * self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, x.ndim)
         self.S = zeros((dim_z, dim_z))   # system uncertainty
         self.SI = zeros((dim_z, dim_z))  # inverse system uncertainty
 
