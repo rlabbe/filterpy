@@ -99,7 +99,8 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True, kf=None):
 
     P, Q, R are all set to the Identity matrix.
 
-    H is assigned assuming the measurement is position, one per dimension `dim`.
+    If `dim_z` is 1, H measures the sum of the positions of all dimensions.
+    Otherwise, row `i` of H measures the position of dimension `i`.
 
 
     >>> kf = kinematic_kf(2, 1, dt=3.0)
@@ -120,7 +121,9 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True, kf=None):
         a stat
 
     dim_z : int, default 1
-        size of z vector *per* dimension `dim`. Normally should be 1
+        number of measurement rows. If 1, the measurement is the sum of the
+        positions of all dimensions. Otherwise row `i` measures the position
+        of dimension `i`; `dim_z` must be `<= dim`
 
     dt : float, default 1.0
         Time step. Used to create the state transition matrix
@@ -148,6 +151,8 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True, kf=None):
         raise ValueError("order must be >= 0")
     if dim_z < 1:
         raise ValueError("dim_z must be >= 1")
+    if dim_z > dim:
+        raise ValueError("dim_z must be <= dim")
 
     dim_x = order + 1
 
@@ -169,12 +174,18 @@ def kinematic_kf(dim, order, dt=1., dim_z=1, order_by_dim=True, kf=None):
             kf.F[ix:ix+dim, iy:iy+dim] = f
 
     if order_by_dim:
-        for i in range(dim_z):
+        if dim_z == 1:
             for j in range(dim):
-                kf.H[i, j * dim_x] = 1.
+                kf.H[0, j * dim_x] = 1.
+        else:
+            for i in range(dim_z):
+                kf.H[i, i * dim_x] = 1.
     else:
-        for i in range(dim_z):
+        if dim_z == 1:
             for j in range(dim):
-                kf.H[i, j] = 1.
+                kf.H[0, j] = 1.
+        else:
+            for i in range(dim_z):
+                kf.H[i, i] = 1.
 
     return kf
