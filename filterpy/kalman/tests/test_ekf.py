@@ -123,5 +123,31 @@ def test_ekf():
         plt.plot(xs[:, 0] - pos)
 
 
+def test_predict_update_linearizes_about_predicted_state():
+    # regression test for issue 271: the measurement Jacobian must be
+    # computed with the state after the predict step, not before
+
+    calls = []
+
+    def HJ(x, *args):
+        calls.append(np.copy(x))
+        return array([[1., 0.]])
+
+    def hx(x):
+        return x[0]
+
+    dt = 1.
+    ekf = ExtendedKalmanFilter(dim_x=2, dim_z=1)
+    ekf.F = array([[1., dt],
+                   [0., 1.]])
+    ekf.x = array([10., 4.5])
+
+    ekf.predict_update(z=array([15.]), HJacobian=HJ, Hx=hx)
+
+    expected = np.dot(ekf.F, array([10., 4.5]))
+    assert len(calls) == 1
+    assert calls[0] == approx(expected)
+
+
 if __name__ == '__main__':
     test_ekf()

@@ -26,7 +26,7 @@ from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class UnscentedKalmanFilter(object):
@@ -347,7 +347,7 @@ class UnscentedKalmanFilter(object):
 
         self.K = np.zeros((dim_x, dim_z))    # Kalman gain
         self.y = np.zeros((dim_z))           # residual
-        self.z = np.array([[None]*dim_z]).T  # measurement
+        self.z = reshape_z(np.array([None]*dim_z), dim_z, self.x.ndim)  # measurement
         self.S = np.zeros((dim_z, dim_z))    # system uncertainty
         self.SI = np.zeros((dim_z, dim_z))   # inverse system uncertainty
 
@@ -773,7 +773,7 @@ class UnscentedKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):

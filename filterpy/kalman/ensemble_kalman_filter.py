@@ -25,7 +25,7 @@ from copy import deepcopy
 import numpy as np
 from numpy import array, zeros, eye, dot
 from numpy.random import multivariate_normal
-from filterpy.common import pretty_str, outer_product_sum
+from filterpy.common import pretty_str, outer_product_sum, reshape_z
 
 
 class EnsembleKalmanFilter(object):
@@ -232,7 +232,7 @@ class EnsembleKalmanFilter(object):
         """
 
         if z is None:
-            self.z = array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return

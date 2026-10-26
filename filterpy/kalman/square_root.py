@@ -22,7 +22,7 @@ from copy import deepcopy
 import numpy as np
 from numpy import dot, zeros, eye
 from scipy.linalg import cholesky, qr, pinv
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class SquareRootKalmanFilter(object):
@@ -146,7 +146,7 @@ class SquareRootKalmanFilter(object):
         self.H = np.zeros((dim_z, dim_x)) # Measurement function
         self._R1_2 = eye(dim_z)   # sqrt state uncertainty
         self._R = eye(dim_z)      # state uncertainty
-        self.z = np.array([[None]*self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
 
         self.K = np.zeros((dim_x, dim_z)) # kalman gain
         self.S1_2 = np.zeros((dim_z, dim_z)) # sqrt system uncertainty
@@ -187,7 +187,7 @@ class SquareRootKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self._P1_2_post = np.copy(self._P1_2)
             return

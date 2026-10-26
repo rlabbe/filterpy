@@ -219,11 +219,11 @@ class ExtendedKalmanFilter(object):
         R = self.R
         x = self.x
 
-        H = HJacobian(x, *args)
-
         # predict step
         x = dot(F, x) + dot(B, u)
         P = dot(F, P).dot(F.T) + Q
+
+        H = HJacobian(x, *args)
 
         # save prior
         self.x_prior = np.copy(self.x)
@@ -295,7 +295,7 @@ class ExtendedKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -406,7 +406,7 @@ class ExtendedKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):
