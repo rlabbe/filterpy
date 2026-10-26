@@ -405,7 +405,7 @@ class KalmanFilter(object):
         self.R = eye(dim_z)               # measurement uncertainty
         self._alpha_sq = 1.               # fading memory control
         self.M = np.zeros((dim_x, dim_z)) # process-measurement cross correlation
-        self.z = np.array([[None]*self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -513,10 +513,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         if R is None:
@@ -642,10 +642,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -703,10 +703,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         if R is None:

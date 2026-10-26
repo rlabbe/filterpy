@@ -18,7 +18,7 @@ from filterpy.common import kinematic_kf, Saver, inv_diagonal, outer_product_sum
 
 import numpy as np
 from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
-                             ExtendedKalmanFilter)
+                             ExtendedKalmanFilter, KalmanFilter)
 
 def test_kinematic_filter():
     # make sure the default matrices are shaped correctly
@@ -130,6 +130,25 @@ def test_saver_kf():
         assert False, "Should not have been able to convert s.K into an array"
     except:
         pass
+
+
+def test_saver_kf_none_update():
+    # regression test for issue 228: update(None) must store z with the
+    # same shape as a normal update so Saver.to_array() does not fail
+
+    kf = KalmanFilter(dim_x=1, dim_z=1)
+    kf.x = np.array([0.])  # 1-D state
+    s = Saver(kf)
+
+    for i in range(5):
+        kf.predict()
+        if i == 2:
+            kf.update(None)
+        else:
+            kf.update([i])
+        s.save()
+
+    s.to_array()
 
 
 def test_saver_ekf():

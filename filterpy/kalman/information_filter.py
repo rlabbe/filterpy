@@ -148,7 +148,7 @@ class InformationFilter(object):
         self._F_inv = 0.          # state transition matrix
         self.H = np.zeros((dim_z, dim_x)) # Measurement function
         self.R_inv = eye(dim_z)   # state uncertainty
-        self.z = np.array([[None]*self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various

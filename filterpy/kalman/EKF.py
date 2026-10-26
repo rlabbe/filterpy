@@ -295,7 +295,7 @@ class ExtendedKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
