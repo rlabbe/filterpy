@@ -35,3 +35,8 @@ jobs:
         run: python -c "import sys, numpy, scipy; print(sys.version); print('numpy', numpy.__version__); print('scipy', scipy.__version__)"
       - name: Run tests
         run: python -m pytest -q filterpy
+      - name: Check package builds and imports
+        run: |
+          python -m pip install .
+          cd ..
+          python -c "import filterpy"
