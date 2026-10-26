@@ -939,8 +939,8 @@ class KalmanFilter(object):
             zs = [t + random.randn()*4 for t in range (40)]
             Fs = [np.array([[1., dt], [0, 1]] for dt in dts]
 
-            (mu, cov, _, _) = kf.batch_filter(zs, Fs=Fs)
-            (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs)
+            mu, cov, _, _ = kf.batch_filter(zs, Fs=Fs)
+            xs, Ps, Ks, Pps = kf.rts_smoother(mu, cov, Fs=Fs)
         """
 
         #pylint: disable=too-many-statements
@@ -1050,8 +1050,8 @@ class KalmanFilter(object):
 
             zs = [t + random.randn()*4 for t in range (40)]
 
-            (mu, cov, _, _) = kalman.batch_filter(zs)
-            (x, P, K, Pp) = rts_smoother(mu, cov, kf.F, kf.Q)
+            mu, cov, _, _ = kalman.batch_filter(zs)
+            x, P, K, Pp = rts_smoother(mu, cov, kf.F, kf.Q)
 
         """
 
@@ -1742,9 +1742,9 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
         Fs = [kf.F for t in range (40)]
         Hs = [kf.H for t in range (40)]
 
-        (mu, cov, _, _) = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
-                                          Bs=None, us=None, update_first=False)
-        (xs, Ps, Ks, Pps) = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
+        mu, cov, _, _ = kf.batch_filter(zs, Rs=R_list, Fs=Fs, Hs=Hs, Qs=None,
+                                        Bs=None, us=None, update_first=False)
+        xs, Ps, Ks, Pps = kf.rts_smoother(mu, cov, Fs=Fs, Qs=None)
 
     """
 
@@ -1844,7 +1844,7 @@ def rts_smoother(Xs, Ps, Fs, Qs):
         zs = [t + random.randn()*4 for t in range (40)]
 
         (mu, cov, _, _) = kalman.batch_filter(zs)
-        (x, P, K, pP) = rts_smoother(mu, cov, kf.F, kf.Q)
+        x, P, K, pP = rts_smoother(mu, cov, kf.F, kf.Q)
     """
 
     if len(Xs) != len(Ps):
