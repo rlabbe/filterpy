@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from pytest import approx
 from filterpy.kalman import KalmanFilter, update, predict, batch_filter
 from filterpy.common import Q_discrete_white_noise, kinematic_kf, Saver
-from filterpy.stats import mahalanobis
+from filterpy.stats import mahalanobis, logpdf
 from scipy.linalg import block_diag, norm
 
 DO_PLOT = False
@@ -423,6 +423,23 @@ def test_procedure_form():
         plt.plot(xest[:, 0])
         plt.plot(xest[:, 1])
         plt.plot(measurements)
+
+
+def test_update_log_likelihood_uses_prior():
+    # regression test for issue 260: log likelihood must be computed
+    # against the prior state, not the posterior
+
+    x = np.array([1., 1.])
+    P = np.eye(2)
+    H = np.array([[1., 0.]])
+    R = np.array([[4.]])
+    z = np.array([5.])
+
+    x_prior = x.copy()
+    S = H @ P @ H.T + R
+
+    x, P, _, _, _, ll = update(x, P, z, R, H, True)
+    assert ll == approx(logpdf(z, H @ x_prior, S))
 
 
 def test_steadystate():

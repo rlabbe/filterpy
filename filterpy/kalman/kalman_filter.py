@@ -1503,7 +1503,7 @@ def update(x, P, z, R, H=None, return_all=False):
 
     if return_all:
         # compute log likelihood
-        log_likelihood = logpdf(z, dot(H, x), S)
+        log_likelihood = logpdf(z, Hx, S)
         return x, P, y, K, S, log_likelihood
     return x, P
 
