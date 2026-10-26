@@ -937,7 +937,7 @@ class KalmanFilter(object):
         """
 
         #pylint: disable=too-many-statements
-        n = np.size(zs, 0)
+        n = len(zs)
         if Fs is None:
             Fs = [self.F] * n
         if Qs is None:
@@ -1235,7 +1235,7 @@ class KalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     @property
@@ -1741,7 +1741,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
 
     """
 
-    n = np.size(zs, 0)
+    n = len(zs)
     dim_x = x.shape[0]
 
     # mean estimates from Kalman Filter

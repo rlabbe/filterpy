@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        numpy: ["numpy>=2"]
+        include:
+          - python-version: "3.10"
+            numpy: "numpy<2"
+            scipy: "scipy<1.14"
+          - python-version: "3.12"
+            numpy: "numpy<2"
+            scipy: "scipy<1.14"
+    name: Python ${{ matrix.python-version }}, ${{ matrix.numpy }}
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "${{ matrix.numpy }}" "${{ matrix.scipy || 'scipy' }}" matplotlib pytest
+      - name: Show versions
+        run: python -c "import sys, numpy, scipy; print(sys.version); print('numpy', numpy.__version__); print('scipy', scipy.__version__)"
+      - name: Run tests
+        run: python -m pytest -q filterpy
+      - name: Check package builds and imports
+        run: |
+          python -m pip install .
+          cd ..
+          python -c "import filterpy"
