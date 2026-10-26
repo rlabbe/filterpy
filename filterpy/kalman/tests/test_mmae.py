@@ -198,6 +198,46 @@ def test_MMAE2():
         plt.plot(xs)
         plt.plot(pos[:, 0])
 
+def test_predict_computes_bank_prior():
+    # regression test for issue 117: predict() must compute the bank's
+    # combined prior x and P
+
+    f1 = KalmanFilter(dim_x=2, dim_z=1)
+    f1.x = np.array([[0., 1.]]).T
+    f1.P = np.eye(2) * 2.
+    f1.F = np.array([[1., 1.], [0., 1.]])
+    f1.H = np.array([[1., 0.]])
+    f1.R = np.eye(1)
+
+    f2 = KalmanFilter(dim_x=2, dim_z=1)
+    f2.x = np.array([[10., -1.]]).T
+    f2.P = np.eye(2) * 5.
+    f2.F = np.array([[1., 2.], [0., 1.]])
+    f2.H = np.array([[1., 0.]])
+    f2.R = np.eye(1)
+
+    bank = MMAEFilterBank([f1, f2], p=(0.5, 0.5), dim_x=2, H=f1.H)
+    bank.predict()
+
+    x_expected = 0.5*f1.x + 0.5*f2.x
+    y1 = f1.x - x_expected
+    y2 = f2.x - x_expected
+    P_expected = 0.5*(np.outer(y1, y1) + f1.P) + 0.5*(np.outer(y2, y2) + f2.P)
+
+    assert np.allclose(bank.x, x_expected)
+    assert np.allclose(bank.P, P_expected)
+    assert np.array_equal(bank.x_prior, bank.x)
+    assert np.array_equal(bank.P_prior, bank.P)
+
+    # update() must combine posteriors with the same mixture formula
+    bank.update(np.array([[5.]]), H=f1.H)
+    y1 = f1.x - bank.x
+    y2 = f2.x - bank.x
+    P_expected = bank.p[0]*(np.outer(y1, y1) + f1.P) + \
+                 bank.p[1]*(np.outer(y2, y2) + f2.P)
+    assert np.allclose(bank.P, P_expected)
+
+
 if __name__ == '__main__':
     DO_PLOT = True
     test_MMAE2()

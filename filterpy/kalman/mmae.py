@@ -153,6 +153,24 @@ class MMAEFilterBank(object):
         for f in self.filters:
             f.predict(u)
 
+        # combine the predicted states into the bank's prior estimate
+        self.P = np.zeros(self.filters[0].P.shape)
+
+        # state can be in form [x,y,z,...] or [[x, y, z,...]].T
+        is_row_vector = (self.filters[0].x.ndim == 1)
+        if is_row_vector:
+            self.x = np.zeros(self.dim_x)
+            for f, p in zip(self.filters, self.p):
+                self.x += np.dot(f.x, p)
+        else:
+            self.x = np.zeros((self.dim_x, 1))
+            for f, p in zip(self.filters, self.p):
+                self.x += np.dot(f.x, p)
+
+        for f, p in zip(self.filters, self.p):
+            y = f.x - self.x
+            self.P += p*(np.outer(y, y) + f.P)
+
         # save prior
         self.x_prior = self.x.copy()
         self.P_prior = self.P.copy()
@@ -201,8 +219,8 @@ class MMAEFilterBank(object):
             for f, p in zip(self.filters, self.p):
                 self.x += np.dot(f.x, p)
 
-        for x, f, p in zip(self.x, self.filters, self.p):
-            y = f.x - x
+        for f, p in zip(self.filters, self.p):
+            y = f.x - self.x
             self.P += p*(np.outer(y, y) + f.P)
 
 
