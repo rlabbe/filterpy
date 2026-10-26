@@ -18,18 +18,19 @@ from filterpy.common import kinematic_kf, Saver, inv_diagonal, outer_product_sum
 
 import numpy as np
 from filterpy.kalman import (MerweScaledSigmaPoints, UnscentedKalmanFilter,
-                             ExtendedKalmanFilter)
+                             ExtendedKalmanFilter, KalmanFilter,
+                             InformationFilter, EnsembleKalmanFilter)
 
 def test_kinematic_filter():
     # make sure the default matrices are shaped correctly
-    for dim_z in range(1, 4):
-        for dim_x in range(1, 4):
-            for order in range (0, 3):
-                kf = kinematic_kf(dim=dim_x, order=order, dim_z=dim_z)
+    for dim in range(1, 4):
+        for order in range (0, 3):
+            for dim_z in range(1, dim + 1):
+                kf = kinematic_kf(dim=dim, order=order, dim_z=dim_z)
                 kf.predict()
                 kf.update(np.zeros((dim_z, 1)))
 
-                kf = kinematic_kf(dim=dim_x, order=order, dim_z=dim_z, order_by_dim=False)
+                kf = kinematic_kf(dim=dim, order=order, dim_z=dim_z, order_by_dim=False)
                 kf.predict()
                 kf.update(np.zeros((dim_z, 1)))
 
@@ -59,11 +60,21 @@ def test_kinematic_filter():
     assert np.array_equal(H, kf.H), "H is\n{}\nshould be\n{}".format(kf.H, H)
 
 
-    kf = kinematic_kf(dim=1, order=2, dim_z=3, order_by_dim=False)
-    H = np.array([[1, 0, 0],
-                  [1, 0, 0],
-                  [1, 0, 0.]])
+    kf = kinematic_kf(dim=2, order=1, dim_z=2)
+    H = np.array([[1, 0, 0, 0],
+                  [0, 0, 1, 0.]])
     assert np.array_equal(H, kf.H), "H is\n{}\nshould be\n{}".format(kf.H, H)
+
+    kf = kinematic_kf(dim=2, order=1, dim_z=2, order_by_dim=False)
+    H = np.array([[1, 0, 0, 0],
+                  [0, 1, 0, 0.]])
+    assert np.array_equal(H, kf.H), "H is\n{}\nshould be\n{}".format(kf.H, H)
+
+    try:
+        kinematic_kf(dim=1, order=2, dim_z=3, order_by_dim=False)
+        assert False, "should have raised ValueError for dim_z > dim"
+    except ValueError:
+        pass
 
 
 
@@ -130,6 +141,98 @@ def test_saver_kf():
         assert False, "Should not have been able to convert s.K into an array"
     except:
         pass
+
+
+def test_saver_kf_none_update():
+    # regression test for issue 228: update(None) must store z with the
+    # same shape as a normal update so Saver.to_array() does not fail
+
+    kf = KalmanFilter(dim_x=1, dim_z=1)
+    kf.x = np.array([0.])  # 1-D state
+    s = Saver(kf)
+
+    for i in range(5):
+        kf.predict()
+        if i == 2:
+            kf.update(None)
+        else:
+            kf.update([i])
+        s.save()
+
+    s.to_array()
+
+
+def test_saver_ukf_none_update():
+    # regression test for issue 228: update(None) must store z with the
+    # same shape as a normal update so Saver.to_array() does not fail
+
+    def fx(x, dt):
+        return x + dt
+
+    def hx(x):
+        return np.atleast_1d(x)
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(1, .1, 2., 2.)
+    kf = UnscentedKalmanFilter(dim_x=1, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    s = Saver(kf)
+
+    for i in range(5):
+        kf.predict()
+        if i == 2:
+            kf.update(None)
+        else:
+            kf.update(np.array([i]))
+        s.save()
+
+    s.to_array()
+
+
+def test_saver_ensemble_kf_none_update():
+    # regression test for issue 228: update(None) must store z with the
+    # same shape as a normal update so Saver.to_array() does not fail
+
+    def fx(x, dt):
+        return x + dt
+
+    def hx(x):
+        return x.copy()
+
+    kf = EnsembleKalmanFilter(x=np.array([0.]), P=np.eye(1), dim_z=1,
+                              dt=0.1, N=100, hx=hx, fx=fx)
+    s = Saver(kf)
+    s.save()
+
+    for i in range(5):
+        kf.predict()
+        if i == 2:
+            kf.update(None)
+        else:
+            kf.update(np.array([i]))
+        s.save()
+
+    s.to_array()
+
+
+def test_saver_information_filter_none_update():
+    # regression test for issue 228: update(None) must store z with the
+    # same shape as a normal update so Saver.to_array() does not fail
+
+    kf = InformationFilter(dim_x=1, dim_z=1)
+    kf.F = np.array([[1.]])
+    kf.H = np.array([[1.]])
+    s = Saver(kf)
+
+    for i in range(5):
+        kf.predict()
+        if i == 2:
+            kf.update(None)
+        else:
+            kf.update(i)
+        s.save()
+
+    s.to_array()
+    assert s.z.shape == (5, 1, 1)
 
 
 def test_saver_ekf():

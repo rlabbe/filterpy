@@ -9,7 +9,7 @@ from filterpy.kalman import CubatureKalmanFilter as CKF
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import MerweScaledSigmaPoints
 from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
+from filterpy.common import Q_discrete_white_noise, Saver
 import numpy as np
 from numpy.random import randn
 import pytest
@@ -46,6 +46,7 @@ def test_1d():
     kf.R *= 0.05
     kf.Q = np.array([[0., 0], [0., .001]])
 
+    s = Saver(kf)
     for i in range(50):
         z = np.array([[i+randn()*0.1]])
         ckf.predict()
@@ -54,11 +55,14 @@ def test_1d():
         kf.update(z[0])
         assert abs(ckf.x[0] - kf.x[0]) < 1e-10
         assert abs(ckf.x[1] - kf.x[1]) < 1e-10
+        s.save()
 
         # test mahalanobis
         a = np.zeros(kf.y.shape)
         maha = scipy_mahalanobis(a, kf.y, kf.SI)
         assert kf.mahalanobis == approx(maha)
+
+    s.to_array()
 
 
 def _run_linear_ckf_history():

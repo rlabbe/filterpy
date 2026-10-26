@@ -26,7 +26,7 @@ from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class UnscentedKalmanFilter(object):
@@ -229,7 +229,7 @@ class UnscentedKalmanFilter(object):
     >>> points = MerweScaledSigmaPoints(4, alpha=.1, beta=2., kappa=-1)
     >>>
     >>> kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-    >>> kf.x = np.array([-1., 1., -1., 1]) # initial state
+    >>> kf.x = np.array([0., 10., 0., 10.]) # initial state
     >>> kf.P *= 0.2 # initial uncertainty
     >>> z_std = 0.1
     >>> kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
@@ -347,7 +347,7 @@ class UnscentedKalmanFilter(object):
 
         self.K = np.zeros((dim_x, dim_z))    # Kalman gain
         self.y = np.zeros((dim_z))           # residual
-        self.z = np.array([[None]*dim_z]).T  # measurement
+        self.z = reshape_z(np.array([None]*dim_z), dim_z, self.x.ndim)  # measurement
         self.S = np.zeros((dim_z, dim_z))    # system uncertainty
         self.SI = np.zeros((dim_z, dim_z))   # inverse system uncertainty
 
@@ -361,7 +361,7 @@ class UnscentedKalmanFilter(object):
         self.x_post = self.x.copy()
         self.P_post = self.P.copy()
 
-    def predict(self, dt=None, UT=None, fx=None, **fx_args):
+    def predict(self, dt=None, Q=None, UT=None, fx=None, **fx_args):
         r"""
         Performs the predict step of the UKF. On return, self.x and
         self.P contain the predicted state (x) and covariance (P). '
@@ -375,6 +375,10 @@ class UnscentedKalmanFilter(object):
         dt : double, optional
             If specified, the time step to be used for this prediction.
             self._dt is used if this is not provided.
+
+        Q : numpy.array((dim_x, dim_x)), optional
+            Process noise. If provided, overrides self.Q for
+            this function call.
 
         fx : callable f(x, dt, **fx_args), optional
             State transition function. If not provided, the default
@@ -393,6 +397,9 @@ class UnscentedKalmanFilter(object):
         if dt is None:
             dt = self._dt
 
+        if Q is None:
+            Q = self.Q
+
         if UT is None:
             UT = unscented_transform
 
@@ -400,7 +407,7 @@ class UnscentedKalmanFilter(object):
         self.compute_process_sigmas(dt, fx, **fx_args)
 
         #and pass sigmas through the unscented transform to compute prior
-        self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, self.Q,
+        self.x, self.P = UT(self.sigmas_f, self.Wm, self.Wc, Q,
                             self.x_mean, self.residual_x)
 
         # update sigma points to reflect the new variance of the points
@@ -440,7 +447,7 @@ class UnscentedKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self._dim_z]).T
+            self.z = reshape_z(np.array([None]*self._dim_z), self._dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -718,7 +725,7 @@ class UnscentedKalmanFilter(object):
                 sigmas_f[i] = self.fx(sigmas[i], dts[k])
 
             xb, Pb = UT(
-                sigmas_f, self.Wm, self.Wc, self.Q,
+                sigmas_f, self.Wm, self.Wc, Qs[k],
                 self.x_mean, self.residual_x)
 
             # compute cross variance
@@ -773,7 +780,7 @@ class UnscentedKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):

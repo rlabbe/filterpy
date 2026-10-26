@@ -81,12 +81,12 @@ def test_sigma_plot():
         for i in range(Xi0.shape[0]):
             plt.scatter((Xi0[i, 0]-x[0, 0])*w0[i] + x[0, 0],
                         (Xi0[i, 1]-x[0, 1])*w0[i] + x[0, 1],
-                        color='blue', label='Julier low $\kappa$')
+                        color='blue', label=r'Julier low $\kappa$')
 
         for i in range(Xi1.shape[0]):
             plt.scatter((Xi1[i, 0]-x[0, 0]) * w1[i] + x[0, 0],
                         (Xi1[i, 1]-x[0, 1]) * w1[i] + x[0, 1],
-                        color='green', label='Julier high $\kappa$')
+                        color='green', label=r'Julier high $\kappa$')
         for i in range(Xi2.shape[0]):
             plt.scatter((Xi2[i, 0] - x[0, 0]) * w2[i] + x[0, 0],
                         (Xi2[i, 1] - x[0, 1]) * w2[i] + x[0, 1],
@@ -976,7 +976,57 @@ def test_linear_rts():
 
     assert np.allclose(dx, 0, atol=1e-7)
     assert np.allclose(dxx, 0, atol=1e-6)
-    return ukf
+
+
+def test_rts_smoother_uses_Qs():
+    # regression test for PR 279: rts_smoother must use the per-epoch
+    # Qs, not self.Q
+
+    def fx(x, dt):
+        F = np.array([[1., dt], [0., 1.]])
+        return np.dot(F, x)
+
+    def hx(x):
+        return np.array([x[0]])
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(2, .1, 2., 2.)
+    ukf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    ukf.x = np.array([0., 1.])
+    ukf.R = np.eye(1)
+    ukf.Q = np.eye(2) * 0.01
+
+    zs = [t + randn() for t in np.arange(0, 30, dt)]
+    mu, cov = ukf.batch_filter(zs)
+
+    xs_small, _, _ = ukf.rts_smoother(mu, cov)
+    xs_big, _, _ = ukf.rts_smoother(mu, cov, Qs=[np.eye(2)] * len(zs))
+
+    assert not np.allclose(xs_small, xs_big)
+
+
+def test_predict_Q_override():
+    # regression test for PR 279: predict must accept a per-call Q
+
+    def fx(x, dt):
+        F = np.array([[1., dt], [0., 1.]])
+        return np.dot(F, x)
+
+    def hx(x):
+        return np.array([x[0]])
+
+    dt = 0.1
+    points = MerweScaledSigmaPoints(2, .1, 2., 2.)
+    ukf = UnscentedKalmanFilter(dim_x=2, dim_z=1, dt=dt, fx=fx, hx=hx, points=points)
+    ukf.x = np.array([0., 1.])
+    ukf.R = np.eye(1)
+    ukf.Q = np.eye(2) * 0.01
+
+    ukf.predict()
+    P_small = ukf.P.copy()
+
+    ukf.predict(Q=np.eye(2) * 100)
+    assert not np.allclose(P_small, ukf.P)
 
 
 def _test_log_likelihood():

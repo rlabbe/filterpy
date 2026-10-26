@@ -26,7 +26,7 @@ import numpy as np
 from numpy import eye, zeros, dot, isscalar
 from scipy.linalg import inv, cholesky
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str, outer_product_sum
+from filterpy.common import pretty_str, outer_product_sum, reshape_z
 
 
 def spherical_radial_sigmas(x, P):
@@ -257,7 +257,7 @@ class CubatureKalmanFilter(object):
         self.x_mean = x_mean_fn
         self.z_mean = z_mean_fn
         self.y = 0
-        self.z = np.array([[None]*self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
         self.S = np.zeros((dim_z, dim_z)) # system uncertainty
         self.SI = np.zeros((dim_z, dim_z)) # inverse system uncertainty
 
@@ -346,7 +346,7 @@ class CubatureKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -534,7 +534,7 @@ class CubatureKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):
