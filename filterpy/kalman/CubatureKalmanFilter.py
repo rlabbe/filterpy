@@ -351,6 +351,8 @@ class CubatureKalmanFilter(object):
             self.P_post = self.P.copy()
             return
 
+        z = reshape_z(z, self.dim_z, self.x.ndim)
+
         if not isinstance(hx_args, tuple):
             hx_args = (hx_args,)
 
@@ -370,7 +372,12 @@ class CubatureKalmanFilter(object):
         m = self._num_sigmas  # literaure uses m for scaling factor
         xf = self.x.flatten()
         zpf = zp.flatten()
-        Pxz = outer_product_sum(self.sigmas_f - xf, self.sigmas_h - zpf) / m
+        Pxz = np.zeros((self.dim_x, self.dim_z))
+        for i in range(m):
+            dx = self.residual_x(self.sigmas_f[i], xf)
+            dz = self.residual_z(self.sigmas_h[i], zpf)
+            Pxz += np.outer(dx, dz)
+        Pxz /= m
 
         self.K = dot(Pxz, self.SI)        # Kalman gain
         self.y = self.residual_z(z, zp)   # residual

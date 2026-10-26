@@ -5,7 +5,7 @@ Created on Sun Jun 26 08:03:07 2016
 @author: rlabbe
 """
 
-from filterpy.kalman import CubatureKalmanFilter as CKF
+from filterpy.kalman import CubatureKalmanFilter as CKF, spherical_radial_sigmas
 from filterpy.kalman import UnscentedKalmanFilter as UKF
 from filterpy.kalman import MerweScaledSigmaPoints
 from filterpy.kalman import KalmanFilter
@@ -152,6 +152,52 @@ def test_ckf_rts_smoother_length_mismatch():
 
     with pytest.raises(ValueError, match="same length"):
         ckf.rts_smoother(xs[:-1], ps)
+
+
+def test_update_uses_residual_x():
+    # regression test for issue 280: update() must compute the cross
+    # variance with residual_x and residual_z
+
+    def fx(x, dt):
+        return x.copy()
+
+    def hx(x):
+        return np.array([np.cos(x[0]), np.sin(x[0])])
+
+    def residual_x(a, b):
+        y = a - b
+        return (y + np.pi) % (2*np.pi) - np.pi
+
+    def residual_z(a, b):
+        return a - b
+
+    ckf = CKF(dim_x=1, dim_z=2, dt=0.1, hx=hx, fx=fx,
+              residual_x=residual_x, residual_z=residual_z)
+    ckf.x = np.array([np.pi - 0.01])
+    ckf.P = np.eye(1) * 100.
+    ckf.R = np.eye(2) * .1
+    ckf.Q = np.zeros((1, 1))
+
+    z = np.array([0., 1.])
+    ckf.predict()
+    ckf.update(z)
+
+    # hand-compute the update with wrapped residuals
+    m = 2
+    x0 = np.array([np.pi - 0.01])
+    sigmas = spherical_radial_sigmas(x0, np.eye(1) * 100.)
+    sigmas_f = np.array([fx(s, 0.1) for s in sigmas])
+    sigmas_h = np.array([hx(s) for s in sigmas_f])
+    zp = np.mean(sigmas_h, axis=0)
+    S = sum(np.outer(dz, dz) for dz in sigmas_h - zp) / m + ckf.R
+    Pxz = sum(np.outer(residual_x(sigmas_f[i], x0),
+                       residual_z(sigmas_h[i], zp))
+              for i in range(m)) / m
+    K = np.dot(Pxz, np.linalg.inv(S))
+    x_expected = x0[:, None] + np.dot(K, z[:, None] - zp[:, None])
+
+    assert np.allclose(ckf.K, K, atol=1e-12)
+    assert np.allclose(ckf.x, x_expected, atol=1e-12)
 
 
 if __name__ == "__main__":
