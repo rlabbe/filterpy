@@ -26,7 +26,7 @@ from numpy import eye, zeros, dot, isscalar, outer
 from scipy.linalg import cholesky
 from filterpy.kalman import unscented_transform
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 
 class UnscentedKalmanFilter(object):
@@ -229,7 +229,7 @@ class UnscentedKalmanFilter(object):
     >>> points = MerweScaledSigmaPoints(4, alpha=.1, beta=2., kappa=-1)
     >>>
     >>> kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-    >>> kf.x = np.array([-1., 1., -1., 1]) # initial state
+    >>> kf.x = np.array([0., 10., 0., 10.]) # initial state
     >>> kf.P *= 0.2 # initial uncertainty
     >>> z_std = 0.1
     >>> kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
@@ -347,7 +347,7 @@ class UnscentedKalmanFilter(object):
 
         self.K = np.zeros((dim_x, dim_z))    # Kalman gain
         self.y = np.zeros((dim_z))           # residual
-        self.z = np.array([[None]*dim_z]).T  # measurement
+        self.z = reshape_z(np.array([None]*dim_z), dim_z, self.x.ndim)  # measurement
         self.S = np.zeros((dim_z, dim_z))    # system uncertainty
         self.SI = np.zeros((dim_z, dim_z))   # inverse system uncertainty
 
@@ -440,7 +440,7 @@ class UnscentedKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self._dim_z]).T
+            self.z = reshape_z(np.array([None]*self._dim_z), self._dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -773,7 +773,7 @@ class UnscentedKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):

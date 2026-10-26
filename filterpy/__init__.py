@@ -14,7 +14,7 @@ This is licensed under an MIT license. See the readme.MD file
 for more information.
 """
 
-__version__ = "1.4.5"
+__version__ = "2.0.0"
 
 __all__ = ['common', 'discrete_bayes', 'gh', 'hinfinity',
            'kalman', 'leastsq', 'memory', 'monte_carlo', 'stats']

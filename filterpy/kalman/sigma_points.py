@@ -487,9 +487,7 @@ class SimplexSigmaPoints(object):
 
         n = self.n
 
-        if np.isscalar(x):
-            x = np.asarray([x])
-        x = x.reshape(-1, 1)
+        x = np.asarray(x).reshape(-1, 1)
 
         if np.isscalar(P):
             P = np.eye(n) * P
