@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from pytest import approx
 from filterpy.kalman import KalmanFilter, update, predict, batch_filter
 from filterpy.common import Q_discrete_white_noise, kinematic_kf, Saver
-from filterpy.stats import mahalanobis
+from filterpy.stats import mahalanobis, logpdf
 from scipy.linalg import block_diag, norm
 
 DO_PLOT = False
@@ -425,6 +425,23 @@ def test_procedure_form():
         plt.plot(measurements)
 
 
+def test_update_log_likelihood_uses_prior():
+    # regression test for issue 260: log likelihood must be computed
+    # against the prior state, not the posterior
+
+    x = np.array([1., 1.])
+    P = np.eye(2)
+    H = np.array([[1., 0.]])
+    R = np.array([[4.]])
+    z = np.array([5.])
+
+    x_prior = x.copy()
+    S = H @ P @ H.T + R
+
+    x, P, _, _, _, ll = update(x, P, z, R, H, True)
+    assert ll == approx(logpdf(z, H @ x_prior, S))
+
+
 def test_steadystate():
 
     dim = 7
@@ -724,6 +741,41 @@ def test_update_correlated():
     for i in range(10):
         f.predict()
         f.update_correlated(3.)
+
+
+def test_batch_filter_missing_array_measurements():
+    # issue #284: measurements given as arrays, with None for missing ones
+    zs = [np.array([1.]), np.array([2.1]), None, np.array([3.9]), np.array([5.2])]
+
+    def make():
+        kf = KalmanFilter(dim_x=2, dim_z=1)
+        kf.x = np.array([[0.], [1.]])
+        kf.F = np.array([[1., 1.], [0., 1.]])
+        kf.H = np.array([[1., 0.]])
+        kf.R *= 0.5
+        kf.Q *= 0.01
+        return kf
+
+    # reference: step through by hand
+    kf = make()
+    expected = []
+    for z in zs:
+        kf.predict()
+        kf.update(z)
+        expected.append(kf.x.copy())
+
+    kf = make()
+    means, covs, _, _ = kf.batch_filter(zs)
+    assert len(means) == len(zs)
+    for m, e in zip(means, expected):
+        assert np.allclose(m, e)
+
+    kf = make()
+    means, covs, _, _ = batch_filter(kf.x, kf.P, zs, [kf.F] * len(zs),
+                                     [kf.Q] * len(zs), [kf.H] * len(zs),
+                                     [kf.R] * len(zs))
+    for m, e in zip(means, expected):
+        assert np.allclose(m, e)
 
 
 if __name__ == "__main__":

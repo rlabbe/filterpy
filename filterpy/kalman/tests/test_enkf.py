@@ -67,11 +67,10 @@ def test_1d_const_vel():
     if DO_PLOT:
         plt.plot(results, label='EnKF')
         plt.plot(measurements, c='r', label='z')
-        plt.plot (results-ps, c='k',linestyle='--', label='3$\sigma$')
+        plt.plot (results-ps, c='k',linestyle='--', label=r'3$\sigma$')
         plt.plot(results+ps, c='k', linestyle='--')
         plt.legend(loc='best')
         #print(ps)
-    return f
 
 
 

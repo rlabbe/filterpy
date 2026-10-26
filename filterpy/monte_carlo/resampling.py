@@ -65,13 +65,14 @@ def residual_resample(weights):
             indexes[k] = i
             k += 1
 
-    # use multinormal resample on the residual to fill up the rest. This
-    # maximizes the variance of the samples
-    residual = weights - num_copies     # get fractional part
-    residual /= sum(residual)           # normalize
-    cumulative_sum = np.cumsum(residual)
-    cumulative_sum[-1] = 1. # avoid round-off errors: ensures sum is exactly one
-    indexes[k:N] = np.searchsorted(cumulative_sum, random(N-k))
+    if k < N:
+        # use multinormal resample on the residual to fill up the rest. This
+        # maximizes the variance of the samples
+        residual = N*np.asarray(weights) - num_copies     # get fractional part
+        residual /= sum(residual)           # normalize
+        cumulative_sum = np.cumsum(residual)
+        cumulative_sum[-1] = 1. # avoid round-off errors: ensures sum is exactly one
+        indexes[k:N] = np.searchsorted(cumulative_sum, random(N-k))
 
     return indexes
 

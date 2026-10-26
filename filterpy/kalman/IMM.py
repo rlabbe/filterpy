@@ -219,22 +219,26 @@ class IMMEstimator(object):
             f.P = Ps[i].copy()
             f.predict(u)
 
-        # compute mixed IMM state and covariance and save posterior estimate
-        self._compute_state_estimate()
+        # combine the predictions using the predicted mode probabilities
+        self._compute_state_estimate(self.cbar)
         self.x_prior = self.x.copy()
         self.P_prior = self.P.copy()
 
-    def _compute_state_estimate(self):
+    def _compute_state_estimate(self, mode_probabilities=None):
         """
         Computes the IMM's mixed state estimate from each filter using
-        the the mode probability self.mu to weight the estimates.
+        the mode probabilities to weight the estimates. By default, use the
+        posterior probabilities self.mu.
         """
+        if mode_probabilities is None:
+            mode_probabilities = self.mu
+
         self.x.fill(0)
-        for f, mu in zip(self.filters, self.mu):
+        for f, mu in zip(self.filters, mode_probabilities):
             self.x += f.x * mu
 
         self.P.fill(0)
-        for f, mu in zip(self.filters, self.mu):
+        for f, mu in zip(self.filters, mode_probabilities):
             y = f.x - self.x
             self.P += mu * (outer(y, y) + f.P)
 

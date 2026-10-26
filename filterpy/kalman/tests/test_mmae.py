@@ -198,8 +198,6 @@ def test_MMAE2():
         plt.plot(xs)
         plt.plot(pos[:, 0])
 
-    return bank
-
 if __name__ == '__main__':
     DO_PLOT = True
     test_MMAE2()

@@ -58,19 +58,22 @@ using the Saver class to save the state of the filter at each epoch.
     from filterpy.kalman import KalmanFilter
     from filterpy.common import Q_discrete_white_noise, Saver
 
+    rng = np.random.RandomState(0)
+
     r_std, q_std = 2., 0.003
+    dt = 1
     cv = KalmanFilter(dim_x=2, dim_z=1)
-    cv.x = np.array([[0., 1.]]) # position, velocity
-    cv.F = np.array([[1, dt],[ [0, 1]])
-    cv.R = np.array([[r_std^^2]])
-    f.H = np.array([[1., 0.]])
-    f.P = np.diag([.1^^2, .03^^2)
-    f.Q = Q_discrete_white_noise(2, dt, q_std**2)
+    cv.x = np.array([[0., 1.]]).T # position, velocity
+    cv.F = np.array([[1, dt], [0, 1]])
+    cv.R = np.array([[r_std ** 2]])
+    cv.H = np.array([[1., 0.]])
+    cv.P = np.diag([.1 ** 2, .03 ** 2])
+    cv.Q = Q_discrete_white_noise(2, dt, q_std ** 2)
 
     saver = Saver(cv)
     for z in range(100):
         cv.predict()
-        cv.update([z + randn() * r_std])
+        cv.update([z + rng.randn() * r_std])
         saver.save() # save the filter's state
 
     saver.to_array()
@@ -85,16 +88,18 @@ using the Saver class to save the state of the filter at each epoch.
 
 This code implements the same filter using the procedural form
 
-    x = np.array([[0., 1.]]) # position, velocity
-    F = np.array([[1, dt],[ [0, 1]])
-    R = np.array([[r_std^^2]])
+    from filterpy.kalman import predict, update
+    x = np.array([[0., 1.]]).T # position, velocity
+    F = np.array([[1, dt], [0, 1]])
+    R = np.array([[r_std ** 2]])
     H = np.array([[1., 0.]])
-    P = np.diag([.1^^2, .03^^2)
-    Q = Q_discrete_white_noise(2, dt, q_std**2)
+    P = np.diag([.1 ** 2, .03 ** 2])
+    Q = Q_discrete_white_noise(2, dt, q_std ** 2)
 
+    xs = []
     for z in range(100):
         x, P = predict(x, P, F=F, Q=Q)
-        x, P = update(x, P, z=[z + randn() * r_std], R=R, H=H)
+        x, P = update(x, P, z=[z + rng.randn() * r_std], R=R, H=H)
         xs.append(x[0, 0])
     plt.plot(xs)
 
@@ -200,7 +205,7 @@ class KalmanFilter(object):
 
         f.H = np.array([[1., 0.]])
 
-    Define the state's covariance matrix P. 
+    Define the state's covariance matrix P.
 
     .. code::
 
@@ -240,7 +245,7 @@ class KalmanFilter(object):
             f.predict()
             f.update(z)
 
-            do_something_with_estimate (f.x)
+            do_something_with_estimate(f.x)
 
 
     **Procedural Form**
@@ -405,7 +410,7 @@ class KalmanFilter(object):
         self.R = eye(dim_z)               # measurement uncertainty
         self._alpha_sq = 1.               # fading memory control
         self.M = np.zeros((dim_x, dim_z)) # process-measurement cross correlation
-        self.z = np.array([[None]*self.dim_z]).T
+        self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -513,10 +518,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         if R is None:
@@ -642,10 +647,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         z = reshape_z(z, self.dim_z, self.x.ndim)
@@ -703,10 +708,10 @@ class KalmanFilter(object):
         self._mahalanobis = None
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
-            self.y = zeros((self.dim_z, 1))
+            self.y = zeros(self.z.shape)
             return
 
         if R is None:
@@ -779,7 +784,9 @@ class KalmanFilter(object):
             length = 1
         else:
             length = len(z_i)
-        z_i = np.reshape(z_i, [length, 1])
+        z_i = reshape_z(z_i, length, self.x.ndim)
+        self.y = reshape_z(self.y, self.dim_z, self.x.ndim)
+        self.z = reshape_z(self.z, self.dim_z, self.x.ndim)
         stop = start + length
 
         if R_i is None:
@@ -937,7 +944,7 @@ class KalmanFilter(object):
         """
 
         #pylint: disable=too-many-statements
-        n = np.size(zs, 0)
+        n = len(zs)
         if Fs is None:
             Fs = [self.F] * n
         if Qs is None:
@@ -1235,7 +1242,7 @@ class KalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     @property
@@ -1503,7 +1510,7 @@ def update(x, P, z, R, H=None, return_all=False):
 
     if return_all:
         # compute log likelihood
-        log_likelihood = logpdf(z, dot(H, x), S)
+        log_likelihood = logpdf(z, Hx, S)
         return x, P, y, K, S, log_likelihood
     return x, P
 
@@ -1741,7 +1748,7 @@ def batch_filter(x, P, zs, Fs, Qs, Hs, Rs, Bs=None, us=None,
 
     """
 
-    n = np.size(zs, 0)
+    n = len(zs)
     dim_x = x.shape[0]
 
     # mean estimates from Kalman Filter
@@ -1807,9 +1814,12 @@ def rts_smoother(Xs, Ps, Fs, Qs):
 
     Fs : list-like collection of numpy.array
         State transition matrix of the Kalman filter at each time step.
+        Fs[k] predicts the state at time k from the state at time k-1,
+        as in batch_filter.
 
     Qs : list-like collection of numpy.array, optional
         Process noise of the Kalman filter at each time step.
+        Qs[k] is the process noise for the prediction at time k.
 
     Returns
     -------
@@ -1848,11 +1858,11 @@ def rts_smoother(Xs, Ps, Fs, Qs):
     x, P, pP = Xs.copy(), Ps.copy(), Ps.copy()
 
     for k in range(n-2, -1, -1):
-        pP[k] = dot(dot(Fs[k], P[k]), Fs[k].T) + Qs[k]
+        pP[k] = dot(dot(Fs[k+1], P[k]), Fs[k+1].T) + Qs[k+1]
 
         #pylint: disable=bad-whitespace
-        K[k]  = dot(dot(P[k], Fs[k].T), linalg.inv(pP[k]))
-        x[k] += dot(K[k], x[k+1] - dot(Fs[k], x[k]))
+        K[k]  = dot(dot(P[k], Fs[k+1].T), linalg.inv(pP[k]))
+        x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
         P[k] += dot(dot(K[k], P[k+1] - pP[k]), K[k].T)
 
     return (x, P, K, pP)
