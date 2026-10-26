@@ -229,7 +229,7 @@ class UnscentedKalmanFilter(object):
     >>> points = MerweScaledSigmaPoints(4, alpha=.1, beta=2., kappa=-1)
     >>>
     >>> kf = UnscentedKalmanFilter(dim_x=4, dim_z=2, dt=dt, fx=fx, hx=hx, points=points)
-    >>> kf.x = np.array([-1., 1., -1., 1]) # initial state
+    >>> kf.x = np.array([0., 10., 0., 10.]) # initial state
     >>> kf.P *= 0.2 # initial uncertainty
     >>> z_std = 0.1
     >>> kf.R = np.diag([z_std**2, z_std**2]) # 1 standard
