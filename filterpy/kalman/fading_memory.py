@@ -27,7 +27,7 @@ import numpy as np
 from numpy import dot, zeros, eye
 import scipy.linalg as linalg
 from filterpy.stats import logpdf
-from filterpy.common import pretty_str
+from filterpy.common import pretty_str, reshape_z
 
 class FadingKalmanFilter(object):
     """
@@ -166,7 +166,7 @@ class FadingKalmanFilter(object):
         self.F = np.eye(dim_x)         # state transition matrix
         self.H = zeros((dim_z, dim_x)) # Measurement function
         self.R = eye(dim_z)            # state uncertainty
-        self.z = np.array([[None]*dim_z]).T
+        self.z = reshape_z(np.array([None]*dim_z), dim_z, self.x.ndim)
 
         # gain and residual are computed during the innovation step. We
         # save them so that in case you want to inspect them for various
@@ -209,7 +209,7 @@ class FadingKalmanFilter(object):
         """
 
         if z is None:
-            self.z = np.array([[None]*self.dim_z]).T
+            self.z = reshape_z(np.array([None]*self.dim_z), self.dim_z, self.x.ndim)
             self.x_post = self.x.copy()
             self.P_post = self.P.copy()
             return
@@ -314,7 +314,7 @@ class FadingKalmanFilter(object):
             In other words `covariance[k,:,:]` is the covariance at step `k`.
         """
 
-        n = np.size(zs, 0)
+        n = len(zs)
         if Rs is None:
             Rs = [None] * n
 
@@ -438,7 +438,7 @@ class FadingKalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     def __repr__(self):

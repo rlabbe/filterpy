@@ -343,5 +343,20 @@ def test_big_data():
     assert delta.min() > -6, delta.min()
 
 
+def test_residual_is_stored():
+    dt = 0.5
+    for order in (0, 1, 2):
+        lsq = LeastSquaresFilter(dt=dt, order=order)
+        for z in [1.0, 2.5, 3.1, 4.8, 6.2]:
+            x = lsq.x.copy()
+            predicted = x[0]
+            if order >= 1:
+                predicted += dt * x[1]
+            if order == 2:
+                predicted += 0.5 * dt**2 * x[2]
+            lsq.update(z)
+            assert abs(lsq.y - (z - predicted)) < 1e-12
+
+
 if __name__ == "__main__":
     test_big_data()
