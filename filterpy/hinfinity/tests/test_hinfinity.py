@@ -26,7 +26,7 @@ from filterpy.hinfinity import HInfinityFilter
 
 def test_Hinfinity():
     dt = 0.1
-    f = HInfinityFilter(2, 1, 0, gamma=.4)
+    f = HInfinityFilter(2, 1, gamma=.4)
 
     f.F = array([[1., dt],
                  [0., 1.]])

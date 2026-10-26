@@ -47,9 +47,6 @@ class HInfinityFilter(object):
         Number of of measurement inputs. For example, if the sensor
         provides you with position in (x, y), `dim_z` would be 2.
 
-    dim_u : int
-        Number of control inputs for the Gu part of the prediction step.
-
     gamma : float
 
     .. warning::
@@ -58,12 +55,11 @@ class HInfinityFilter(object):
         matrix.
     """
 
-    def __init__(self, dim_x, dim_z, dim_u, gamma):
+    def __init__(self, dim_x, dim_z, gamma):
         warnings.warn("This code is likely incorrect. DO NOT USE.", DeprecationWarning)
 
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.dim_u = dim_u
         self.gamma = gamma
 
         self.x = zeros((dim_x, 1)) # state
@@ -278,8 +274,7 @@ class HInfinityFilter(object):
             'HInfinityFilter object',
             pretty_str('dim_x', self.dim_x),
             pretty_str('dim_z', self.dim_z),
-            pretty_str('dim_u', self.dim_u),
-            pretty_str('gamma', self.dim_u),
+            pretty_str('gamma', self.gamma),
             pretty_str('x', self.x),
             pretty_str('P', self.P),
             pretty_str('F', self.F),

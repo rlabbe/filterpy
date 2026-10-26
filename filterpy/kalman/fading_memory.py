@@ -59,10 +59,6 @@ class FadingKalmanFilter(object):
         Number of of measurement inputs. For example, if the sensor
         provides you with position in (x,y), dim_z would be 2.
 
-    dim_u : int (optional)
-        size of the control input, if it is being used.
-        Default value of 0 indicates it is not used.
-
     Attributes
     ----------
 
@@ -104,7 +100,7 @@ class FadingKalmanFilter(object):
     F : ndarray (dim_x, dim_x)
         state transition matrix
 
-    B : ndarray (dim_x, dim_u), default 0
+    B : ndarray, default 0
         control transition matrix
 
     y : numpy.array
@@ -143,7 +139,7 @@ class FadingKalmanFilter(object):
     """
 
 
-    def __init__(self, alpha, dim_x, dim_z, dim_u=0):
+    def __init__(self, alpha, dim_x, dim_z):
 
         warnings.warn(
             "Use KalmanFilter class instead; it also provides the alpha attribute",
@@ -152,12 +148,10 @@ class FadingKalmanFilter(object):
         assert alpha >= 1
         assert dim_x > 0
         assert dim_z > 0
-        assert dim_u >= 0
 
         self.alpha_sq = alpha**2
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.dim_u = dim_u
 
         self.x = zeros((dim_x, 1))     # state
         self.P = eye(dim_x)            # uncertainty covariance
@@ -446,7 +440,6 @@ class FadingKalmanFilter(object):
             'FadingKalmanFilter object',
             pretty_str('dim_x', self.x),
             pretty_str('dim_z', self.x),
-            pretty_str('dim_u', self.dim_u),
             pretty_str('x', self.x),
             pretty_str('P', self.P),
             pretty_str('F', self.F),

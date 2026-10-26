@@ -286,10 +286,6 @@ class KalmanFilter(object):
         Number of of measurement inputs. For example, if the sensor
         provides you with position in (x,y), dim_z would be 2.
 
-    dim_u : int (optional)
-        size of the control input, if it is being used.
-        Default value of 0 indicates it is not used.
-
     compute_log_likelihood : bool (default = True)
         Computes log likelihood by default, but this can be a slow
         computation, so if you never use it you can turn this computation
@@ -389,17 +385,14 @@ class KalmanFilter(object):
 
     """
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+    def __init__(self, dim_x, dim_z):
         if dim_x < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
             raise ValueError('dim_z must be 1 or greater')
-        if dim_u < 0:
-            raise ValueError('dim_u must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.dim_u = dim_u
 
         self.x = zeros((dim_x, 1))        # state
         self.P = eye(dim_x)               # uncertainty covariance
@@ -450,7 +443,7 @@ class KalmanFilter(object):
         u : np.array, default 0
             Optional control vector.
 
-        B : np.array(dim_x, dim_u), or None
+        B : np.array, or None
             Optional control transition matrix; a value of None
             will cause the filter to use `self.B`.
 
@@ -579,7 +572,7 @@ class KalmanFilter(object):
             Optional control vector. If non-zero, it is multiplied by B
             to create the control input into the system.
 
-        B : np.array(dim_x, dim_u), or None
+        B : np.array, or None
             Optional control transition matrix; a value of None
             will cause the filter to use `self.B`.
         """
@@ -1091,7 +1084,7 @@ class KalmanFilter(object):
         u : np.array, default 0
             Optional control vector.
 
-        B : np.array(dim_x, dim_u), or None
+        B : np.array, or None
             Optional control transition matrix; a value of None
             will cause the filter to use `self.B`.
 
@@ -1278,7 +1271,6 @@ class KalmanFilter(object):
             'KalmanFilter object',
             pretty_str('dim_x', self.dim_x),
             pretty_str('dim_z', self.dim_z),
-            pretty_str('dim_u', self.dim_u),
             pretty_str('x', self.x),
             pretty_str('P', self.P),
             pretty_str('x_prior', self.x_prior),

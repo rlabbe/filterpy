@@ -363,7 +363,7 @@ def test_batch_filter():
 
 
 def test_univariate():
-    f = KalmanFilter(dim_x=1, dim_z=1, dim_u=1)
+    f = KalmanFilter(dim_x=1, dim_z=1)
     f.x = np.array([[0]])
     f.P *= 50
     f.H = np.array([[1.]])

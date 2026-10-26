@@ -129,11 +129,10 @@ class ExtendedKalmanFilter(object):
     https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python
     """
 
-    def __init__(self, dim_x, dim_z, dim_u=0):
+    def __init__(self, dim_x, dim_z):
 
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.dim_u = dim_u
 
         self.x = zeros((dim_x, 1)) # state
         self.P = eye(dim_x)        # uncertainty covariance

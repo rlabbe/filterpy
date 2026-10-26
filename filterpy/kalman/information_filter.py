@@ -51,10 +51,6 @@ class InformationFilter(object):
         Number of of measurement inputs. For example, if the sensor
         provides you with position in (x,y), dim_z would be 2.
 
-    dim_u : int (optional)
-        size of the control input, if it is being used.
-        Default value of 0 indicates it is not used.
-
     self.compute_log_likelihood = compute_log_likelihood
     self.log_likelihood = math.log(sys.float_info.min)
 
@@ -127,18 +123,15 @@ class InformationFilter(object):
     """
 
 
-    def __init__(self, dim_x, dim_z, dim_u=0, compute_log_likelihood=True):
+    def __init__(self, dim_x, dim_z, compute_log_likelihood=True):
 
         if dim_x < 1:
             raise ValueError('dim_x must be 1 or greater')
         if dim_z < 1:
             raise ValueError('dim_z must be 1 or greater')
-        if dim_u < 0:
-            raise ValueError('dim_u must be 0 or greater')
 
         self.dim_x = dim_x
         self.dim_z = dim_z
-        self.dim_u = dim_u
 
         self.x = zeros((dim_x, 1)) # state
         self.P_inv = eye(dim_x)   # uncertainty covariance
@@ -380,7 +373,6 @@ class InformationFilter(object):
             'InformationFilter object',
             pretty_str('dim_x', self.dim_x),
             pretty_str('dim_z', self.dim_z),
-            pretty_str('dim_u', self.dim_u),
             pretty_str('x', self.x),
             pretty_str('P_inv', self.P_inv),
             pretty_str('x_prior', self.x_prior),
