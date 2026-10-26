@@ -219,11 +219,11 @@ class ExtendedKalmanFilter(object):
         R = self.R
         x = self.x
 
-        H = HJacobian(x, *args)
-
         # predict step
         x = dot(F, x) + dot(B, u)
         P = dot(F, P).dot(F.T) + Q
+
+        H = HJacobian(x, *args)
 
         # save prior
         self.x_prior = np.copy(self.x)
