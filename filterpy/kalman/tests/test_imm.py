@@ -176,8 +176,8 @@ def test_imm():
 
     zs = np.zeros((N, 2))
     for i in range(len(zs)):
-        zs[i, 0] = simxs[i, 0] + randn()*r
-        zs[i, 1] = simxs[i, 2] + randn()*r
+        zs[i, 0] = simxs[i, 0, 0] + randn()*r
+        zs[i, 1] = simxs[i, 2, 0] + randn()*r
 
     '''
     try:

@@ -19,8 +19,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import numpy as np
-from scipy.ndimage.filters import convolve
-from scipy.ndimage.interpolation import shift
+from scipy.ndimage import convolve, shift
 
 
 def normalize(pdf):
