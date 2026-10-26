@@ -379,8 +379,8 @@ def multivariate_gaussian(x, mu, cov):
          "a future release of FilterPy"), DeprecationWarning)
 
     # force all to numpy.array type, and flatten in case they are vectors
-    x = np.array(x, copy=False, ndmin=1).flatten()
-    mu = np.array(mu, copy=False, ndmin=1).flatten()
+    x = np.array(x, ndmin=1).flatten()
+    mu = np.array(mu, ndmin=1).flatten()
 
     nx = len(mu)
     cov = _to_cov(cov, nx)
@@ -1127,11 +1127,15 @@ def _to_cov(x, n):
 def rand_student_t(df, mu=0, std=1):
     """
     return random number distributed by student's t distribution with
-    `df` degrees of freedom with the specified mean and standard deviation.
+    `df` degrees of freedom, location `mu`, and scale `std`.
+
+    `std` is the standard deviation of the normal variate used to generate
+    the sample, not the standard deviation of the Student's t distribution.
+    For df > 2, the returned variance is std**2 * df / (df - 2).
     """
 
     x = random.gauss(0, std)
-    y = 2.0*random.gammavariate(0.5 * df, 2.0)
+    y = random.gammavariate(0.5 * df, 2.0)
     return x / (math.sqrt(y / df)) + mu
 
 

@@ -81,12 +81,12 @@ def test_sigma_plot():
         for i in range(Xi0.shape[0]):
             plt.scatter((Xi0[i, 0]-x[0, 0])*w0[i] + x[0, 0],
                         (Xi0[i, 1]-x[0, 1])*w0[i] + x[0, 1],
-                        color='blue', label='Julier low $\kappa$')
+                        color='blue', label=r'Julier low $\kappa$')
 
         for i in range(Xi1.shape[0]):
             plt.scatter((Xi1[i, 0]-x[0, 0]) * w1[i] + x[0, 0],
                         (Xi1[i, 1]-x[0, 1]) * w1[i] + x[0, 1],
-                        color='green', label='Julier high $\kappa$')
+                        color='green', label=r'Julier high $\kappa$')
         for i in range(Xi2.shape[0]):
             plt.scatter((Xi2[i, 0] - x[0, 0]) * w2[i] + x[0, 0],
                         (Xi2[i, 1] - x[0, 1]) * w2[i] + x[0, 1],
@@ -976,7 +976,6 @@ def test_linear_rts():
 
     assert np.allclose(dx, 0, atol=1e-7)
     assert np.allclose(dxx, 0, atol=1e-6)
-    return ukf
 
 
 def _test_log_likelihood():
