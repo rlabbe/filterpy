@@ -1235,7 +1235,7 @@ class KalmanFilter(object):
         mahalanobis : float
         """
         if self._mahalanobis is None:
-            self._mahalanobis = sqrt(float(dot(dot(self.y.T, self.SI), self.y)))
+            self._mahalanobis = sqrt(dot(dot(self.y.T, self.SI), self.y).item())
         return self._mahalanobis
 
     @property
