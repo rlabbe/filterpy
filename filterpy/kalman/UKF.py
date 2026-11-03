@@ -598,11 +598,13 @@ class UnscentedKalmanFilter(object):
         #pylint: disable=too-many-arguments
 
         try:
-            z = zs[0]
+            z = next((measurement for measurement in zs if measurement is not None), None)
         except TypeError:
             raise TypeError('zs must be list-like')
 
-        if self._dim_z == 1:
+        if z is None:
+            pass  # Every epoch is prediction-only; no measurement shape to check.
+        elif self._dim_z == 1:
             if not(isscalar(z) or (z.ndim == 1 and len(z) == 1)):
                 raise TypeError('zs must be a list of scalars or 1D, 1 element arrays')
         else:
