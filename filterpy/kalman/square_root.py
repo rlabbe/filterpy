@@ -292,7 +292,7 @@ class SquareRootKalmanFilter(object):
     @property
     def P_post(self):
         """ covariance matrix of the posterior"""
-        return dot(self._P1_2_prior, self._P1_2_prior.T)
+        return dot(self._P1_2_post, self._P1_2_post.T)
 
     @property
     def P1_2(self):
