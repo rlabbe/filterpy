@@ -127,7 +127,7 @@ class Saver(object):
         # if the class uses properties that compute data only when
         # accessed
         for prop in self.properties:
-            self._DL[prop[0]].append(getattr(kf, prop[0]))
+            self._DL[prop[0]].append(copy.deepcopy(getattr(kf, prop[0])))
 
         v = copy.deepcopy(kf.__dict__)
 
