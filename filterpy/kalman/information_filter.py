@@ -222,7 +222,10 @@ class InformationFilter(object):
             self.P_inv = P_inv + dot(H_T, R_inv).dot(H)
 
             if self.compute_log_likelihood:
-                self.log_likelihood = logpdf(x=self.y, cov=self.S)
+                # The gain uses posterior information in state space, but
+                # the innovation likelihood needs covariance in measurement space.
+                innovation_cov = dot(H, self.inv(P_inv)).dot(H_T) + self.inv(R_inv)
+                self.log_likelihood = logpdf(x=self.y, cov=innovation_cov)
                 self.likelihood = math.exp(self.log_likelihood)
                 if self.likelihood == 0:
                     self.likelihood = sys.float_info.min
