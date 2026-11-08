@@ -992,7 +992,8 @@ class KalmanFilter(object):
 
         return (means, covariances, means_p, covariances_p)
 
-    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, inv=np.linalg.inv):
+    def rts_smoother(self, Xs, Ps, Fs=None, Qs=None, Bs=None, us=None,
+                     inv=np.linalg.inv):
         """
         Runs the Rauch-Tung-Striebel Kalman smoother on a set of
         means and covariances computed by a Kalman filter. The usual input
@@ -1015,6 +1016,17 @@ class KalmanFilter(object):
         Qs : list-like collection of numpy.array, optional
             Process noise of the Kalman filter at each time step. Optional,
             if not provided the filter's self.Q will be used
+
+        Bs : list-like collection of numpy.array, optional
+            Control transition matrix of the Kalman filter at each time
+            step. Optional, and only used together with `us`; if either is
+            not provided the smoother assumes no control input was applied,
+            matching `KalmanFilter.predict()` called with `u=None`.
+
+        us : list-like collection of numpy.array, optional
+            Control vector of the Kalman filter at each time step, i.e. the
+            same `u` that was passed to `predict()` when computing `Xs[k]`
+            from `Xs[k-1]`. Optional, see `Bs`.
 
         inv : function, default numpy.linalg.inv
             If you prefer another inverse function, such as the Moore-Penrose
@@ -1068,7 +1080,15 @@ class KalmanFilter(object):
 
             #pylint: disable=bad-whitespace
             K[k]  = dot(dot(P[k], Fs[k+1].T), inv(Pp[k]))
-            x[k] += dot(K[k], x[k+1] - dot(Fs[k+1], x[k]))
+            # x = Fx + Bu, same as predict(): Xs[k+1] was itself produced by
+            # applying Bs[k+1]/us[k+1] on top of Fs[k+1], so the predicted
+            # mean this step corrects against must include that term too,
+            # or a non-zero control input biases every smoothed estimate.
+            x_pred = dot(Fs[k+1], x[k])
+            if Bs is not None and us is not None and \
+                    Bs[k+1] is not None and us[k+1] is not None:
+                x_pred = x_pred + dot(Bs[k+1], us[k+1])
+            x[k] += dot(K[k], x[k+1] - x_pred)
             P[k] += dot(dot(K[k], P[k+1] - Pp[k]), K[k].T)
 
         return (x, P, K, Pp)
