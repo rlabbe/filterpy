@@ -191,12 +191,14 @@ class KalmanFilter(object):
         f.x = np.array([2., 0.])
 
 
-    Define the state transition matrix:
+    Define the state transition matrix for a time step of ``dt`` seconds.
+    Each prediction advances the position by the velocity multiplied by ``dt``.
 
-        .. code::
+    .. code::
 
-            f.F = np.array([[1.,1.],
-                            [0.,1.]])
+        dt = 0.1
+        f.F = np.array([[1., dt],
+                        [0., 1.]])
 
     Define the measurement function. Here we need to convert a position-velocity
     vector into just a position vector, so we use:
@@ -233,7 +235,7 @@ class KalmanFilter(object):
     .. code::
 
         from filterpy.common import Q_discrete_white_noise
-        f.Q = Q_discrete_white_noise(dim=2, dt=0.1, var=0.13)
+        f.Q = Q_discrete_white_noise(dim=2, dt=dt, var=0.13)
 
 
     Now just perform the standard predict/update loop:
